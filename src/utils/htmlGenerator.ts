@@ -478,16 +478,13 @@ function animateSpell(spellIdx,x1,y1,x2,y2,cb){
 }
 function playerFlyAttack(eIdx,dmg,cb){
   const pi=activePlayerIdx();const pEl=playerEls[pi];
-  const apos=gs.allPlayerPos[pi];const e=ENEMIES[eIdx];
-  const dst=hexCenter(e.col,e.row);const src=hexCenter(apos.col,apos.row);
+  const e=ENEMIES[eIdx];
+  const dc=Math.max(0,e.col-1),dr=e.row;
+  const dst=hexCenter(dc,dr);
+  gs.allPlayerPos[pi]={col:dc,row:dr};gs.pCol=dc;gs.pRow=dr;
   playSound(SFX.player_atk);
   if(pEl){pEl.style.transition='left .28s ease-in,top .28s ease-in';pEl.style.left=dst.x+'px';pEl.style.top=dst.y+'px';}
-  setTimeout(()=>{
-    applyDamageToEnemy(eIdx,dmg,()=>{
-      if(pEl){pEl.style.transition='left .28s ease-out,top .28s ease-out';pEl.style.left=src.x+'px';pEl.style.top=src.y+'px';}
-      setTimeout(()=>{if(pEl)pEl.style.transition='';if(cb)cb();},300);
-    });
-  },300);
+  setTimeout(()=>{if(pEl)pEl.style.transition='';applyDamageToEnemy(eIdx,dmg,cb);},300);
 }
 function animateEnemyCharge(idx,cb){
   const e=ENEMIES[idx];const flyer=enemyFlyerEls[idx];
@@ -742,13 +739,13 @@ function onHexClick(){
       if(ap.type==='ranged'||ap.type==='flying'){
         playerAttackAlt(eIdx,()=>{checkWin();});
       } else {
+        const dc=Math.max(0,e.col-1),dr=e.row;
         const apos=gs.allPlayerPos[pi];
-        const dist=hexDist(apos.col,apos.row,e.col,e.row);
+        const dist=hexDist(apos.col,apos.row,dc,dr);
         if(dist>ap.moveRange){
           showOutOfReach();
           gs.state='player_turn';highlightMove();
         } else {
-          const dc=Math.max(0,e.col-1),dr=e.row;
           movePlayerTo(dc,dr,()=>{playerAttackAlt(eIdx,()=>{checkWin();});});
         }
       }
@@ -768,11 +765,11 @@ function onHexClick(){
       movePlayerTo(Math.max(0,e.col-1),e.row,()=>{setTimeout(()=>enemyAttack(eIdx,HINTS_MOVE_FLY),300);});
       return;
     }
-    const dist=hexDist(gs.pCol,gs.pRow,e.col,e.row);
+    const dc=Math.max(0,e.col-1),dr=e.row;
+    const dist=hexDist(gs.pCol,gs.pRow,dc,dr);
     if(dist>ALL_PLAYERS[0].moveRange){showOutOfReach();return;}
     gs.state='animating';clearHex();hideSpeech();hideAttackIcon();
     const flyingAlive=ENEMIES.some((en,i)=>gs.enemyAlive[i]&&en.type==='flying');
-    const dc=Math.max(0,e.col-1),dr=e.row;
     if(!flyingAlive){
       movePlayerTo(dc,dr,()=>{playerSwingAttack(()=>{killEnemy(eIdx,()=>{checkWin();});});});
     } else {
