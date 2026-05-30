@@ -170,10 +170,30 @@ export function generateHTML(config: BattleConfig, network: NetworkTarget): stri
   const audioEngine = hasAudio ? `
   let actx;const audioCache={};
   function getAudioCtx(){if(!actx){try{actx=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}}return actx;}
-  function playSound(dataUri,vol){vol=vol===undefined?1:vol;if(!dataUri)return;const ctx=getAudioCtx();if(!ctx)return;if(ctx.state==='suspended')ctx.resume();if(audioCache[dataUri]){const src=ctx.createBufferSource(),g=ctx.createGain();g.gain.value=vol;src.buffer=audioCache[dataUri];src.connect(g).connect(ctx.destination);src.start();return;}const b64=dataUri.split(',')[1];const bin=atob(b64);const ab=new ArrayBuffer(bin.length);const u8=new Uint8Array(ab);for(let i=0;i<bin.length;i++)u8[i]=bin.charCodeAt(i);ctx.decodeAudioData(ab).then(buf=>{audioCache[dataUri]=buf;playSound(dataUri,vol);}).catch(()=>{});}
+  function playSound(dataUri,vol){
+    vol=vol===undefined?1:vol;if(!dataUri)return;
+    const ctx=getAudioCtx();if(!ctx)return;
+    function doPlay(){
+      if(audioCache[dataUri]){const src=ctx.createBufferSource(),g=ctx.createGain();g.gain.value=vol;src.buffer=audioCache[dataUri];src.connect(g).connect(ctx.destination);src.start();return;}
+      const b64=dataUri.split(',')[1];if(!b64)return;
+      const bin=atob(b64);const ab=new ArrayBuffer(bin.length);const u8=new Uint8Array(ab);for(let i=0;i<bin.length;i++)u8[i]=bin.charCodeAt(i);
+      ctx.decodeAudioData(ab).then(buf=>{audioCache[dataUri]=buf;doPlay();}).catch(()=>{});
+    }
+    if(ctx.state==='suspended')ctx.resume().then(doPlay);else doPlay();
+  }
   document.addEventListener('click',()=>{const c=getAudioCtx();if(c&&c.state==='suspended')c.resume();},{once:true});
   let musicStarted=false;
-  function startMusic(){if(musicStarted||!SFX.music)return;musicStarted=true;const ctx=getAudioCtx();if(!ctx)return;const b64=SFX.music.split(',')[1];const bin=atob(b64);const ab=new ArrayBuffer(bin.length);const u8=new Uint8Array(ab);for(let i=0;i<bin.length;i++)u8[i]=bin.charCodeAt(i);ctx.decodeAudioData(ab).then(buf=>{const g=ctx.createGain();g.gain.value=0.3;const n=ctx.createBufferSource();n.buffer=buf;n.loop=true;n.connect(g).connect(ctx.destination);n.start();}).catch(()=>{});}` :
+  function startMusic(){
+    if(musicStarted||!SFX.music)return;musicStarted=true;
+    const ctx=getAudioCtx();if(!ctx)return;
+    const b64=SFX.music.split(',')[1];if(!b64)return;
+    const bin=atob(b64);const ab=new ArrayBuffer(bin.length);const u8=new Uint8Array(ab);for(let i=0;i<bin.length;i++)u8[i]=bin.charCodeAt(i);
+    ctx.decodeAudioData(ab).then(buf=>{
+      const g=ctx.createGain();g.gain.value=0.3;
+      const n=ctx.createBufferSource();n.buffer=buf;n.loop=true;n.connect(g).connect(ctx.destination);
+      if(ctx.state==='suspended')ctx.resume().then(()=>n.start());else n.start();
+    }).catch(()=>{});
+  }` :
   `\n  function playSound(){}\n  function startMusic(){}`;
 
   const ctaFn = {
