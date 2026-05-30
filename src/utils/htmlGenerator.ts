@@ -99,6 +99,7 @@ export function generateHTML(config: BattleConfig, network: NetworkTarget): stri
   const enemyElsInit      = config.enemyUnits.map((_, i) => `$('unit-enemy-${i}')`).join(',');
   const enemyHpElsInit    = config.enemyUnits.map((_, i) => `$('enemy-${i}-hp')`).join(',');
   const enemyFlyerElsInit = config.enemyUnits.map((e, i) => e.assets.attack ? `$('enemy-flyer-${i}')` : 'null').join(',');
+  const enemyTapElsInit   = config.enemyUnits.map((_, i) => `$('etap-${i}')`).join(',');
   const playerElsInit     = config.playerUnits.map((_, i) => `$('unit-player-${i}')`).join(',');
 
   // HTML sections
@@ -120,6 +121,10 @@ export function generateHTML(config: BattleConfig, network: NetworkTarget): stri
       : '')
     .filter(Boolean).join('\n');
 
+  const enemyTapHTML = config.enemyUnits
+    .map((_, i) => `  <div id="etap-${i}" class="enemy-tap"></div>`)
+    .join('\n');
+
   const spellsHTML = config.spells.map((sp, i) => `
       <div class="spell-btn" id="sp-spell${i}" data-spell="spell${i}">
         <img class="spell-img" src="${uri(sp.asset)}" alt="${sp.name}">
@@ -127,10 +132,14 @@ export function generateHTML(config: BattleConfig, network: NetworkTarget): stri
       </div>`).join('');
 
   const enemyUnitClicksJS = config.enemyUnits.map((_, i) =>
+    // img: hover icon for desktop mouse
     `if(enemyEls[${i}]){` +
-    `enemyEls[${i}].querySelector('img').addEventListener('click',e=>{e.stopPropagation();if(gs.state==='spell_target'){castSpell(ENEMIES[${i}].col,ENEMIES[${i}].row);}else if(gs.state==='intro'){skipIntro();}else if(gs.state==='player_turn'||gs.state==='animating'){const k=ENEMIES[${i}].col+','+ENEMIES[${i}].row;if(hexEls[k])onHexClick.call(hexEls[k]);}});` +
     `enemyEls[${i}].addEventListener('mouseenter',()=>{if(gs.state!=='player_turn')return;const pi=activePlayerIdx();const ap=ALL_PLAYERS[pi];const{x,y}=hexCenter(ENEMIES[${i}].col,ENEMIES[${i}].row);showAttackIcon(x,y,ap.type);});` +
     `enemyEls[${i}].addEventListener('mouseleave',()=>{hideAttackIcon();});` +
+    `}` +
+    // tap catcher: primary click target (desktop + mobile)
+    `if(enemyTapEls[${i}]){` +
+    `enemyTapEls[${i}].addEventListener('click',e=>{e.stopPropagation();if(gs.state==='spell_target'){castSpell(ENEMIES[${i}].col,ENEMIES[${i}].row);}else if(gs.state==='intro'){skipIntro();}else if(gs.state==='player_turn'||gs.state==='animating'){const k=ENEMIES[${i}].col+','+ENEMIES[${i}].row;if(hexEls[k])onHexClick.call(hexEls[k]);}});` +
     `}`
   ).join('\n');
 
@@ -268,6 +277,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;touch-action:no
 .hp-badge.flash{animation:hpFlash .4s ease;}
 @keyframes hpFlash{0%,100%{background:rgba(10,10,20,.8)}50%{background:rgba(200,30,30,.9);border-color:#f44;}}
 .enemy-flyer{position:absolute;pointer-events:none;z-index:40;}
+.enemy-tap{position:absolute;width:var(--hw,120px);height:var(--hh,80px);transform:translate(-50%,-50%);cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
 .float-text{position:absolute;font-family:'Arial Black',Arial,sans-serif;font-size:26px;font-weight:900;pointer-events:none;z-index:55;text-shadow:2px 2px 4px #000,0 0 8px #000;animation:floatUp 1.5s ease forwards;}
 .float-text.critical{color:#00e8ff;font-size:30px;text-shadow:0 0 14px #0af,2px 2px 5px #000;}
 .float-text.resist{color:#ffaa00;font-size:26px;text-shadow:0 0 12px #f60,2px 2px 4px #000;}
@@ -312,6 +322,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;touch-action:no
   ${playerUnitsHTML}
   ${enemyUnitsHTML}
   ${enemyFlyersHTML}
+${enemyTapHTML}
   <div id="spell-proj"></div>
   <div id="arrow"></div>
   <div id="atk-icon" style="position:absolute;pointer-events:none;z-index:62;display:none;"><img id="atk-icon-img" style="width:48px;height:48px;filter:drop-shadow(0 2px 8px rgba(0,0,0,.8));" src="" alt=""></div>
@@ -406,6 +417,7 @@ const playerEls=[${playerElsInit}];
 const enemyEls=[${enemyElsInit}];
 const enemyHpEls=[${enemyHpElsInit}];
 const enemyFlyerEls=[${enemyFlyerElsInit}];
+const enemyTapEls=[${enemyTapElsInit}];
 const spellProj=$('spell-proj'),arrowEl=$('arrow');
 const sbArea=$('spellbook-area'),sbPanel=$('spells-panel'),sbBtn=$('spellbook-btn'),sbIcon=$('sb-icon');
 const ${spSP_vars};
@@ -472,6 +484,7 @@ function highlightTargets(){clearHex();ENEMIES.forEach((e,i)=>{if(gs.enemyAlive[
 
 // ─── PLACEMENT ───
 function placeUnit(el,col,row){if(!el)return;const{x,y}=hexCenter(col,row);el.style.left=x+'px';el.style.top=y+'px';el.style.zIndex=String(10+row*2);}
+function placeEnemyTap(i){const e=ENEMIES[i];const el=enemyTapEls[i];if(!el)return;const{x,y}=hexCenter(e.col,e.row);el.style.left=x+'px';el.style.top=y+'px';el.style.zIndex=String(10+e.row*2+1);}
 
 // ─── HP / EFFECTS ───
 function setPlayerHP(val){
@@ -548,6 +561,7 @@ function animateEnemyCharge(idx,cb){
 function killUnit(el,x,y,color,sfxKey,cb){deathBurst(x,y,color);playSound(SFX[sfxKey]||null);setTimeout(()=>{if(el)el.classList.add('dead');if(cb)setTimeout(cb,580);},250);}
 function killEnemy(idx,cb){
   gs.enemyAlive[idx]=false;hideAttackIcon();
+  if(enemyTapEls[idx])enemyTapEls[idx].style.display='none';
   const e=ENEMIES[idx];const{x,y}=hexCenter(e.col,e.row);
   killUnit(enemyEls[idx],x,y,'#ff6600',e.type==='flying'?'enemy0_die':'enemy1_die',cb);
 }
@@ -887,6 +901,7 @@ function resetGame(){
   ALL_PLAYERS.forEach((p,i)=>{if(playerEls[i]){const img=playerEls[i].querySelector('img');if(p.idleImg){img.src=p.idleImg;img.width=p.w;}}});
   [...playerEls,...enemyEls].filter(Boolean).forEach(u=>{u.classList.remove('dead','shake','active-player');u.style.opacity='';u.style.transform='';u.style.transition='none';});
   enemyFlyerEls.filter(Boolean).forEach(f=>{f.style.display='none';});
+  enemyTapEls.forEach((el,i)=>{if(el){el.style.display='';placeEnemyTap(i);}});
   ${spSP_resetAll}
   closeSpellbookSilent();
   if(sbArea&&!SPELLBOOK_ENABLED)sbArea.style.display='none';
@@ -894,7 +909,7 @@ function resetGame(){
   failScr.classList.remove('show');winScr.classList.remove('show');
   requestAnimationFrame(()=>{
     ${playerInitJS}
-    ENEMIES.forEach((e,i)=>{placeUnit(enemyEls[i],e.col,e.row);});
+    ENEMIES.forEach((e,i)=>{placeUnit(enemyEls[i],e.col,e.row);placeEnemyTap(i);});
     requestAnimationFrame(()=>{[...playerEls,...enemyEls].filter(Boolean).forEach(u=>u.style.transition='');});
     clearHex();
     if(SCENARIO_MODE==='alternating'&&ALT_FIRST==='enemy'){setTimeout(runEnemyTurns,600);}
@@ -906,7 +921,7 @@ function resetGame(){
 function refreshLayout(){
   buildGrid();
   ${playerInitJS}
-  ENEMIES.forEach((e,i)=>{if(gs.enemyAlive[i])placeUnit(enemyEls[i],e.col,e.row);});
+  ENEMIES.forEach((e,i)=>{if(gs.enemyAlive[i]){placeUnit(enemyEls[i],e.col,e.row);placeEnemyTap(i);}});
   if(gs.state==='player_turn'||gs.state==='animating')highlightMove();
   else if(gs.state==='spell_target')highlightTargets();
   else clearHex();
@@ -918,7 +933,7 @@ function initGame(){
   resize();buildGrid();
   if(sbArea&&!SPELLBOOK_ENABLED)sbArea.style.display='none';
   ${playerInitJS}
-  ENEMIES.forEach((e,i)=>{placeUnit(enemyEls[i],e.col,e.row);});
+  ENEMIES.forEach((e,i)=>{placeUnit(enemyEls[i],e.col,e.row);placeEnemyTap(i);});
   startIntro();
 }
 
