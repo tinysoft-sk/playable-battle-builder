@@ -70,6 +70,8 @@ export function generateHTML(config: BattleConfig, network: NetworkTarget): stri
     defense: e.defense,
     w: e.displayWidth,
     aw: e.assets.attack ? Math.round(e.displayWidth * 1.3) : e.displayWidth,
+    idleImg: uri(e.assets.idle),
+    atkImg: uri(e.assets.attack),
   }));
 
   // alternating mode injection values
@@ -233,6 +235,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;touch-action:no
 .unit.dead{opacity:0;transform:translate(-50%,-88%) scale(.3) rotate(-15deg);transition:all .55s ease;}
 .unit.shake{animation:shakeUnit .35s ease;}
 @keyframes shakeUnit{0%,100%{transform:translate(-50%,-88%)}20%{transform:translate(-42%,-88%)}60%{transform:translate(-58%,-88%)}}
+@keyframes hopUnit{0%,100%{transform:translate(-50%,-88%)}45%{transform:translate(-50%,-102%)}}
+.unit.hop{animation:hopUnit .36s ease-out;}
 .unit.active-player::after{content:'';position:absolute;left:50%;bottom:-28px;transform:translateX(-50%);width:36px;height:3px;background:#4af;border-radius:2px;box-shadow:0 0 8px rgba(64,170,255,.8);}
 .hp-badge{position:absolute;bottom:-24px;left:50%;transform:translateX(-50%);background:rgba(10,10,20,.8);color:#fff;font-family:'Arial Black',Arial,sans-serif;font-size:12px;font-weight:900;padding:2px 8px;border-radius:10px;border:1.5px solid #8cf;white-space:nowrap;pointer-events:none;z-index:20;}
 .hp-badge.flash{animation:hpFlash .4s ease;}
@@ -396,6 +400,12 @@ ${audioEngine}
 // ─── ACTIVE PLAYER ───
 function activePlayerIdx(){const id=PLT_IDS[gs.altPlayerTurnIdx%PLT_IDS.length];const i=ALL_PLAYERS.findIndex(p=>p.id===id);return i>=0?i:0;}
 function updateActiveIndicator(){if(SCENARIO_MODE!=='alternating')return;playerEls.forEach((el,i)=>{if(el)el.classList.toggle('active-player',i===activePlayerIdx()&&gs.allPlayerAlive[i]);});}
+let lastHoppedIdx=-1;
+function hopPlayer(pi){
+  const el=playerEls[pi];if(!el)return;
+  el.classList.remove('hop');
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{el.classList.add('hop');setTimeout(()=>{if(el)el.classList.remove('hop');},400);}));
+}
 
 // ─── GRID BUILD ───
 const hexEls={};
@@ -414,6 +424,7 @@ function highlightMove(){
     if(hexDist(ap.col,ap.row,c,r)<=mr)hexEls[c+','+r].classList.add('reachable');
   }
   updateActiveIndicator();
+  if(pi!==lastHoppedIdx){lastHoppedIdx=pi;hopPlayer(pi);}
 }
 function highlightTargets(){clearHex();ENEMIES.forEach((e,i)=>{if(gs.enemyAlive[i]){const h=hexEls[e.col+','+e.row];if(h)h.classList.add('targetable');}});}
 
@@ -590,13 +601,15 @@ function applyDamageToEnemy(eIdx,dmg,cb){
       if(reaction&&reaction.ret){
         setTimeout(()=>{
           if(reaction.speech)showSpeech(reaction.speech,2000);
-          const pi=activePlayerIdx();const apos=gs.allPlayerPos[pi];
-          const pc=hexCenter(apos.col,apos.row);
-          setPlayerHP(gs.allPlayerHP[pi]-reaction.dmg);
-          floatText('-'+reaction.dmg,pc.x,pc.y-40,'damage');
-          shakeUnit(playerEls[pi],()=>{
-            if(gs.allPlayerHP[pi]<=0){playerDies('');return;}
-            if(cb)cb();
+          enemySwingAttack(eIdx,()=>{
+            const pi=activePlayerIdx();const apos=gs.allPlayerPos[pi];
+            const pc=hexCenter(apos.col,apos.row);
+            setPlayerHP(gs.allPlayerHP[pi]-reaction.dmg);
+            floatText('-'+reaction.dmg,pc.x,pc.y-40,'damage');
+            shakeUnit(playerEls[pi],()=>{
+              if(gs.allPlayerHP[pi]<=0){playerDies('');return;}
+              if(cb)cb();
+            });
           });
         },300);
       } else {
@@ -631,6 +644,14 @@ function runEnemyTurns(){
     let safe=0;while(safe++<ALL_PLAYERS.length&&!gs.allPlayerAlive[activePlayerIdx()])gs.altPlayerTurnIdx++;
     gs.state='player_turn';highlightMove();
   }
+}
+
+function enemySwingAttack(idx,cb){
+  const e=ENEMIES[idx];const el=enemyEls[idx];
+  const img=el&&el.querySelector('img');
+  if(img&&e.atkImg){img.src=e.atkImg;img.width=e.aw;}
+  if(el)el.classList.add('shake');playSound(SFX.enemy1_atk);
+  setTimeout(()=>{if(img&&e.idleImg){img.src=e.idleImg;img.width=e.w;}if(el)el.classList.remove('shake');if(cb)cb();},420);
 }
 
 function enemyAttackAlt(idx,damage,cb){
@@ -784,7 +805,7 @@ function startIntro(){gs.state='intro';showSpeech('Defeat the enemies!');showArr
 
 // ─── RESET ───
 function resetGame(){
-  altTurnIdx=0;
+  altTurnIdx=0;lastHoppedIdx=-1;
   gs.state='player_turn';gs.turn=1;gs.failCount=0;
   gs.playerHP=PLAYER_HP_INIT;gs.enemyHP=ENEMIES.map(e=>e.hp);gs.enemyAlive=ENEMIES.map(()=>true);
   gs.spellUsed={...spellUsedInit};gs.selSpell=null;gs.sbOpen=false;
