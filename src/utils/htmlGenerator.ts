@@ -126,12 +126,12 @@ export function generateHTML(config: BattleConfig, network: NetworkTarget): stri
         <span class="spell-label">${sp.name}</span>
       </div>`).join('');
 
-  const enemyUnitClicksJS = config.enemyUnits.map((_, i) =>
-    `if(enemyEls[${i}]){` +
-    `enemyEls[${i}].addEventListener('mouseenter',()=>{if(gs.state!=='player_turn')return;const pi=activePlayerIdx();const ap=ALL_PLAYERS[pi];const{x,y}=hexCenter(ENEMIES[${i}].col,ENEMIES[${i}].row);showAttackIcon(x,y,ap.type);});` +
-    `enemyEls[${i}].addEventListener('mouseleave',()=>{hideAttackIcon();});` +
-    `}`
-  ).join('\n');
+  const enemyUnitClicksJS = '';
+
+  const atkIconsHTML = config.enemyUnits.map((_, i) =>
+    `<div id="atk-icon-${i}" class="atk-icon"><img style="width:48px;height:48px;filter:drop-shadow(0 2px 8px rgba(0,0,0,.8));" src="" alt=""></div>`
+  ).join('\n  ');
+  const atkIconElsInit = config.enemyUnits.map((_, i) => `$('atk-icon-${i}')`).join(',');
 
   const spSP_vars = config.spells.map((_, i) => `spSP${i}=$('sp-spell${i}')`).join(',');
   const spSP_reset = config.spells.map((_, i) => `if(spSP${i})spSP${i}.classList.remove('selected');`).join('');
@@ -297,6 +297,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;touch-action:no
 .popup-btn{display:block;margin:10px auto 0;width:210px;cursor:pointer;transition:transform .14s;position:relative;z-index:2;}
 .popup-btn:hover{transform:scale(1.07);}
 .popup-app-icon{width:72px;height:72px;border-radius:16px;display:block;margin:8px auto 0;position:relative;z-index:2;box-shadow:0 4px 16px rgba(0,0,0,.5);}
+.atk-icon{position:absolute;pointer-events:auto;z-index:62;display:none;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .12s;}
+.atk-icon:hover{transform:scale(1.18);}
 #fail-hint{position:absolute;top:${hintLandY}px;left:50%;transform:translateX(-50%);width:270px;color:${hDefeatColor};font-family:Arial,sans-serif;font-size:${hintLandFS}px;line-height:1.55;text-align:center;text-shadow:1px 1px 4px #000,0 0 8px rgba(0,0,0,.8);z-index:3;}
 .portrait #fail-hint{top:${hintPortY}px;font-size:${hintPortFS}px;}
 </style>
@@ -313,7 +315,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;touch-action:no
   ${enemyFlyersHTML}
   <div id="spell-proj"></div>
   <div id="arrow"></div>
-  <div id="atk-icon" style="position:absolute;pointer-events:none;z-index:62;display:none;"><img id="atk-icon-img" style="width:48px;height:48px;filter:drop-shadow(0 2px 8px rgba(0,0,0,.8));" src="" alt=""></div>
+  ${atkIconsHTML}
   <div id="spellbook-area">
     <div id="spellbook-btn"><img id="sb-icon" src="${sbClosedUri}" alt="Spellbook"></div>
     <div id="spells-panel">${spellsHTML}
@@ -466,8 +468,9 @@ function highlightMove(){
   }
   updateActiveIndicator();
   if(pi!==lastHoppedIdx){lastHoppedIdx=pi;hopPlayer(pi);}
+  showAllAttackIcons();
 }
-function highlightTargets(){clearHex();ENEMIES.forEach((e,i)=>{if(gs.enemyAlive[i]){const h=hexEls[e.col+','+e.row];if(h)h.classList.add('targetable');}});}
+function highlightTargets(){clearHex();hideAllAttackIcons();ENEMIES.forEach((e,i)=>{if(gs.enemyAlive[i]){const h=hexEls[e.col+','+e.row];if(h)h.classList.add('targetable');}});}
 
 // ─── PLACEMENT ───
 function placeUnit(el,col,row){if(!el)return;const{x,y}=hexCenter(col,row);el.style.left=x+'px';el.style.top=y+'px';el.style.zIndex=String(10+row*2);}
@@ -491,16 +494,22 @@ function hideSpeech(){speechBub.style.display='none';}
 function showArrow(col,row){const{x,y}=hexCenter(col,row);arrowEl.style.left=(x-18)+'px';arrowEl.style.top=(y-110)+'px';arrowEl.classList.add('visible');}
 function hideArrow(){arrowEl.classList.remove('visible');}
 
-// ─── ATTACK ICON ───
-const atkIconEl=$('atk-icon'),atkIconImg=$('atk-icon-img');
-function showAttackIcon(x,y,type){
-  const src=type==='ranged'?ATTACK_ICON_RANGED:type==='flying'?ATTACK_ICON_FLYING:ATTACK_ICON_MELEE;
-  if(!src||!atkIconEl)return;
-  if(atkIconImg)atkIconImg.src=src;
-  atkIconEl.style.left=(x-24)+'px';atkIconEl.style.top=(y-90)+'px';
-  atkIconEl.style.display='block';atkIconEl.style.opacity='1';atkIconEl.style.transition='none';
+// ─── ATTACK ICONS (per-enemy) ───
+const atkIconEls=[${atkIconElsInit}];
+function showAllAttackIcons(){
+  if(gs.state!=='player_turn')return;
+  const pi=activePlayerIdx();const ap=ALL_PLAYERS[pi];
+  const src=ap.type==='ranged'?ATTACK_ICON_RANGED:ap.type==='flying'?ATTACK_ICON_FLYING:ATTACK_ICON_MELEE;
+  ENEMIES.forEach((e,i)=>{
+    const el=atkIconEls[i];if(!el)return;
+    if(!gs.enemyAlive[i]||!src){el.style.display='none';return;}
+    const img=el.querySelector('img');if(img)img.src=src;
+    const{x,y}=hexCenter(e.col,e.row);
+    el.style.left=(x-24)+'px';el.style.top=(y-90)+'px';
+    el.style.display='block';
+  });
 }
-function hideAttackIcon(){if(atkIconEl)atkIconEl.style.display='none';}
+function hideAllAttackIcons(){atkIconEls.forEach(el=>{if(el)el.style.display='none';});}
 function showOutOfReach(){showSpeech('Unit is out of reach!',1800);}
 
 // ─── ANIMATIONS ───
@@ -546,7 +555,7 @@ function animateEnemyCharge(idx,cb){
 }
 function killUnit(el,x,y,color,sfxKey,cb){deathBurst(x,y,color);playSound(SFX[sfxKey]||null);setTimeout(()=>{if(el)el.classList.add('dead');if(cb)setTimeout(cb,580);},250);}
 function killEnemy(idx,cb){
-  gs.enemyAlive[idx]=false;hideAttackIcon();
+  gs.enemyAlive[idx]=false;if(atkIconEls[idx])atkIconEls[idx].style.display='none';
   const e=ENEMIES[idx];const{x,y}=hexCenter(e.col,e.row);
   killUnit(enemyEls[idx],x,y,'#ff6600',e.type==='flying'?'enemy0_die':'enemy1_die',cb);
 }
@@ -619,7 +628,7 @@ function playerAttackAlt(eIdx,cb){
   const pi=activePlayerIdx();const ap=ALL_PLAYERS[pi];
   const dmg=calcDamage(ap.baseDmg,ap.dmgMult,e.defense||0);
   const{x,y}=hexCenter(e.col,e.row);
-  hideAttackIcon();
+  hideAllAttackIcons();
   if(ap.type==='ranged'){
     const apos=gs.allPlayerPos[pi];const from=hexCenter(apos.col,apos.row);
     const img=playerEls[pi]&&playerEls[pi].querySelector('img');
@@ -787,7 +796,7 @@ function onHexClick(){
 
   if(SCENARIO_MODE==='alternating'){
     if(eIdx>=0){
-      gs.state='animating';clearHex();hideSpeech();hideAttackIcon();
+      gs.state='animating';clearHex();hideSpeech();hideAllAttackIcons();
       const e=ENEMIES[eIdx];
       const pi=activePlayerIdx();const ap=ALL_PLAYERS[pi];
       if(ap.type==='ranged'){
@@ -815,7 +824,7 @@ function onHexClick(){
     const e=ENEMIES[eIdx];
     const pi0=activePlayerIdx();const ap0=ALL_PLAYERS[pi0];
     if(ap0.type==='ranged'){
-      gs.state='animating';clearHex();hideSpeech();hideAttackIcon();
+      gs.state='animating';clearHex();hideSpeech();hideAllAttackIcons();
       const flyingAlive=ENEMIES.some((en,i)=>gs.enemyAlive[i]&&en.type==='flying');
       const from=hexCenter(gs.pCol,gs.pRow);const to=hexCenter(e.col,e.row);
       const img=playerEls[pi0]&&playerEls[pi0].querySelector('img');
@@ -828,7 +837,7 @@ function onHexClick(){
       return;
     }
     if(e.type==='flying'){
-      gs.state='animating';clearHex();hideSpeech();hideAttackIcon();
+      gs.state='animating';clearHex();hideSpeech();hideAllAttackIcons();
       const [dfc,dfr]=nearestAdjacentTo(e.col,e.row,gs.pCol,gs.pRow);
       movePlayerTo(dfc,dfr,()=>{setTimeout(()=>enemyAttack(eIdx,HINTS_MOVE_FLY),300);});
       return;
@@ -836,7 +845,7 @@ function onHexClick(){
     const [dc,dr]=nearestAdjacentTo(e.col,e.row,gs.pCol,gs.pRow);
     const dist=hexDist(gs.pCol,gs.pRow,dc,dr);
     if(dist>ap0.moveRange||(dist>0&&occupied(dc,dr))){showOutOfReach();return;}
-    gs.state='animating';clearHex();hideSpeech();hideAttackIcon();
+    gs.state='animating';clearHex();hideSpeech();hideAllAttackIcons();
     const flyingAlive=ENEMIES.some((en,i)=>gs.enemyAlive[i]&&en.type==='flying');
     if(!flyingAlive){
       movePlayerTo(dc,dr,()=>{playerSwingAttack(()=>{killEnemy(eIdx,()=>{checkWin();});});});
@@ -877,6 +886,7 @@ vp.addEventListener('click',function(ev){
 // ─── UNIT CLICKS ───
 playerEls.forEach((el,i)=>{if(el)el.querySelector('img').addEventListener('click',e=>{e.stopPropagation();if(gs.state==='intro'){skipIntro();return;}if(gs.state==='player_turn'&&i===activePlayerIdx())highlightMove();});});
 ${enemyUnitClicksJS}
+atkIconEls.forEach((el,i)=>{if(!el)return;el.addEventListener('click',function(ev){ev.stopPropagation();if(gs.state==='intro'){skipIntro();return;}const e=ENEMIES[i];if(gs.state==='spell_target'){castSpell(e.col,e.row);}else if(gs.state==='player_turn'){const k=e.col+','+e.row;if(hexEls[k])onHexClick.call(hexEls[k]);}});});
 sbBtn.addEventListener('click',e=>{e.stopPropagation();if(gs.state==='intro')skipIntro();if(gs.state==='animating'||gs.state==='fail'||gs.state==='win')return;if(gs.sbOpen)closeSpellbook();else openSpellbook();});
 ${spSP_events}
 retryBtn.addEventListener('click',()=>{failScr.classList.remove('show');resetGame();});
