@@ -414,7 +414,8 @@ const hexEls={};
 function buildGrid(){gridEl.innerHTML='';for(const k in hexEls)delete hexEls[k];vp.style.setProperty('--hw',cur.hexW+'px');vp.style.setProperty('--hh',cur.hexH+'px');for(let col=0;col<COLS;col++)for(let row=0;row<ROWS;row++){if(col===COLS-1&&row%2===1)continue;const{x,y}=hexCenter(col,row);const d=document.createElement('div');d.className='hex';d.dataset.col=col;d.dataset.row=row;d.style.left=(x-cur.hexW/2)+'px';d.style.top=(y-cur.hexH/2)+'px';d.addEventListener('click',onHexClick);gridEl.appendChild(d);hexEls[col+','+row]=d;}}
 function clearHex(){for(const h of Object.values(hexEls))h.className='hex';}
 function findEnemyAt(c,r){return ENEMIES.findIndex((e,i)=>gs.enemyAlive[i]&&e.col===c&&e.row===r);}
-function occupied(c,r){return findEnemyAt(c,r)>=0;}
+function findPlayerAt(c,r){return gs.allPlayerAlive.findIndex((alive,i)=>alive&&gs.allPlayerPos[i].col===c&&gs.allPlayerPos[i].row===r);}
+function occupied(c,r){return findEnemyAt(c,r)>=0||findPlayerAt(c,r)>=0;}
 function highlightMove(){
   clearHex();
   const pi=activePlayerIdx();const ap=gs.allPlayerPos[pi];const mr=ALL_PLAYERS[pi].moveRange;
@@ -431,7 +432,7 @@ function highlightMove(){
 function highlightTargets(){clearHex();ENEMIES.forEach((e,i)=>{if(gs.enemyAlive[i]){const h=hexEls[e.col+','+e.row];if(h)h.classList.add('targetable');}});}
 
 // ─── PLACEMENT ───
-function placeUnit(el,col,row){if(!el)return;const{x,y}=hexCenter(col,row);el.style.left=x+'px';el.style.top=y+'px';}
+function placeUnit(el,col,row){if(!el)return;const{x,y}=hexCenter(col,row);el.style.left=x+'px';el.style.top=y+'px';el.style.zIndex=String(10+row*2);}
 
 // ─── HP / EFFECTS ───
 function setPlayerHP(val){
@@ -736,18 +737,17 @@ function onHexClick(){
       gs.state='animating';clearHex();hideSpeech();
       const e=ENEMIES[eIdx];
       const pi=activePlayerIdx();const ap=ALL_PLAYERS[pi];
-      if(ap.type==='ranged'||ap.type==='flying'){
+      const dc=Math.max(0,e.col-1),dr=e.row;
+      if(ap.type==='ranged'){
         playerAttackAlt(eIdx,()=>{checkWin();});
       } else {
-        const dc=Math.max(0,e.col-1),dr=e.row;
         const apos=gs.allPlayerPos[pi];
-        const dist=hexDist(apos.col,apos.row,dc,dr);
-        if(dist>ap.moveRange){
-          showOutOfReach();
-          gs.state='player_turn';highlightMove();
-        } else {
-          movePlayerTo(dc,dr,()=>{playerAttackAlt(eIdx,()=>{checkWin();});});
-        }
+        const adjDist=hexDist(apos.col,apos.row,dc,dr);
+        const destBlocked=adjDist>0&&occupied(dc,dr);
+        const outOfRange=ap.type==='melee'&&adjDist>ap.moveRange;
+        if(destBlocked||outOfRange){showOutOfReach();gs.state='player_turn';highlightMove();}
+        else if(ap.type==='flying'){playerAttackAlt(eIdx,()=>{checkWin();});}
+        else{movePlayerTo(dc,dr,()=>{playerAttackAlt(eIdx,()=>{checkWin();});});}
       }
     } else {
       const pi=activePlayerIdx();const ap=ALL_PLAYERS[pi];const apos=gs.allPlayerPos[pi];
@@ -767,7 +767,7 @@ function onHexClick(){
     }
     const dc=Math.max(0,e.col-1),dr=e.row;
     const dist=hexDist(gs.pCol,gs.pRow,dc,dr);
-    if(dist>ALL_PLAYERS[0].moveRange){showOutOfReach();return;}
+    if(dist>ALL_PLAYERS[0].moveRange||(dist>0&&occupied(dc,dr))){showOutOfReach();return;}
     gs.state='animating';clearHex();hideSpeech();hideAttackIcon();
     const flyingAlive=ENEMIES.some((en,i)=>gs.enemyAlive[i]&&en.type==='flying');
     if(!flyingAlive){
