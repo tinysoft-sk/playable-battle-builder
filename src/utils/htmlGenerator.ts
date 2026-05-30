@@ -677,7 +677,7 @@ function onHexClick(){
       gs.state='animating';clearHex();hideSpeech();
       const e=ENEMIES[eIdx];
       const pi=activePlayerIdx();const ap=ALL_PLAYERS[pi];
-      if(ap.type==='ranged'){
+      if(ap.type==='ranged'||ap.type==='flying'){
         playerAttackAlt(eIdx,true,()=>{checkWin();});
       } else if(e.type==='flying'){
         showSpeech('Flying enemies are out of reach!',2000);
@@ -689,7 +689,7 @@ function onHexClick(){
     } else {
       const pi=activePlayerIdx();const ap=ALL_PLAYERS[pi];const apos=gs.allPlayerPos[pi];
       const dist=hexDist(apos.col,apos.row,col,row);
-      if(dist>0&&dist<=ap.moveRange&&!occupied(col,row)){gs.state='animating';clearHex();playSound(SFX.grid,.7);movePlayerTo(col,row,()=>{gs.state='player_turn';highlightMove();});}
+      if(dist>0&&dist<=ap.moveRange&&!occupied(col,row)){gs.state='animating';clearHex();playSound(SFX.grid,.7);movePlayerTo(col,row,()=>{checkWin();});}
     }
     return;
   }
