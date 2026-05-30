@@ -810,12 +810,6 @@ function onHexClick(){
   if(eIdx>=0){
     const e=ENEMIES[eIdx];
     const pi0=activePlayerIdx();const ap0=ALL_PLAYERS[pi0];
-    if(e.type==='flying'){
-      gs.state='animating';clearHex();hideSpeech();hideAttackIcon();
-      const [dfc,dfr]=nearestAdjacentTo(e.col,e.row,gs.pCol,gs.pRow);
-      movePlayerTo(dfc,dfr,()=>{setTimeout(()=>enemyAttack(eIdx,HINTS_MOVE_FLY),300);});
-      return;
-    }
     if(ap0.type==='ranged'){
       gs.state='animating';clearHex();hideSpeech();hideAttackIcon();
       const flyingAlive=ENEMIES.some((en,i)=>gs.enemyAlive[i]&&en.type==='flying');
@@ -824,9 +818,15 @@ function onHexClick(){
       if(img&&ap0.atkImg){img.src=ap0.atkImg;img.width=ap0.aw;}
       animateSpell(-1,from.x,from.y-30,to.x,to.y-30,()=>{
         if(img&&ap0.idleImg){img.src=ap0.idleImg;img.width=ap0.w;}
-        if(flyingAlive){floatText('KILL',to.x,to.y-30,'critical');killEnemy(eIdx,()=>{const flyIdx=ENEMIES.findIndex((en,i)=>gs.enemyAlive[i]&&en.type==='flying');if(flyIdx>=0)setTimeout(()=>enemyAttack(flyIdx,HINTS_RANGED_FIRST),400);else checkWin();});}
+        if(flyingAlive&&e.type!=='flying'){floatText('KILL',to.x,to.y-30,'critical');killEnemy(eIdx,()=>{const flyIdx=ENEMIES.findIndex((en,i)=>gs.enemyAlive[i]&&en.type==='flying');if(flyIdx>=0)setTimeout(()=>enemyAttack(flyIdx,HINTS_RANGED_FIRST),400);else checkWin();});}
         else{killEnemy(eIdx,()=>{checkWin();});}
       });
+      return;
+    }
+    if(e.type==='flying'){
+      gs.state='animating';clearHex();hideSpeech();hideAttackIcon();
+      const [dfc,dfr]=nearestAdjacentTo(e.col,e.row,gs.pCol,gs.pRow);
+      movePlayerTo(dfc,dfr,()=>{setTimeout(()=>enemyAttack(eIdx,HINTS_MOVE_FLY),300);});
       return;
     }
     const [dc,dr]=nearestAdjacentTo(e.col,e.row,gs.pCol,gs.pRow);
