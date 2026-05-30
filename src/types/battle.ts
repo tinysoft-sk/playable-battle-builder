@@ -19,6 +19,7 @@ export interface UnitConfig {
   gridCol: number;
   gridRow: number;
   displayWidth: number;
+  moveRange: number;
   resistTo: SpellElement[];
   flipped: boolean;
   assets: {
@@ -79,8 +80,14 @@ export interface AttackReaction {
   retaliationSpeech: string;
 }
 
+export interface PlayerTurnDef {
+  id: string;
+  unitId: string;
+}
+
 export interface AlternatingConfig {
   firstTurn: 'player' | 'enemy';
+  playerTurns: PlayerTurnDef[];
   enemyTurns: EnemyTurnDef[];
   attackReactions: AttackReaction[];
 }
@@ -111,6 +118,7 @@ export interface PopupConfig {
 export interface BattleConfig {
   id: string;
   name: string;
+  spellbookEnabled: boolean;
   playerUnits: UnitConfig[];
   enemyUnits: UnitConfig[];
   heroLeft: HeroConfig;

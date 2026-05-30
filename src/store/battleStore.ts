@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { BattleConfig, UnitConfig, HeroConfig, SpellConfig, BattleScenario, PopupConfig, AssetData, EnemyTurnDef, AttackReaction } from '../types/battle';
+import type { BattleConfig, UnitConfig, HeroConfig, SpellConfig, BattleScenario, PopupConfig, AssetData, EnemyTurnDef, AttackReaction, PlayerTurnDef } from '../types/battle';
 import { AUDIO_EVENTS } from '../types/battle';
 
 export interface LibraryAsset extends AssetData { id: string; }
@@ -11,6 +11,7 @@ const emptyAudioMap = (): Record<string, AssetData | null> =>
 export const DEFAULT_CONFIG: BattleConfig = {
   id: crypto.randomUUID(),
   name: 'My Battle',
+  spellbookEnabled: true,
   playerUnits: [
     {
       id: 'knight',
@@ -23,6 +24,7 @@ export const DEFAULT_CONFIG: BattleConfig = {
       gridCol: 1,
       gridRow: 2,
       displayWidth: 110,
+      moveRange: 2,
       resistTo: [],
       flipped: false,
       assets: { idle: null, attack: null },
@@ -40,6 +42,7 @@ export const DEFAULT_CONFIG: BattleConfig = {
       gridCol: 4,
       gridRow: 0,
       displayWidth: 115,
+      moveRange: 2,
       resistTo: ['ice'],
       flipped: true,
       assets: { idle: null, attack: null },
@@ -55,6 +58,7 @@ export const DEFAULT_CONFIG: BattleConfig = {
       gridCol: 3,
       gridRow: 2,
       displayWidth: 130,
+      moveRange: 2,
       resistTo: [],
       flipped: true,
       assets: { idle: null, attack: null },
@@ -119,6 +123,7 @@ export const DEFAULT_CONFIG: BattleConfig = {
     ],
     alternating: {
       firstTurn: 'player',
+      playerTurns: [{ id: 'pt1', unitId: 'knight' }],
       enemyTurns: [
         { id: 'et1', attackerUnitId: 'valkyrie',      damage: 30, speechText: 'Valkyrie strikes!' },
         { id: 'et2', attackerUnitId: 'armored_giant', damage: 40, speechText: 'Armored Giant charges!' },
@@ -182,6 +187,10 @@ interface BattleStore {
   removeEnemyTurn: (id: string) => void;
   updateEnemyTurn: (id: string, patch: Partial<EnemyTurnDef>) => void;
   updateAttackReaction: (enemyUnitId: string, patch: Partial<AttackReaction>) => void;
+  addPlayerTurn: () => void;
+  removePlayerTurn: (id: string) => void;
+  updatePlayerTurn: (id: string, patch: Partial<PlayerTurnDef>) => void;
+  setSpellbookEnabled: (enabled: boolean) => void;
   setPopups: (patch: Partial<PopupConfig>) => void;
   setBackground: (key: 'landscape' | 'portrait', asset: AssetData | null) => void;
   setStore: (patch: Partial<BattleConfig['store']>) => void;
@@ -259,6 +268,7 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
       gridCol: 0,
       gridRow: 0,
       displayWidth: 110,
+      moveRange: 2,
       resistTo: [],
       flipped: false,
       assets: { idle: null, attack: null },
@@ -293,6 +303,7 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
       gridCol: 2,
       gridRow: 0,
       displayWidth: 110,
+      moveRange: 2,
       resistTo: [],
       flipped: true,
       assets: { idle: null, attack: null },
@@ -341,6 +352,28 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
       : [...alt.attackReactions, { enemyUnitId, retaliates: false, retaliationDamage: 0, retaliationSpeech: '', ...patch }];
     set(s => ({ ...pushUndo(get), config: { ...s.config, scenario: { ...s.config.scenario, alternating: { ...alt, attackReactions: reactions } } } }));
   },
+
+  addPlayerTurn: () => {
+    const alt = get().config.scenario.alternating;
+    const turn: PlayerTurnDef = { id: crypto.randomUUID(), unitId: get().config.playerUnits[0]?.id ?? '' };
+    set(s => ({ ...pushUndo(get), config: { ...s.config, scenario: { ...s.config.scenario, alternating: { ...alt, playerTurns: [...(alt.playerTurns ?? []), turn] } } } }));
+  },
+
+  removePlayerTurn: (id) => {
+    const alt = get().config.scenario.alternating;
+    const turns = (alt.playerTurns ?? []).filter(t => t.id !== id);
+    if (!turns.length) return;
+    set(s => ({ ...pushUndo(get), config: { ...s.config, scenario: { ...s.config.scenario, alternating: { ...alt, playerTurns: turns } } } }));
+  },
+
+  updatePlayerTurn: (id, patch) => {
+    const alt = get().config.scenario.alternating;
+    const turns = (alt.playerTurns ?? []).map(t => t.id === id ? { ...t, ...patch } : t);
+    set(s => ({ ...pushUndo(get), config: { ...s.config, scenario: { ...s.config.scenario, alternating: { ...alt, playerTurns: turns } } } }));
+  },
+
+  setSpellbookEnabled: (enabled) =>
+    set(s => ({ ...pushUndo(get), config: { ...s.config, spellbookEnabled: enabled } })),
 
   setPopups: (patch) =>
     set(s => ({ ...pushUndo(get), config: { ...s.config, popups: { ...s.config.popups, ...patch } } })),

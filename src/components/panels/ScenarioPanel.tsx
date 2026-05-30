@@ -12,6 +12,7 @@ export default function ScenarioPanel() {
   const {
     config, setScenario,
     addEnemyTurn, removeEnemyTurn, updateEnemyTurn, updateAttackReaction,
+    addPlayerTurn, removePlayerTurn, updatePlayerTurn,
   } = useBattleStore();
   const { scenario } = config;
   const alt = scenario.alternating;
@@ -234,6 +235,32 @@ export default function ScenarioPanel() {
                 &nbsp;Enemy
               </label>
             </div>
+          </div>
+
+          {/* Player Turn Order */}
+          <div className="popup-section" style={{ marginBottom: 12 }}>
+            <div className="popup-section-title">Player Turn Order</div>
+            <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 10 }}>
+              Which player units attack and in what order. Cycles after each enemy turn.
+            </p>
+            {(alt?.playerTurns ?? []).map((pt, i) => (
+              <div key={pt.id} className="step-card" style={{ flexWrap: 'wrap', gap: 6, marginBottom: 6 }}>
+                <span className="step-order">{i + 1}.</span>
+                <select
+                  value={pt.unitId}
+                  onChange={e => updatePlayerTurn(pt.id, { unitId: e.target.value })}
+                  style={{ flex: '1 1 120px', minWidth: 100 }}
+                >
+                  {config.playerUnits.map(u => (
+                    <option key={u.id} value={u.id}>{u.name}</option>
+                  ))}
+                </select>
+                <button className="unit-remove"
+                  disabled={(alt?.playerTurns ?? []).length <= 1}
+                  onClick={() => removePlayerTurn(pt.id)}>✕</button>
+              </div>
+            ))}
+            <button className="btn-add" onClick={addPlayerTurn}>+ Add Turn</button>
           </div>
 
           {/* Enemy Turn Sequence */}

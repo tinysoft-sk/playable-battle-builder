@@ -74,6 +74,10 @@ function UnitCard({
             <label>Display Width</label>
             <input type="number" min={40} max={300} value={unit.displayWidth} onChange={e => onUpdate({ displayWidth: +e.target.value })} />
           </div>
+          <div className="field">
+            <label>Move Range</label>
+            <input type="number" min={1} max={8} value={unit.moveRange ?? 2} onChange={e => onUpdate({ moveRange: +e.target.value })} title="Max hexes per turn" />
+          </div>
         </div>
 
         <div className="field">

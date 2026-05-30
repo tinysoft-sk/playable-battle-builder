@@ -44,6 +44,18 @@ export function generateHTML(config: BattleConfig, network: NetworkTarget): stri
   // ── build JS injection values ─────────────────────────────────────
   const p0AtkW = p0.assets.attack ? Math.round(p0.displayWidth * 1.3) : p0.displayWidth;
 
+  const allPlayersData = config.playerUnits.map(p => ({
+    id: p.id,
+    col: p.gridCol, row: p.gridRow, hp: p.hp, type: p.type,
+    w: p.displayWidth,
+    aw: p.assets.attack ? Math.round(p.displayWidth * 1.3) : p.displayWidth,
+    moveRange: (p as any).moveRange ?? 2,
+    baseDmg: p.baseDamage, dmgMult: p.damageMultiplier,
+    idleImg: uri(p.assets.idle), atkImg: uri(p.assets.attack),
+  }));
+
+  const spellbookEnabled = (config as any).spellbookEnabled !== false;
+
   // enemies array for JS injection (includes defense for damage formula)
   const enemiesData = config.enemyUnits.map(e => ({
     id: e.id,
@@ -58,9 +70,14 @@ export function generateHTML(config: BattleConfig, network: NetworkTarget): stri
   }));
 
   // alternating mode injection values
-  const altCfg = config.scenario.alternating ?? { firstTurn: 'player', enemyTurns: [], attackReactions: [] };
+  const altCfg = config.scenario.alternating ?? { firstTurn: 'player', playerTurns: [], enemyTurns: [], attackReactions: [] };
   const altEnemyTurns = altCfg.enemyTurns.map(t => ({ id: t.id, unitId: t.attackerUnitId, dmg: t.damage, speech: t.speechText }));
   const altReactions  = altCfg.attackReactions.map(r => ({ unitId: r.enemyUnitId, ret: r.retaliates, dmg: r.retaliationDamage, speech: r.retaliationSpeech }));
+  const altPlayerTurnsArr = (altCfg.playerTurns && altCfg.playerTurns.length)
+    ? altCfg.playerTurns
+    : [{ id: 'pt1', unitId: config.playerUnits[0]?.id ?? '' }];
+  const pltIds = altPlayerTurnsArr.map(t => t.unitId).filter(Boolean);
+  if (!pltIds.length && config.playerUnits.length) pltIds.push(config.playerUnits[0].id);
 
   // player units positions for init
   const playerInitJS = config.playerUnits.map((p, i) =>
@@ -209,6 +226,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;touch-action:no
 .unit.dead{opacity:0;transform:translate(-50%,-88%) scale(.3) rotate(-15deg);transition:all .55s ease;}
 .unit.shake{animation:shakeUnit .35s ease;}
 @keyframes shakeUnit{0%,100%{transform:translate(-50%,-88%)}20%{transform:translate(-42%,-88%)}60%{transform:translate(-58%,-88%)}}
+.unit.active-player::after{content:'';position:absolute;left:50%;bottom:-28px;transform:translateX(-50%);width:36px;height:3px;background:#4af;border-radius:2px;box-shadow:0 0 8px rgba(64,170,255,.8);}
 .hp-badge{position:absolute;bottom:-24px;left:50%;transform:translateX(-50%);background:rgba(10,10,20,.8);color:#fff;font-family:'Arial Black',Arial,sans-serif;font-size:12px;font-weight:900;padding:2px 8px;border-radius:10px;border:1.5px solid #8cf;white-space:nowrap;pointer-events:none;z-index:20;}
 .hp-badge.flash{animation:hpFlash .4s ease;}
 @keyframes hpFlash{0%,100%{background:rgba(10,10,20,.8)}50%{background:rgba(200,30,30,.9);border-color:#f44;}}
@@ -323,13 +341,20 @@ const SCENARIO_MODE='${config.scenario.mode}';
 const ALT_FIRST='${altCfg.firstTurn}';
 const ALT_ENEMY_TURNS=${JSON.stringify(altEnemyTurns)};
 const ALT_REACTIONS=${JSON.stringify(altReactions)};
+const ALL_PLAYERS=${JSON.stringify(allPlayersData)};
+const PLT_IDS=${JSON.stringify(pltIds)};
+const SPELLBOOK_ENABLED=${spellbookEnabled};
 
 // ─── STATE ───
 const spellUsedInit={};SPELL_ELS.forEach((_,i)=>spellUsedInit['spell'+i]=false);
 let gs={state:'intro',turn:1,failCount:0,playerHP:PLAYER_HP_INIT,
   enemyHP:ENEMIES.map(e=>e.hp),enemyAlive:ENEMIES.map(()=>true),
   spellUsed:{...spellUsedInit},selSpell:null,sbOpen:false,
-  pCol:PLAYER_START_COL,pRow:PLAYER_START_ROW};
+  pCol:PLAYER_START_COL,pRow:PLAYER_START_ROW,
+  allPlayerHP:ALL_PLAYERS.map(p=>p.hp),
+  allPlayerAlive:ALL_PLAYERS.map(()=>true),
+  allPlayerPos:ALL_PLAYERS.map(p=>({col:p.col,row:p.row})),
+  altPlayerTurnIdx:0};
 let altTurnIdx=0;
 
 // ─── DOM ───
@@ -344,6 +369,7 @@ const sbArea=$('spellbook-area'),sbPanel=$('spells-panel'),sbBtn=$('spellbook-bt
 const ${spSP_vars};
 const failScr=$('fail-screen'),winScr=$('win-screen');
 const playerHpEl=$('player-0-hp');
+const playerHpEls=[${config.playerUnits.map((_,i)=>`$('player-${i}-hp')`).join(',')}];
 const retryBtn=$('retry-btn'),storeBtn=$('store-btn');
 
 // ─── VIEWPORT ───
@@ -356,6 +382,10 @@ window.addEventListener('resize',resize);
 
 ${audioEngine}
 
+// ─── ACTIVE PLAYER ───
+function activePlayerIdx(){const id=PLT_IDS[gs.altPlayerTurnIdx%PLT_IDS.length];const i=ALL_PLAYERS.findIndex(p=>p.id===id);return i>=0?i:0;}
+function updateActiveIndicator(){if(SCENARIO_MODE!=='alternating')return;playerEls.forEach((el,i)=>{if(el)el.classList.toggle('active-player',i===activePlayerIdx()&&gs.allPlayerAlive[i]);});}
+
 // ─── GRID BUILD ───
 const hexEls={};
 function buildGrid(){gridEl.innerHTML='';for(const k in hexEls)delete hexEls[k];vp.style.setProperty('--hw',cur.hexW+'px');vp.style.setProperty('--hh',cur.hexH+'px');for(let col=0;col<COLS;col++)for(let row=0;row<ROWS;row++){if(col===COLS-1&&row%2===1)continue;const{x,y}=hexCenter(col,row);const d=document.createElement('div');d.className='hex';d.dataset.col=col;d.dataset.row=row;d.style.left=(x-cur.hexW/2)+'px';d.style.top=(y-cur.hexH/2)+'px';d.addEventListener('click',onHexClick);gridEl.appendChild(d);hexEls[col+','+row]=d;}}
@@ -363,13 +393,16 @@ function clearHex(){for(const h of Object.values(hexEls))h.className='hex';}
 function findEnemyAt(c,r){return ENEMIES.findIndex((e,i)=>gs.enemyAlive[i]&&e.col===c&&e.row===r);}
 function occupied(c,r){return findEnemyAt(c,r)>=0;}
 function highlightMove(){
-  clearHex();const k=hexEls[gs.pCol+','+gs.pRow];if(k)k.classList.add('selected');
+  clearHex();
+  const pi=activePlayerIdx();const ap=gs.allPlayerPos[pi];const mr=ALL_PLAYERS[pi].moveRange;
+  const k=hexEls[ap.col+','+ap.row];if(k)k.classList.add('selected');
   for(let c=0;c<COLS;c++)for(let r=0;r<ROWS;r++){
-    if(!hexEls[c+','+r])continue;if(c===gs.pCol&&r===gs.pRow)continue;
+    if(!hexEls[c+','+r])continue;if(c===ap.col&&r===ap.row)continue;
     const eIdx=findEnemyAt(c,r);
     if(eIdx>=0){hexEls[c+','+r].classList.add('enemy-hex');continue;}
-    if(hexDist(gs.pCol,gs.pRow,c,r)<=2)hexEls[c+','+r].classList.add('reachable');
+    if(hexDist(ap.col,ap.row,c,r)<=mr)hexEls[c+','+r].classList.add('reachable');
   }
+  updateActiveIndicator();
 }
 function highlightTargets(){clearHex();ENEMIES.forEach((e,i)=>{if(gs.enemyAlive[i]){const h=hexEls[e.col+','+e.row];if(h)h.classList.add('targetable');}});}
 
@@ -377,7 +410,12 @@ function highlightTargets(){clearHex();ENEMIES.forEach((e,i)=>{if(gs.enemyAlive[
 function placeUnit(el,col,row){if(!el)return;const{x,y}=hexCenter(col,row);el.style.left=x+'px';el.style.top=y+'px';}
 
 // ─── HP / EFFECTS ───
-function setPlayerHP(val){val=Math.max(0,val);gs.playerHP=val;if(playerHpEl)playerHpEl.textContent=val;flashBadge(playerEls[0]);}
+function setPlayerHP(val){
+  val=Math.max(0,val);gs.playerHP=val;
+  const pi=activePlayerIdx();gs.allPlayerHP[pi]=val;
+  if(playerHpEls[pi])playerHpEls[pi].textContent=val;
+  flashBadge(playerEls[pi]);
+}
 function setEnemyHP(idx,val){val=Math.max(0,val);gs.enemyHP[idx]=val;if(enemyHpEls[idx])enemyHpEls[idx].textContent=val;}
 function flashBadge(u){if(!u)return;const b=u.querySelector('.hp-badge');b.classList.remove('flash');requestAnimationFrame(()=>requestAnimationFrame(()=>b.classList.add('flash')));setTimeout(()=>b.classList.remove('flash'),450);}
 function floatText(text,x,y,cls){const el=document.createElement('div');el.className='float-text '+(cls||'');el.textContent=text;el.style.left=(x-24)+'px';el.style.top=(y-70)+'px';vp.appendChild(el);setTimeout(()=>el.remove(),1600);}
@@ -405,7 +443,8 @@ function animateSpell(spellIdx,x1,y1,x2,y2,cb){
 function animateEnemyCharge(idx,cb){
   const e=ENEMIES[idx];const flyer=enemyFlyerEls[idx];
   if(!flyer){if(cb)cb();return;}
-  const src=hexCenter(e.col,e.row),dst=hexCenter(gs.pCol,gs.pRow);
+  const pi=activePlayerIdx();const apos=gs.allPlayerPos[pi];
+  const src=hexCenter(e.col,e.row),dst=hexCenter(apos.col,apos.row);
   flyer.style.transition='none';flyer.style.left=(src.x-e.aw/2)+'px';flyer.style.top=(src.y-48)+'px';flyer.style.display='block';flyer.style.opacity='1';
   playSound(SFX.enemy0_atk);
   requestAnimationFrame(()=>requestAnimationFrame(()=>{
@@ -420,26 +459,33 @@ function killEnemy(idx,cb){
   killUnit(enemyEls[idx],x,y,'#ff6600',e.type==='flying'?'enemy0_die':'enemy1_die',cb);
 }
 function shakeUnit(el,cb){if(!el)return;el.classList.remove('shake');requestAnimationFrame(()=>requestAnimationFrame(()=>{el.classList.add('shake');setTimeout(()=>{if(el)el.classList.remove('shake');if(cb)cb();},370);}));}
-function movePlayerTo(col,row,cb){gs.pCol=col;gs.pRow=row;placeUnit(playerEls[0],col,row);playSound(SFX.walk);setTimeout(()=>{if(cb)cb();},460);}
+function movePlayerTo(col,row,cb){
+  const pi=activePlayerIdx();
+  gs.allPlayerPos[pi]={col,row};gs.pCol=col;gs.pRow=row;
+  placeUnit(playerEls[pi],col,row);playSound(SFX.walk);
+  setTimeout(()=>{if(cb)cb();},460);
+}
 function playerSwingAttack(cb){
-  const img=playerEls[0]&&playerEls[0].querySelector('img');
-  if(img&&IMG_P0_ATK){img.src=IMG_P0_ATK;img.width=PLAYER_ATK_W;}
+  const pi=activePlayerIdx();const ap=ALL_PLAYERS[pi];
+  const img=playerEls[pi]&&playerEls[pi].querySelector('img');
+  if(img&&ap.atkImg){img.src=ap.atkImg;img.width=ap.aw;}
   playSound(SFX.player_atk);
-  setTimeout(()=>{if(img&&IMG_P0_IDLE){img.src=IMG_P0_IDLE;img.width=PLAYER_W;}if(cb)cb();},420);
+  setTimeout(()=>{if(img&&ap.idleImg){img.src=ap.idleImg;img.width=ap.w;}if(cb)cb();},420);
 }
 
 // ─── ENEMY ATTACK ───
 function enemyAttack(idx,hint){
   const e=ENEMIES[idx];
+  const getHitPos=()=>{const pi=activePlayerIdx();const ap=gs.allPlayerPos[pi];return hexCenter(ap.col,ap.row);};
   if(e.type==='flying'){
     animateEnemyCharge(idx,()=>{
-      const{x,y}=hexCenter(gs.pCol,gs.pRow);floatText('CRITICAL HIT!',x,y-40,'critical');deathBurst(x,y,'#ff4400');playerDies(hint);
+      const{x,y}=getHitPos();floatText('CRITICAL HIT!',x,y-40,'critical');deathBurst(x,y,'#ff4400');playerDies(hint);
     });
   } else {
     const el=enemyEls[idx];if(el){el.classList.add('shake');playSound(SFX.enemy1_atk);}
     setTimeout(()=>{
       if(el)el.classList.remove('shake');
-      const{x,y}=hexCenter(gs.pCol,gs.pRow);floatText('CRITICAL HIT!',x,y-40,'critical');deathBurst(x,y,'#ff4400');playerDies(hint);
+      const{x,y}=getHitPos();floatText('CRITICAL HIT!',x,y-40,'critical');deathBurst(x,y,'#ff4400');playerDies(hint);
     },400);
   }
 }
@@ -451,7 +497,20 @@ function doFail(hint){
   failScr.classList.add('show');playSound(SFX.fail);
 }
 function playerDies(hint){
-  setPlayerHP(0);shakeUnit(playerEls[0],()=>{const{x,y}=hexCenter(gs.pCol,gs.pRow);killUnit(playerEls[0],x,y,'#ff4400','player_die',()=>{setTimeout(()=>doFail(hint),350);});});
+  const pi=activePlayerIdx();
+  setPlayerHP(0);gs.allPlayerAlive[pi]=false;
+  shakeUnit(playerEls[pi],()=>{
+    const pos=gs.allPlayerPos[pi];const{x,y}=hexCenter(pos.col,pos.row);
+    killUnit(playerEls[pi],x,y,'#ff4400','player_die',()=>{
+      if(SCENARIO_MODE==='alternating'&&gs.allPlayerAlive.some(Boolean)){
+        gs.altPlayerTurnIdx++;
+        let safe=0;while(safe++<ALL_PLAYERS.length&&!gs.allPlayerAlive[activePlayerIdx()])gs.altPlayerTurnIdx++;
+        setTimeout(()=>{gs.state='player_turn';highlightMove();},350);
+      } else {
+        setTimeout(()=>doFail(hint),350);
+      }
+    });
+  });
 }
 function checkWin(){
   if(!gs.enemyAlive.some(Boolean)){setTimeout(doWin,500);}
@@ -465,14 +524,12 @@ function calcDamage(baseDmg,mult,def){return Math.max(1,Math.floor(baseDmg*mult-
 
 function playerAttackAlt(eIdx,isRanged,cb){
   const e=ENEMIES[eIdx];
-  const dmg=calcDamage(PLAYER_BASE_DMG,PLAYER_DMG_MULT,e.defense||0);
+  const pi=activePlayerIdx();const ap=ALL_PLAYERS[pi];
+  const dmg=calcDamage(ap.baseDmg,ap.dmgMult,e.defense||0);
   const{x,y}=hexCenter(e.col,e.row);
   if(isRanged){
-    // ranged: animate a small projectile from player to target
-    const from=hexCenter(gs.pCol,gs.pRow);
-    animateSpell(-1,from.x,from.y-30,x,y-30,()=>{
-      applyDamageToEnemy(eIdx,dmg,cb);
-    });
+    const apos=gs.allPlayerPos[pi];const from=hexCenter(apos.col,apos.row);
+    animateSpell(-1,from.x,from.y-30,x,y-30,()=>{applyDamageToEnemy(eIdx,dmg,cb);});
   } else {
     playerSwingAttack(()=>{applyDamageToEnemy(eIdx,dmg,cb);});
   }
@@ -494,11 +551,12 @@ function applyDamageToEnemy(eIdx,dmg,cb){
       if(reaction&&reaction.ret){
         setTimeout(()=>{
           if(reaction.speech)showSpeech(reaction.speech,2000);
-          const pc=hexCenter(gs.pCol,gs.pRow);
-          setPlayerHP(gs.playerHP-reaction.dmg);
+          const pi=activePlayerIdx();const apos=gs.allPlayerPos[pi];
+          const pc=hexCenter(apos.col,apos.row);
+          setPlayerHP(gs.allPlayerHP[pi]-reaction.dmg);
           floatText('-'+reaction.dmg,pc.x,pc.y-40,'damage');
-          shakeUnit(playerEls[0],()=>{
-            if(gs.playerHP<=0){playerDies('');return;}
+          shakeUnit(playerEls[pi],()=>{
+            if(gs.allPlayerHP[pi]<=0){playerDies('');return;}
             if(cb)cb();
           });
         },300);
@@ -521,20 +579,29 @@ function runEnemyTurns(){
       found=true;
       gs.state='animating';
       if(t.speech)showSpeech(t.speech,2000);
-      enemyAttackAlt(eIdx,t.dmg,()=>{gs.state='player_turn';highlightMove();});
+      enemyAttackAlt(eIdx,t.dmg,()=>{
+        gs.altPlayerTurnIdx++;
+        let safe=0;while(safe++<ALL_PLAYERS.length&&!gs.allPlayerAlive[activePlayerIdx()])gs.altPlayerTurnIdx++;
+        gs.state='player_turn';highlightMove();
+      });
       break;
     }
   }
-  if(!found){gs.state='player_turn';highlightMove();}
+  if(!found){
+    gs.altPlayerTurnIdx++;
+    let safe=0;while(safe++<ALL_PLAYERS.length&&!gs.allPlayerAlive[activePlayerIdx()])gs.altPlayerTurnIdx++;
+    gs.state='player_turn';highlightMove();
+  }
 }
 
 function enemyAttackAlt(idx,damage,cb){
   const e=ENEMIES[idx];
   const applyHit=()=>{
-    const pc=hexCenter(gs.pCol,gs.pRow);
-    setPlayerHP(gs.playerHP-damage);
+    const pi=activePlayerIdx();const apos=gs.allPlayerPos[pi];
+    const pc=hexCenter(apos.col,apos.row);
+    setPlayerHP(gs.allPlayerHP[pi]-damage);
     floatText('-'+damage,pc.x,pc.y-40,'damage');
-    shakeUnit(playerEls[0],()=>{if(gs.playerHP<=0){playerDies('');return;}if(cb)cb();});
+    shakeUnit(playerEls[pi],()=>{if(gs.allPlayerHP[pi]<=0){playerDies('');return;}if(cb)cb();});
   };
   if(e.type==='flying'){
     animateEnemyCharge(idx,applyHit);
@@ -548,7 +615,7 @@ function enemyAttackAlt(idx,damage,cb){
 ${ctaFn}
 
 // ─── SPELLBOOK ───
-function openSpellbook(){startMusic();gs.sbOpen=true;gs.state='spell_select';if(sbIcon&&IMG_SB_OPEN)sbIcon.src=IMG_SB_OPEN;sbPanel.style.display='flex';clearHex();playSound(SFX.sb_open);}
+function openSpellbook(){if(!SPELLBOOK_ENABLED)return;startMusic();gs.sbOpen=true;gs.state='spell_select';if(sbIcon&&IMG_SB_OPEN)sbIcon.src=IMG_SB_OPEN;sbPanel.style.display='flex';clearHex();playSound(SFX.sb_open);}
 function closeSpellbook(){gs.sbOpen=false;if(sbIcon&&IMG_SB_CLOSED)sbIcon.src=IMG_SB_CLOSED;sbPanel.style.display='none';gs.selSpell=null;${spSP_reset}if(gs.state==='spell_select'||gs.state==='spell_target'){gs.state='player_turn';highlightMove();}}
 function closeSpellbookSilent(){gs.sbOpen=false;if(sbIcon&&IMG_SB_CLOSED)sbIcon.src=IMG_SB_CLOSED;sbPanel.style.display='none';}
 function selectSpell(id){const idx=parseInt(id.replace('spell',''));if(gs.spellUsed[id])return;gs.selSpell=id;${spSP_toggleSel}gs.state='spell_target';highlightTargets();playSound(SFX.sb_spell);}
@@ -579,7 +646,7 @@ function castSpell(targetCol,targetRow){
               if(retEl)retEl.classList.remove('shake');
               const pc=hexCenter(gs.pCol,gs.pRow);
               setPlayerHP(PLAYER_HP_AFTER_RET);floatText('-'+RET_DAMAGE,pc.x,pc.y-40,'damage');
-              shakeUnit(playerEls[0],()=>{gs.turn=2;gs.state='player_turn';highlightMove();showSpeech(RET_FOLLOWUP,2200);});
+              shakeUnit(playerEls[activePlayerIdx()],()=>{gs.turn=2;gs.state='player_turn';highlightMove();showSpeech(RET_FOLLOWUP,2200);});
             },500);
           },600);
         } else {
@@ -609,11 +676,10 @@ function onHexClick(){
     if(eIdx>=0){
       gs.state='animating';clearHex();hideSpeech();
       const e=ENEMIES[eIdx];
-      const isRanged=PLAYER_TYPE==='ranged';
-      if(isRanged){
+      const pi=activePlayerIdx();const ap=ALL_PLAYERS[pi];
+      if(ap.type==='ranged'){
         playerAttackAlt(eIdx,true,()=>{checkWin();});
       } else if(e.type==='flying'){
-        // melee can't reach flying
         showSpeech('Flying enemies are out of reach!',2000);
         gs.state='player_turn';highlightMove();
       } else {
@@ -621,8 +687,9 @@ function onHexClick(){
         movePlayerTo(dc,dr,()=>{playerAttackAlt(eIdx,false,()=>{checkWin();});});
       }
     } else {
-      const dist=hexDist(gs.pCol,gs.pRow,col,row);
-      if(dist>0&&dist<=2&&!occupied(col,row)){gs.state='animating';clearHex();playSound(SFX.grid,.7);movePlayerTo(col,row,()=>{gs.state='player_turn';highlightMove();});}
+      const pi=activePlayerIdx();const ap=ALL_PLAYERS[pi];const apos=gs.allPlayerPos[pi];
+      const dist=hexDist(apos.col,apos.row,col,row);
+      if(dist>0&&dist<=ap.moveRange&&!occupied(col,row)){gs.state='animating';clearHex();playSound(SFX.grid,.7);movePlayerTo(col,row,()=>{gs.state='player_turn';highlightMove();});}
     }
     return;
   }
@@ -635,7 +702,7 @@ function onHexClick(){
       movePlayerTo(Math.max(0,e.col-1),e.row,()=>{setTimeout(()=>enemyAttack(eIdx,HINTS_MOVE_FLY),300);});
       return;
     }
-    const dist=hexDist(gs.pCol,gs.pRow,e.col,e.row);if(dist>2)return;
+    const dist=hexDist(gs.pCol,gs.pRow,e.col,e.row);if(dist>ALL_PLAYERS[0].moveRange)return;
     gs.state='animating';clearHex();hideSpeech();
     const flyingAlive=ENEMIES.some((en,i)=>gs.enemyAlive[i]&&en.type==='flying');
     const dc=Math.max(0,e.col-1),dr=e.row;
@@ -647,11 +714,11 @@ function onHexClick(){
     return;
   }
   const dist=hexDist(gs.pCol,gs.pRow,col,row);
-  if(dist>0&&dist<=2&&!occupied(col,row)){gs.state='animating';clearHex();playSound(SFX.grid,.7);movePlayerTo(col,row,()=>{gs.state='player_turn';highlightMove();});}
+  if(dist>0&&dist<=ALL_PLAYERS[0].moveRange&&!occupied(col,row)){gs.state='animating';clearHex();playSound(SFX.grid,.7);movePlayerTo(col,row,()=>{gs.state='player_turn';highlightMove();});}
 }
 
 // ─── UNIT CLICKS ───
-if(playerEls[0])playerEls[0].querySelector('img').addEventListener('click',e=>{e.stopPropagation();if(gs.state==='intro'){skipIntro();return;}if(gs.state==='player_turn')highlightMove();});
+playerEls.forEach((el,i)=>{if(el)el.querySelector('img').addEventListener('click',e=>{e.stopPropagation();if(gs.state==='intro'){skipIntro();return;}if(gs.state==='player_turn'&&i===activePlayerIdx())highlightMove();});});
 ${enemyUnitClicksJS}
 sbBtn.addEventListener('click',e=>{e.stopPropagation();if(gs.state==='intro')skipIntro();if(gs.state==='animating'||gs.state==='fail'||gs.state==='win')return;if(gs.sbOpen)closeSpellbook();else openSpellbook();});
 ${spSP_events}
@@ -678,13 +745,19 @@ function resetGame(){
   gs.playerHP=PLAYER_HP_INIT;gs.enemyHP=ENEMIES.map(e=>e.hp);gs.enemyAlive=ENEMIES.map(()=>true);
   gs.spellUsed={...spellUsedInit};gs.selSpell=null;gs.sbOpen=false;
   gs.pCol=PLAYER_START_COL;gs.pRow=PLAYER_START_ROW;
-  if(playerHpEl)playerHpEl.textContent=PLAYER_HP_INIT;
+  gs.allPlayerHP=ALL_PLAYERS.map(p=>p.hp);
+  gs.allPlayerAlive=ALL_PLAYERS.map(()=>true);
+  gs.allPlayerPos=ALL_PLAYERS.map(p=>({col:p.col,row:p.row}));
+  gs.altPlayerTurnIdx=0;
+  ALL_PLAYERS.forEach((p,i)=>{if(playerHpEls[i])playerHpEls[i].textContent=p.hp;});
   ENEMIES.forEach((_,i)=>{if(enemyHpEls[i])enemyHpEls[i].textContent=ENEMIES[i].hp;});
-  if(playerEls[0]){const img=playerEls[0].querySelector('img');if(IMG_P0_IDLE){img.src=IMG_P0_IDLE;img.width=PLAYER_W;}}
-  [...playerEls,...enemyEls].filter(Boolean).forEach(u=>{u.classList.remove('dead','shake');u.style.opacity='';u.style.transform='';u.style.transition='none';});
+  ALL_PLAYERS.forEach((p,i)=>{if(playerEls[i]){const img=playerEls[i].querySelector('img');if(p.idleImg){img.src=p.idleImg;img.width=p.w;}}});
+  [...playerEls,...enemyEls].filter(Boolean).forEach(u=>{u.classList.remove('dead','shake','active-player');u.style.opacity='';u.style.transform='';u.style.transition='none';});
   enemyFlyerEls.filter(Boolean).forEach(f=>{f.style.display='none';});
   ${spSP_resetAll}
-  closeSpellbookSilent();hideSpeech();hideArrow();spellProj.style.display='none';
+  closeSpellbookSilent();
+  if(sbArea&&!SPELLBOOK_ENABLED)sbArea.style.display='none';
+  hideSpeech();hideArrow();spellProj.style.display='none';
   failScr.classList.remove('show');winScr.classList.remove('show');
   requestAnimationFrame(()=>{
     ${playerInitJS}
@@ -692,7 +765,7 @@ function resetGame(){
     requestAnimationFrame(()=>{[...playerEls,...enemyEls].filter(Boolean).forEach(u=>u.style.transition='');});
     clearHex();
     if(SCENARIO_MODE==='alternating'&&ALT_FIRST==='enemy'){setTimeout(runEnemyTurns,600);}
-    else highlightMove();
+    else{highlightMove();}
   });
 }
 
@@ -710,6 +783,7 @@ function refreshLayout(){
 // ─── INIT ───
 function initGame(){
   resize();buildGrid();
+  if(sbArea&&!SPELLBOOK_ENABLED)sbArea.style.display='none';
   ${playerInitJS}
   ENEMIES.forEach((e,i)=>{placeUnit(enemyEls[i],e.col,e.row);});
   startIntro();
