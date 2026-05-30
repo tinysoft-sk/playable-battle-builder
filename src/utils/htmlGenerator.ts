@@ -478,14 +478,20 @@ function animateSpell(spellIdx,x1,y1,x2,y2,cb){
   }));
 }
 function playerFlyAttack(eIdx,dmg,cb){
-  const pi=activePlayerIdx();const pEl=playerEls[pi];
+  const pi=activePlayerIdx();const pEl=playerEls[pi];const ap=ALL_PLAYERS[pi];
   const e=ENEMIES[eIdx];
   const dc=Math.max(0,e.col-1),dr=e.row;
   const dst=hexCenter(dc,dr);
   gs.allPlayerPos[pi]={col:dc,row:dr};gs.pCol=dc;gs.pRow=dr;
+  const img=pEl&&pEl.querySelector('img');
+  if(img&&ap.atkImg){img.src=ap.atkImg;img.width=ap.aw;}
   playSound(SFX.player_atk);
   if(pEl){pEl.style.transition='left .28s ease-in,top .28s ease-in';pEl.style.left=dst.x+'px';pEl.style.top=dst.y+'px';}
-  setTimeout(()=>{if(pEl)pEl.style.transition='';applyDamageToEnemy(eIdx,dmg,cb);},300);
+  setTimeout(()=>{
+    if(pEl)pEl.style.transition='';
+    if(img&&ap.idleImg){img.src=ap.idleImg;img.width=ap.w;}
+    applyDamageToEnemy(eIdx,dmg,cb);
+  },300);
 }
 function animateEnemyCharge(idx,cb){
   const e=ENEMIES[idx];const flyer=enemyFlyerEls[idx];
@@ -577,7 +583,12 @@ function playerAttackAlt(eIdx,cb){
   hideAttackIcon();
   if(ap.type==='ranged'){
     const apos=gs.allPlayerPos[pi];const from=hexCenter(apos.col,apos.row);
-    animateSpell(-1,from.x,from.y-30,x,y-30,()=>{applyDamageToEnemy(eIdx,dmg,cb);});
+    const img=playerEls[pi]&&playerEls[pi].querySelector('img');
+    if(img&&ap.atkImg){img.src=ap.atkImg;img.width=ap.aw;}
+    animateSpell(-1,from.x,from.y-30,x,y-30,()=>{
+      if(img&&ap.idleImg){img.src=ap.idleImg;img.width=ap.w;}
+      applyDamageToEnemy(eIdx,dmg,cb);
+    });
   } else if(ap.type==='flying'){
     playerFlyAttack(eIdx,dmg,cb);
   } else {
@@ -598,7 +609,10 @@ function applyDamageToEnemy(eIdx,dmg,cb){
   } else {
     shakeUnit(enemyEls[eIdx],()=>{
       const reaction=ALT_REACTIONS.find(r=>r.unitId===e.id);
-      if(reaction&&reaction.ret){
+      const pi=activePlayerIdx();const ap=ALL_PLAYERS[pi];const apos=gs.allPlayerPos[pi];
+      const atkDist=hexDist(apos.col,apos.row,e.col,e.row);
+      const retAllowed=!(ap.type==='ranged'&&atkDist>1);
+      if(reaction&&reaction.ret&&retAllowed){
         setTimeout(()=>{
           if(reaction.speech)showSpeech(reaction.speech,2000);
           enemySwingAttack(eIdx,()=>{
