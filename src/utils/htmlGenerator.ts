@@ -809,15 +809,29 @@ function onHexClick(){
   // ─── PUZZLE MODE ───
   if(eIdx>=0){
     const e=ENEMIES[eIdx];
+    const pi0=activePlayerIdx();const ap0=ALL_PLAYERS[pi0];
     if(e.type==='flying'){
       gs.state='animating';clearHex();hideSpeech();hideAttackIcon();
       const [dfc,dfr]=nearestAdjacentTo(e.col,e.row,gs.pCol,gs.pRow);
       movePlayerTo(dfc,dfr,()=>{setTimeout(()=>enemyAttack(eIdx,HINTS_MOVE_FLY),300);});
       return;
     }
+    if(ap0.type==='ranged'){
+      gs.state='animating';clearHex();hideSpeech();hideAttackIcon();
+      const flyingAlive=ENEMIES.some((en,i)=>gs.enemyAlive[i]&&en.type==='flying');
+      const from=hexCenter(gs.pCol,gs.pRow);const to=hexCenter(e.col,e.row);
+      const img=playerEls[pi0]&&playerEls[pi0].querySelector('img');
+      if(img&&ap0.atkImg){img.src=ap0.atkImg;img.width=ap0.aw;}
+      animateSpell(-1,from.x,from.y-30,to.x,to.y-30,()=>{
+        if(img&&ap0.idleImg){img.src=ap0.idleImg;img.width=ap0.w;}
+        if(flyingAlive){floatText('KILL',to.x,to.y-30,'critical');killEnemy(eIdx,()=>{const flyIdx=ENEMIES.findIndex((en,i)=>gs.enemyAlive[i]&&en.type==='flying');if(flyIdx>=0)setTimeout(()=>enemyAttack(flyIdx,HINTS_RANGED_FIRST),400);else checkWin();});}
+        else{killEnemy(eIdx,()=>{checkWin();});}
+      });
+      return;
+    }
     const [dc,dr]=nearestAdjacentTo(e.col,e.row,gs.pCol,gs.pRow);
     const dist=hexDist(gs.pCol,gs.pRow,dc,dr);
-    if(dist>ALL_PLAYERS[0].moveRange||(dist>0&&occupied(dc,dr))){showOutOfReach();return;}
+    if(dist>ap0.moveRange||(dist>0&&occupied(dc,dr))){showOutOfReach();return;}
     gs.state='animating';clearHex();hideSpeech();hideAttackIcon();
     const flyingAlive=ENEMIES.some((en,i)=>gs.enemyAlive[i]&&en.type==='flying');
     if(!flyingAlive){
@@ -828,7 +842,7 @@ function onHexClick(){
     return;
   }
   const dist=hexDist(gs.pCol,gs.pRow,col,row);
-  if(dist>0&&dist<=ALL_PLAYERS[0].moveRange&&!occupied(col,row)){gs.state='animating';clearHex();playSound(SFX.grid,.7);movePlayerTo(col,row,()=>{gs.state='player_turn';highlightMove();});}
+  if(dist>0&&dist<=ALL_PLAYERS[activePlayerIdx()].moveRange&&!occupied(col,row)){gs.state='animating';clearHex();playSound(SFX.grid,.7);movePlayerTo(col,row,()=>{gs.state='player_turn';highlightMove();});}
 }
 
 // ─── UNIT CLICKS ───
