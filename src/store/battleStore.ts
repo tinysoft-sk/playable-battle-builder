@@ -161,7 +161,7 @@ export const DEFAULT_CONFIG: BattleConfig = {
   },
   audio: { music: null, sfxMap: emptyAudioMap() },
   gridTiles: { walkable: null, active: null },
-  uiAssets: { spellbookClosed: null, spellbookOpen: null },
+  uiAssets: { spellbookClosed: null, spellbookOpen: null, meleeIcon: null, rangedIcon: null, flyingIcon: null },
   appIcon: null,
 };
 
@@ -206,7 +206,7 @@ interface BattleStore {
   setMusic: (asset: AssetData | null) => void;
   setSfx: (event: string, asset: AssetData | null) => void;
   setGridTile: (key: 'walkable' | 'active', asset: AssetData | null) => void;
-  setUiAsset: (key: 'spellbookClosed' | 'spellbookOpen', asset: AssetData | null) => void;
+  setUiAsset: (key: keyof BattleConfig['uiAssets'], asset: AssetData | null) => void;
   setAppIcon: (asset: AssetData | null) => void;
 
   // Library

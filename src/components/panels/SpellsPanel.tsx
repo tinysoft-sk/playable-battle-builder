@@ -21,6 +21,30 @@ export default function SpellsPanel() {
         </label>
       </div>
 
+      <div className="popup-section" style={{ marginBottom: 14 }}>
+        <div className="popup-section-title">Attack Type Icons</div>
+        <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 10 }}>
+          Shown briefly when a unit attacks. Optional — leave empty for no icon.
+        </p>
+        <div className="row">
+          <div className="field">
+            <label>Melee</label>
+            <AssetUpload label="Melee icon" asset={config.uiAssets?.meleeIcon ?? null}
+              onChange={a => setUiAsset('meleeIcon', a)} />
+          </div>
+          <div className="field">
+            <label>Ranged</label>
+            <AssetUpload label="Ranged icon" asset={config.uiAssets?.rangedIcon ?? null}
+              onChange={a => setUiAsset('rangedIcon', a)} />
+          </div>
+          <div className="field">
+            <label>Flying</label>
+            <AssetUpload label="Flying icon" asset={config.uiAssets?.flyingIcon ?? null}
+              onChange={a => setUiAsset('flyingIcon', a)} />
+          </div>
+        </div>
+      </div>
+
       {sbEnabled && (
         <>
           <div className="popup-section" style={{ marginBottom: 14 }}>

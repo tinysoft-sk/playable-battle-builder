@@ -146,6 +146,9 @@ export interface BattleConfig {
   uiAssets: {
     spellbookClosed: AssetData | null;
     spellbookOpen: AssetData | null;
+    meleeIcon: AssetData | null;
+    rangedIcon: AssetData | null;
+    flyingIcon: AssetData | null;
   };
   appIcon: AssetData | null;
 }

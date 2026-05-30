@@ -30,8 +30,11 @@ export function generateHTML(config: BattleConfig, network: NetworkTarget): stri
   const ctaFailCount = config.store.ctaFailCount;
   const hDefeatColor = config.popups.defeat.hintTextColor;
 
-  const sbClosedUri = uri(config.uiAssets?.spellbookClosed);
-  const sbOpenUri   = uri(config.uiAssets?.spellbookOpen);
+  const sbClosedUri   = uri(config.uiAssets?.spellbookClosed);
+  const sbOpenUri     = uri(config.uiAssets?.spellbookOpen);
+  const meleeIconUri  = uri((config.uiAssets as any)?.meleeIcon);
+  const rangedIconUri = uri((config.uiAssets as any)?.rangedIcon);
+  const flyingIconUri = uri((config.uiAssets as any)?.flyingIcon);
   const appIconUri  = uri(config.appIcon);
   const appIconHTML = appIconUri
     ? `<img class="popup-app-icon" src="${appIconUri}" alt="">`
@@ -276,6 +279,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;touch-action:no
   ${enemyFlyersHTML}
   <div id="spell-proj"></div>
   <div id="arrow"></div>
+  <div id="atk-icon" style="position:absolute;pointer-events:none;z-index:62;display:none;"><img id="atk-icon-img" style="width:48px;height:48px;filter:drop-shadow(0 2px 8px rgba(0,0,0,.8));" src="" alt=""></div>
   <div id="spellbook-area">
     <div id="spellbook-btn"><img id="sb-icon" src="${sbClosedUri}" alt="Spellbook"></div>
     <div id="spells-panel">${spellsHTML}
@@ -337,6 +341,9 @@ const HINTS_MOVE_FLY=${JSON.stringify(hintMoveToFlying)};
 const HINTS_RANGED_FIRST=${JSON.stringify(hintKillRangedFirst)};
 const HINTS_WRONG_FLY=${JSON.stringify(hintWrongSpellFly)};
 const HINTS_WASTED=${JSON.stringify(hintWastedSpell)};
+const ATTACK_ICON_MELEE='${meleeIconUri}';
+const ATTACK_ICON_RANGED='${rangedIconUri}';
+const ATTACK_ICON_FLYING='${flyingIconUri}';
 const SCENARIO_MODE='${config.scenario.mode}';
 const ALT_FIRST='${altCfg.firstTurn}';
 const ALT_ENEMY_TURNS=${JSON.stringify(altEnemyTurns)};
@@ -428,6 +435,19 @@ function hideSpeech(){speechBub.style.display='none';}
 function showArrow(col,row){const{x,y}=hexCenter(col,row);arrowEl.style.left=(x-18)+'px';arrowEl.style.top=(y-110)+'px';arrowEl.classList.add('visible');}
 function hideArrow(){arrowEl.classList.remove('visible');}
 
+// ─── ATTACK ICON ───
+const atkIconEl=$('atk-icon'),atkIconImg=$('atk-icon-img');
+function showAttackIcon(x,y,type){
+  const src=type==='ranged'?ATTACK_ICON_RANGED:type==='flying'?ATTACK_ICON_FLYING:ATTACK_ICON_MELEE;
+  if(!src||!atkIconEl)return;
+  if(atkIconImg)atkIconImg.src=src;
+  atkIconEl.style.left=(x-24)+'px';atkIconEl.style.top=(y-90)+'px';
+  atkIconEl.style.display='block';atkIconEl.style.opacity='1';atkIconEl.style.transition='none';
+  setTimeout(()=>{if(atkIconEl){atkIconEl.style.transition='opacity .4s';atkIconEl.style.opacity='0';}},500);
+  setTimeout(()=>{if(atkIconEl)atkIconEl.style.display='none';},900);
+}
+function showOutOfReach(){showSpeech('Unit is out of reach!',1800);}
+
 // ─── ANIMATIONS ───
 function animateSpell(spellIdx,x1,y1,x2,y2,cb){
   const img=spellIdx>=0?(SPELL_IMGS[spellIdx]||''):'';
@@ -439,6 +459,19 @@ function animateSpell(spellIdx,x1,y1,x2,y2,cb){
     spellProj.style.transition='left .38s ease-in,top .38s ease-in';spellProj.style.left=(x2-30)+'px';spellProj.style.top=(y2-30)+'px';
     setTimeout(()=>{spellProj.style.display='none';if(spellIdx>=0)playSound(SPELL_HIT_SFX[spellIdx]);if(cb)cb();},420);
   }));
+}
+function playerFlyAttack(eIdx,dmg,cb){
+  const pi=activePlayerIdx();const pEl=playerEls[pi];
+  const apos=gs.allPlayerPos[pi];const e=ENEMIES[eIdx];
+  const dst=hexCenter(e.col,e.row);const src=hexCenter(apos.col,apos.row);
+  playSound(SFX.player_atk);
+  if(pEl){pEl.style.transition='left .28s ease-in,top .28s ease-in';pEl.style.left=dst.x+'px';pEl.style.top=dst.y+'px';}
+  setTimeout(()=>{
+    applyDamageToEnemy(eIdx,dmg,()=>{
+      if(pEl){pEl.style.transition='left .28s ease-out,top .28s ease-out';pEl.style.left=src.x+'px';pEl.style.top=src.y+'px';}
+      setTimeout(()=>{if(pEl)pEl.style.transition='';if(cb)cb();},300);
+    });
+  },300);
 }
 function animateEnemyCharge(idx,cb){
   const e=ENEMIES[idx];const flyer=enemyFlyerEls[idx];
@@ -522,14 +555,17 @@ function doWin(){gs.state='win';clearHex();winScr.classList.add('show');$('win-c
 // ─── ALTERNATING MODE ───
 function calcDamage(baseDmg,mult,def){return Math.max(1,Math.floor(baseDmg*mult-def));}
 
-function playerAttackAlt(eIdx,isRanged,cb){
+function playerAttackAlt(eIdx,cb){
   const e=ENEMIES[eIdx];
   const pi=activePlayerIdx();const ap=ALL_PLAYERS[pi];
   const dmg=calcDamage(ap.baseDmg,ap.dmgMult,e.defense||0);
   const{x,y}=hexCenter(e.col,e.row);
-  if(isRanged){
+  showAttackIcon(x,y,ap.type);
+  if(ap.type==='ranged'){
     const apos=gs.allPlayerPos[pi];const from=hexCenter(apos.col,apos.row);
     animateSpell(-1,from.x,from.y-30,x,y-30,()=>{applyDamageToEnemy(eIdx,dmg,cb);});
+  } else if(ap.type==='flying'){
+    playerFlyAttack(eIdx,dmg,cb);
   } else {
     playerSwingAttack(()=>{applyDamageToEnemy(eIdx,dmg,cb);});
   }
@@ -678,13 +714,13 @@ function onHexClick(){
       const e=ENEMIES[eIdx];
       const pi=activePlayerIdx();const ap=ALL_PLAYERS[pi];
       if(ap.type==='ranged'||ap.type==='flying'){
-        playerAttackAlt(eIdx,true,()=>{checkWin();});
+        playerAttackAlt(eIdx,()=>{checkWin();});
       } else if(e.type==='flying'){
-        showSpeech('Flying enemies are out of reach!',2000);
+        showOutOfReach();
         gs.state='player_turn';highlightMove();
       } else {
         const dc=Math.max(0,e.col-1),dr=e.row;
-        movePlayerTo(dc,dr,()=>{playerAttackAlt(eIdx,false,()=>{checkWin();});});
+        movePlayerTo(dc,dr,()=>{playerAttackAlt(eIdx,()=>{checkWin();});});
       }
     } else {
       const pi=activePlayerIdx();const ap=ALL_PLAYERS[pi];const apos=gs.allPlayerPos[pi];
@@ -702,8 +738,10 @@ function onHexClick(){
       movePlayerTo(Math.max(0,e.col-1),e.row,()=>{setTimeout(()=>enemyAttack(eIdx,HINTS_MOVE_FLY),300);});
       return;
     }
-    const dist=hexDist(gs.pCol,gs.pRow,e.col,e.row);if(dist>ALL_PLAYERS[0].moveRange)return;
+    const dist=hexDist(gs.pCol,gs.pRow,e.col,e.row);
+    if(dist>ALL_PLAYERS[0].moveRange){showOutOfReach();return;}
     gs.state='animating';clearHex();hideSpeech();
+    const{x:ex,y:ey}=hexCenter(e.col,e.row);showAttackIcon(ex,ey,ALL_PLAYERS[0].type);
     const flyingAlive=ENEMIES.some((en,i)=>gs.enemyAlive[i]&&en.type==='flying');
     const dc=Math.max(0,e.col-1),dr=e.row;
     if(!flyingAlive){
