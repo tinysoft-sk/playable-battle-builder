@@ -37,6 +37,10 @@ export function generateHTML(config: BattleConfig, network: NetworkTarget): stri
   const flyingIconUri = uri((config.uiAssets as any)?.flyingIcon);
   const gridOffsetLand = (config as any).gridOffset?.landscape ?? 0;
   const gridOffsetPort = (config as any).gridOffset?.portrait ?? 0;
+  const hintLandY    = (config as any).hintLayout?.landscapeY    ?? 265;
+  const hintPortY    = (config as any).hintLayout?.portraitY     ?? 265;
+  const hintLandFS   = (config as any).hintLayout?.landscapeFontSize ?? 13.5;
+  const hintPortFS   = (config as any).hintLayout?.portraitFontSize  ?? 13.5;
   const appIconUri  = uri(config.appIcon);
   const appIconHTML = appIconUri
     ? `<img class="popup-app-icon" src="${appIconUri}" alt="">`
@@ -294,7 +298,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;touch-action:no
 .popup-btn{display:block;margin:10px auto 0;width:210px;cursor:pointer;transition:transform .14s;position:relative;z-index:2;}
 .popup-btn:hover{transform:scale(1.07);}
 .popup-app-icon{width:72px;height:72px;border-radius:16px;display:block;margin:8px auto 0;position:relative;z-index:2;box-shadow:0 4px 16px rgba(0,0,0,.5);}
-#fail-hint{position:absolute;top:265px;left:50%;transform:translateX(-50%);width:270px;color:${hDefeatColor};font-family:Arial,sans-serif;font-size:13.5px;line-height:1.55;text-align:center;text-shadow:1px 1px 4px #000,0 0 8px rgba(0,0,0,.8);z-index:3;}
+#fail-hint{position:absolute;top:${hintLandY}px;left:50%;transform:translateX(-50%);width:270px;color:${hDefeatColor};font-family:Arial,sans-serif;font-size:${hintLandFS}px;line-height:1.55;text-align:center;text-shadow:1px 1px 4px #000,0 0 8px rgba(0,0,0,.8);z-index:3;}
+.portrait #fail-hint{top:${hintPortY}px;font-size:${hintPortFS}px;}
 </style>
 </head>
 <body>

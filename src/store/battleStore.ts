@@ -164,6 +164,7 @@ export const DEFAULT_CONFIG: BattleConfig = {
   uiAssets: { spellbookClosed: null, spellbookOpen: null, meleeIcon: null, rangedIcon: null, flyingIcon: null },
   appIcon: null,
   gridOffset: { landscape: 0, portrait: 0 },
+  hintLayout: { landscapeY: 265, portraitY: 265, landscapeFontSize: 13.5, portraitFontSize: 13.5 },
 };
 
 interface BattleStore {
@@ -210,6 +211,7 @@ interface BattleStore {
   setUiAsset: (key: keyof BattleConfig['uiAssets'], asset: AssetData | null) => void;
   setAppIcon: (asset: AssetData | null) => void;
   setGridOffset: (key: 'landscape' | 'portrait', value: number) => void;
+  setHintLayout: (patch: Partial<BattleConfig['hintLayout']>) => void;
 
   // Library
   addToLibrary: (asset: AssetData) => void;
@@ -415,6 +417,9 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
 
   setGridOffset: (key, value) =>
     set(s => ({ ...pushUndo(get), config: { ...s.config, gridOffset: { ...s.config.gridOffset, [key]: value } } })),
+
+  setHintLayout: (patch) =>
+    set(s => ({ ...pushUndo(get), config: { ...s.config, hintLayout: { ...s.config.hintLayout, ...patch } } })),
 
   addToLibrary: (asset) =>
     set(s => {

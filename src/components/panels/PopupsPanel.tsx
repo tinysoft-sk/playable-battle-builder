@@ -2,8 +2,9 @@ import { useBattleStore } from '../../store/battleStore';
 import AssetUpload from '../AssetUpload';
 
 export default function PopupsPanel() {
-  const { config, setPopups, setAppIcon } = useBattleStore();
+  const { config, setPopups, setAppIcon, setHintLayout } = useBattleStore();
   const { popups } = config;
+  const hintLayout = config.hintLayout ?? { landscapeY: 265, portraitY: 265, landscapeFontSize: 13.5, portraitFontSize: 13.5 };
 
   return (
     <div>
@@ -66,6 +67,34 @@ export default function PopupsPanel() {
             value={popups.defeat.hintTextColor}
             onChange={e => setPopups({ defeat: { ...popups.defeat, hintTextColor: e.target.value } })}
           />
+        </div>
+        <div className="section-title" style={{ marginTop: 10 }}>Hint Text Position &amp; Size</div>
+        <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 10 }}>
+          Y position is from the top of the popup board. Adjust per orientation.
+        </p>
+        <div className="row">
+          <div className="field">
+            <label>Landscape Y</label>
+            <input type="number" step={5} value={hintLayout.landscapeY}
+              onChange={e => setHintLayout({ landscapeY: +e.target.value })} />
+          </div>
+          <div className="field">
+            <label>Portrait Y</label>
+            <input type="number" step={5} value={hintLayout.portraitY}
+              onChange={e => setHintLayout({ portraitY: +e.target.value })} />
+          </div>
+        </div>
+        <div className="row">
+          <div className="field">
+            <label>Landscape font size</label>
+            <input type="number" step={0.5} min={8} max={32} value={hintLayout.landscapeFontSize}
+              onChange={e => setHintLayout({ landscapeFontSize: +e.target.value })} />
+          </div>
+          <div className="field">
+            <label>Portrait font size</label>
+            <input type="number" step={0.5} min={8} max={32} value={hintLayout.portraitFontSize}
+              onChange={e => setHintLayout({ portraitFontSize: +e.target.value })} />
+          </div>
         </div>
       </div>
     </div>
