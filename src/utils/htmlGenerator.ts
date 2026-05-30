@@ -119,7 +119,11 @@ export function generateHTML(config: BattleConfig, network: NetworkTarget): stri
       </div>`).join('');
 
   const enemyUnitClicksJS = config.enemyUnits.map((_, i) =>
-    `if(enemyEls[${i}])enemyEls[${i}].querySelector('img').addEventListener('click',e=>{e.stopPropagation();if(gs.state==='spell_target'){castSpell(ENEMIES[${i}].col,ENEMIES[${i}].row);}else if(gs.state==='intro'){skipIntro();}else if(gs.state==='player_turn'||gs.state==='animating'){const k=ENEMIES[${i}].col+','+ENEMIES[${i}].row;if(hexEls[k])onHexClick.call(hexEls[k]);}});`
+    `if(enemyEls[${i}]){` +
+    `enemyEls[${i}].querySelector('img').addEventListener('click',e=>{e.stopPropagation();if(gs.state==='spell_target'){castSpell(ENEMIES[${i}].col,ENEMIES[${i}].row);}else if(gs.state==='intro'){skipIntro();}else if(gs.state==='player_turn'||gs.state==='animating'){const k=ENEMIES[${i}].col+','+ENEMIES[${i}].row;if(hexEls[k])onHexClick.call(hexEls[k]);}});` +
+    `enemyEls[${i}].addEventListener('mouseenter',()=>{if(gs.state!=='player_turn')return;const pi=activePlayerIdx();const ap=ALL_PLAYERS[pi];const{x,y}=hexCenter(ENEMIES[${i}].col,ENEMIES[${i}].row);showAttackIcon(x,y,ap.type);});` +
+    `enemyEls[${i}].addEventListener('mouseleave',()=>{hideAttackIcon();});` +
+    `}`
   ).join('\n');
 
   const spSP_vars = config.spells.map((_, i) => `spSP${i}=$('sp-spell${i}')`).join(',');
@@ -443,9 +447,8 @@ function showAttackIcon(x,y,type){
   if(atkIconImg)atkIconImg.src=src;
   atkIconEl.style.left=(x-24)+'px';atkIconEl.style.top=(y-90)+'px';
   atkIconEl.style.display='block';atkIconEl.style.opacity='1';atkIconEl.style.transition='none';
-  setTimeout(()=>{if(atkIconEl){atkIconEl.style.transition='opacity .4s';atkIconEl.style.opacity='0';}},500);
-  setTimeout(()=>{if(atkIconEl)atkIconEl.style.display='none';},900);
 }
+function hideAttackIcon(){if(atkIconEl)atkIconEl.style.display='none';}
 function showOutOfReach(){showSpeech('Unit is out of reach!',1800);}
 
 // ─── ANIMATIONS ───
@@ -560,7 +563,7 @@ function playerAttackAlt(eIdx,cb){
   const pi=activePlayerIdx();const ap=ALL_PLAYERS[pi];
   const dmg=calcDamage(ap.baseDmg,ap.dmgMult,e.defense||0);
   const{x,y}=hexCenter(e.col,e.row);
-  showAttackIcon(x,y,ap.type);
+  hideAttackIcon();
   if(ap.type==='ranged'){
     const apos=gs.allPlayerPos[pi];const from=hexCenter(apos.col,apos.row);
     animateSpell(-1,from.x,from.y-30,x,y-30,()=>{applyDamageToEnemy(eIdx,dmg,cb);});
@@ -715,12 +718,16 @@ function onHexClick(){
       const pi=activePlayerIdx();const ap=ALL_PLAYERS[pi];
       if(ap.type==='ranged'||ap.type==='flying'){
         playerAttackAlt(eIdx,()=>{checkWin();});
-      } else if(e.type==='flying'){
-        showOutOfReach();
-        gs.state='player_turn';highlightMove();
       } else {
-        const dc=Math.max(0,e.col-1),dr=e.row;
-        movePlayerTo(dc,dr,()=>{playerAttackAlt(eIdx,()=>{checkWin();});});
+        const apos=gs.allPlayerPos[pi];
+        const dist=hexDist(apos.col,apos.row,e.col,e.row);
+        if(dist>ap.moveRange){
+          showOutOfReach();
+          gs.state='player_turn';highlightMove();
+        } else {
+          const dc=Math.max(0,e.col-1),dr=e.row;
+          movePlayerTo(dc,dr,()=>{playerAttackAlt(eIdx,()=>{checkWin();});});
+        }
       }
     } else {
       const pi=activePlayerIdx();const ap=ALL_PLAYERS[pi];const apos=gs.allPlayerPos[pi];
@@ -740,8 +747,7 @@ function onHexClick(){
     }
     const dist=hexDist(gs.pCol,gs.pRow,e.col,e.row);
     if(dist>ALL_PLAYERS[0].moveRange){showOutOfReach();return;}
-    gs.state='animating';clearHex();hideSpeech();
-    const{x:ex,y:ey}=hexCenter(e.col,e.row);showAttackIcon(ex,ey,ALL_PLAYERS[0].type);
+    gs.state='animating';clearHex();hideSpeech();hideAttackIcon();
     const flyingAlive=ENEMIES.some((en,i)=>gs.enemyAlive[i]&&en.type==='flying');
     const dc=Math.max(0,e.col-1),dr=e.row;
     if(!flyingAlive){
