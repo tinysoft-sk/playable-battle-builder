@@ -903,7 +903,7 @@ function startTurn(){
     gs.state='player_turn';highlightMove();
   }
 }
-function startIntro(){gs.state='intro';showSpeech('Defeat the enemies!');showArrow(gs.pCol,gs.pRow);setTimeout(()=>{if(gs.state!=='intro')return;showSpeech('Defeat the enemies!');},2200);setTimeout(()=>{if(gs.state!=='intro')return;skipIntro();},5800);}
+function startIntro(){gs.state='intro';showSpeech('Defeat the enemies!');showArrow(gs.pCol,gs.pRow);setTimeout(()=>{if(gs.state!=='intro')return;skipIntro();},1500);}
 
 // ─── RESET ───
 function resetGame(){
