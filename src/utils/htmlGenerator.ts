@@ -14,11 +14,13 @@ export function generateHTML(config: BattleConfig, network: NetworkTarget): stri
 
   const p0 = config.playerUnits[0];
 
-  const ret             = config.scenario.retaliations[0];
-  const retDamage       = ret?.damage ?? 0;
-  const retSpeech       = ret?.speechText ?? '';
-  const retFollowUp     = ret?.followUpSpeech ?? '';
-  const playerHPAfterRet = Math.max(0, p0.hp - retDamage);
+  const retaliationsData = config.scenario.retaliations.map(r => ({
+    killerId: r.killedUnitId,
+    retaliatorId: r.retaliatorUnitId,
+    damage: r.damage,
+    speech: r.speechText,
+    followUp: r.followUpSpeech,
+  }));
 
   const hintMoveToFlying    = hintFor(config, 'move_to_flying');
   const hintKillRangedFirst = hintFor(config, 'kill_ranged_first');
@@ -368,10 +370,7 @@ const PLAYER_TYPE='${p0.type}';
 const PLAYER_START_COL=${p0.gridCol},PLAYER_START_ROW=${p0.gridRow};
 const IMG_P0_IDLE='${uri(p0.assets.idle)}',IMG_P0_ATK='${uri(p0.assets.attack)}';
 const IMG_SB_CLOSED='${sbClosedUri}',IMG_SB_OPEN='${sbOpenUri}';
-const RET_KILLER_ID=${JSON.stringify(ret?.killedUnitId??'')};
-const RET_RETALIATOR_ID=${JSON.stringify(ret?.retaliatorUnitId??'')};
-const RET_DAMAGE=${retDamage},RET_SPEECH=${JSON.stringify(retSpeech)},RET_FOLLOWUP=${JSON.stringify(retFollowUp)};
-const PLAYER_HP_AFTER_RET=${playerHPAfterRet};
+const RETALIATIONS=${JSON.stringify(retaliationsData)};
 const CTA_FAIL_COUNT=${ctaFailCount};
 const HINTS_MOVE_FLY=${JSON.stringify(hintMoveToFlying)};
 const HINTS_RANGED_FIRST=${JSON.stringify(hintKillRangedFirst)};
@@ -560,6 +559,28 @@ function killEnemy(idx,cb){
   killUnit(enemyEls[idx],x,y,'#ff6600',e.type==='flying'?'enemy0_die':'enemy1_die',cb);
 }
 function shakeUnit(el,cb){if(!el)return;el.classList.remove('shake');requestAnimationFrame(()=>requestAnimationFrame(()=>{el.classList.add('shake');setTimeout(()=>{if(el)el.classList.remove('shake');if(cb)cb();},370);}));}
+function doRetaliation(killedId,cb){
+  const ret=RETALIATIONS.find(r=>r.killerId===killedId);
+  if(!ret||ret.damage<=0){if(cb)cb();return;}
+  const retIdx=ENEMIES.findIndex(en=>en.id===ret.retaliatorId);
+  if(retIdx<0||!gs.enemyAlive[retIdx]){if(cb)cb();return;}
+  setTimeout(()=>{
+    if(ret.speech)showSpeech(ret.speech,1800);
+    const retEl=enemyEls[retIdx];if(retEl){retEl.classList.add('shake');playSound(SFX.enemy1_atk);}
+    setTimeout(()=>{
+      if(retEl)retEl.classList.remove('shake');
+      const pi=activePlayerIdx();const apos=gs.allPlayerPos[pi];
+      const pc=hexCenter(apos.col,apos.row);
+      setPlayerHP(gs.allPlayerHP[pi]-ret.damage);
+      floatText('-'+ret.damage,pc.x,pc.y-40,'damage');
+      shakeUnit(playerEls[pi],()=>{
+        if(gs.allPlayerHP[pi]<=0){playerDies('');return;}
+        gs.state='player_turn';highlightMove();
+        if(ret.followUp)showSpeech(ret.followUp,2200);
+      });
+    },500);
+  },600);
+}
 function movePlayerTo(col,row,cb){
   const pi=activePlayerIdx();
   gs.allPlayerPos[pi]={col,row};gs.pCol=col;gs.pRow=row;
@@ -757,24 +778,7 @@ function castSpell(targetCol,targetRow){
   animateSpell(spellIdx,from.x,from.y-40,to.x,to.y-40,()=>{
     if(!isResisted){
       floatText('Critical!',to.x,to.y-30,'critical');
-      killEnemy(idx,()=>{
-        // check retaliation
-        const retIdx=RET_KILLER_ID&&e.id===RET_KILLER_ID?ENEMIES.findIndex(en=>en.id===RET_RETALIATOR_ID):-1;
-        if(retIdx>=0&&gs.enemyAlive[retIdx]&&RET_DAMAGE>0){
-          setTimeout(()=>{
-            showSpeech(RET_SPEECH,1400);
-            const retEl=enemyEls[retIdx];if(retEl){retEl.classList.add('shake');playSound(SFX.enemy1_atk);}
-            setTimeout(()=>{
-              if(retEl)retEl.classList.remove('shake');
-              const pc=hexCenter(gs.pCol,gs.pRow);
-              setPlayerHP(PLAYER_HP_AFTER_RET);floatText('-'+RET_DAMAGE,pc.x,pc.y-40,'damage');
-              shakeUnit(playerEls[activePlayerIdx()],()=>{gs.turn=2;gs.state='player_turn';highlightMove();showSpeech(RET_FOLLOWUP,2200);});
-            },500);
-          },600);
-        } else {
-          checkWin();
-        }
-      });
+      killEnemy(idx,()=>{doRetaliation(e.id,()=>{checkWin();});});
     } else {
       setEnemyHP(idx,Math.max(1,gs.enemyHP[idx]-5));floatText('Resist',to.x,to.y-30,'resist');
       const hint=e.type==='flying'?HINTS_WRONG_FLY:HINTS_WASTED;
@@ -832,7 +836,7 @@ function onHexClick(){
       animateSpell(-1,from.x,from.y-30,to.x,to.y-30,()=>{
         if(img&&ap0.idleImg){img.src=ap0.idleImg;img.width=ap0.w;}
         if(flyingAlive&&e.type!=='flying'){floatText('KILL',to.x,to.y-30,'critical');killEnemy(eIdx,()=>{const flyIdx=ENEMIES.findIndex((en,i)=>gs.enemyAlive[i]&&en.type==='flying');if(flyIdx>=0)setTimeout(()=>enemyAttack(flyIdx,HINTS_RANGED_FIRST),400);else checkWin();});}
-        else{killEnemy(eIdx,()=>{checkWin();});}
+        else{killEnemy(eIdx,()=>{doRetaliation(e.id,()=>{checkWin();});});}
       });
       return;
     }
@@ -848,7 +852,7 @@ function onHexClick(){
     gs.state='animating';clearHex();hideSpeech();hideAllAttackIcons();
     const flyingAlive=ENEMIES.some((en,i)=>gs.enemyAlive[i]&&en.type==='flying');
     if(!flyingAlive){
-      movePlayerTo(dc,dr,()=>{playerSwingAttack(()=>{killEnemy(eIdx,()=>{checkWin();});});});
+      movePlayerTo(dc,dr,()=>{playerSwingAttack(()=>{killEnemy(eIdx,()=>{doRetaliation(e.id,()=>{checkWin();});});});});
     } else {
       movePlayerTo(dc,dr,()=>{playerSwingAttack(()=>{const fc=hexCenter(e.col,e.row);floatText('KILL',fc.x,fc.y-30,'critical');killEnemy(eIdx,()=>{const flyIdx=ENEMIES.findIndex((en,i)=>gs.enemyAlive[i]&&en.type==='flying');if(flyIdx>=0)setTimeout(()=>enemyAttack(flyIdx,HINTS_RANGED_FIRST),400);else checkWin();});});});
     }
