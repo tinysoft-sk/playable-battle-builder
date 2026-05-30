@@ -163,6 +163,7 @@ export const DEFAULT_CONFIG: BattleConfig = {
   gridTiles: { walkable: null, active: null },
   uiAssets: { spellbookClosed: null, spellbookOpen: null, meleeIcon: null, rangedIcon: null, flyingIcon: null },
   appIcon: null,
+  gridOffset: { landscape: 0, portrait: 0 },
 };
 
 interface BattleStore {
@@ -208,6 +209,7 @@ interface BattleStore {
   setGridTile: (key: 'walkable' | 'active', asset: AssetData | null) => void;
   setUiAsset: (key: keyof BattleConfig['uiAssets'], asset: AssetData | null) => void;
   setAppIcon: (asset: AssetData | null) => void;
+  setGridOffset: (key: 'landscape' | 'portrait', value: number) => void;
 
   // Library
   addToLibrary: (asset: AssetData) => void;
@@ -410,6 +412,9 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
 
   setAppIcon: (asset) =>
     set(s => ({ ...pushUndo(get), config: { ...s.config, appIcon: asset } })),
+
+  setGridOffset: (key, value) =>
+    set(s => ({ ...pushUndo(get), config: { ...s.config, gridOffset: { ...s.config.gridOffset, [key]: value } } })),
 
   addToLibrary: (asset) =>
     set(s => {

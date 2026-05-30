@@ -2,8 +2,9 @@ import { useBattleStore } from '../../store/battleStore';
 import AssetUpload from '../AssetUpload';
 
 export default function HeroPanel() {
-  const { config, setHeroLeft, setHeroRight } = useBattleStore();
+  const { config, setHeroLeft, setHeroRight, setGridOffset } = useBattleStore();
   const { heroLeft, heroRight } = config;
+  const gridOffset = config.gridOffset ?? { landscape: 0, portrait: 0 };
 
   return (
     <div>
@@ -51,6 +52,23 @@ export default function HeroPanel() {
           <input type="checkbox" checked={heroRight.flipped} onChange={e => setHeroRight({ flipped: e.target.checked })} />
           {' '}Flipped horizontally
         </label>
+      </div>
+
+      <div className="section-title">Grid Position</div>
+      <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 10 }}>
+        Shift the battle grid up (negative) or down (positive) in pixels.
+      </p>
+      <div className="row">
+        <div className="field">
+          <label>Landscape offset Y</label>
+          <input type="number" step={10} value={gridOffset.landscape}
+            onChange={e => setGridOffset('landscape', +e.target.value)} />
+        </div>
+        <div className="field">
+          <label>Portrait offset Y</label>
+          <input type="number" step={10} value={gridOffset.portrait}
+            onChange={e => setGridOffset('portrait', +e.target.value)} />
+        </div>
       </div>
     </div>
   );

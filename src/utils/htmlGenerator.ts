@@ -35,6 +35,8 @@ export function generateHTML(config: BattleConfig, network: NetworkTarget): stri
   const meleeIconUri  = uri((config.uiAssets as any)?.meleeIcon);
   const rangedIconUri = uri((config.uiAssets as any)?.rangedIcon);
   const flyingIconUri = uri((config.uiAssets as any)?.flyingIcon);
+  const gridOffsetLand = (config as any).gridOffset?.landscape ?? 0;
+  const gridOffsetPort = (config as any).gridOffset?.portrait ?? 0;
   const appIconUri  = uri(config.appIcon);
   const appIconHTML = appIconUri
     ? `<img class="popup-app-icon" src="${appIconUri}" alt="">`
@@ -320,8 +322,8 @@ ${audioVars}
 // ─── GRID ───
 const COLS=5,ROWS=4;
 const LAYOUT={
-  land:{vpW:1000,vpH:563,gx0:240,gy0:275,hexW:120,hexH:80,colSp:120,rowSp:60,oddDx:60},
-  port:{vpW:563,vpH:1000,gx0:79,gy0:420,hexW:90,hexH:60,colSp:90,rowSp:45,oddDx:45},
+  land:{vpW:1000,vpH:563,gx0:240,gy0:${275+gridOffsetLand},hexW:120,hexH:80,colSp:120,rowSp:60,oddDx:60},
+  port:{vpW:563,vpH:1000,gx0:79,gy0:${420+gridOffsetPort},hexW:90,hexH:60,colSp:90,rowSp:45,oddDx:45},
 };
 let cur=LAYOUT.land;
 function hexCenter(col,row){return{x:cur.gx0+col*cur.colSp+(row%2===1?cur.oddDx:0),y:cur.gy0+row*cur.rowSp};}

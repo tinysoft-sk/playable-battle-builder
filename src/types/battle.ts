@@ -151,6 +151,10 @@ export interface BattleConfig {
     flyingIcon: AssetData | null;
   };
   appIcon: AssetData | null;
+  gridOffset: {
+    landscape: number;
+    portrait: number;
+  };
 }
 
 export const AUDIO_EVENTS = [
