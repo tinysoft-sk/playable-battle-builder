@@ -5,6 +5,15 @@ import { AUDIO_EVENTS } from '../types/battle';
 export interface LibraryAsset extends AssetData { id: string; }
 export interface TemplateEntry { id: string; name: string; savedAt: number; config: BattleConfig; }
 
+const LIBRARY_KEY = 'battle-editor-library';
+function loadLibrary(): LibraryAsset[] {
+  try { const raw = localStorage.getItem(LIBRARY_KEY); if (raw) return JSON.parse(raw); } catch {}
+  return [];
+}
+function saveLibrary(lib: LibraryAsset[]) {
+  try { localStorage.setItem(LIBRARY_KEY, JSON.stringify(lib)); } catch {}
+}
+
 const emptyAudioMap = (): Record<string, AssetData | null> =>
   Object.fromEntries(AUDIO_EVENTS.map(e => [e, null]));
 
@@ -224,7 +233,7 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
   config: DEFAULT_CONFIG,
   undoStack: [],
   redoStack: [],
-  library: [],
+  library: loadLibrary(),
   templates: [],
 
   undo() {
@@ -403,10 +412,18 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
     set(s => ({ ...pushUndo(get), config: { ...s.config, appIcon: asset } })),
 
   addToLibrary: (asset) =>
-    set(s => ({ library: [...s.library, { ...asset, id: crypto.randomUUID() }] })),
+    set(s => {
+      const library = [...s.library, { ...asset, id: crypto.randomUUID() }];
+      saveLibrary(library);
+      return { library };
+    }),
 
   removeFromLibrary: (id) =>
-    set(s => ({ library: s.library.filter(a => a.id !== id) })),
+    set(s => {
+      const library = s.library.filter(a => a.id !== id);
+      saveLibrary(library);
+      return { library };
+    }),
 
   saveTemplate: (name) => {
     const entry: TemplateEntry = { id: crypto.randomUUID(), name, savedAt: Date.now(), config: get().config };
