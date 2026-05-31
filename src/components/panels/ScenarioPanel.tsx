@@ -269,34 +269,69 @@ export default function ScenarioPanel() {
             <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 10 }}>
               Enemies attack in this order (dead enemies are skipped). Cycles until fight ends.
             </p>
-            {(alt?.enemyTurns ?? []).map((turn, i) => (
-              <div key={turn.id} className="step-card" style={{ flexWrap: 'wrap', gap: 6, marginBottom: 6 }}>
-                <span className="step-order">{i + 1}.</span>
-                <select
-                  title="Attacker"
-                  value={turn.attackerUnitId}
-                  onChange={e => updateEnemyTurn(turn.id, { attackerUnitId: e.target.value })}
-                  style={{ flex: '1 1 90px', minWidth: 80 }}
-                >
-                  {config.enemyUnits.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
-                </select>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4, flex: '0 0 auto' }}>
-                  <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>dmg</span>
-                  <input
-                    type="number" min={0} value={turn.damage}
-                    onChange={e => updateEnemyTurn(turn.id, { damage: +e.target.value })}
-                    style={{ width: 60 }}
-                  />
+            {(alt?.enemyTurns ?? []).map((turn, i) => {
+              const turnAction = turn.action ?? 'attack';
+              return (
+                <div key={turn.id} className="step-card" style={{ flexWrap: 'wrap', gap: 6, marginBottom: 6 }}>
+                  <span className="step-order">{i + 1}.</span>
+                  <select
+                    title="Attacker"
+                    value={turn.attackerUnitId}
+                    onChange={e => updateEnemyTurn(turn.id, { attackerUnitId: e.target.value })}
+                    style={{ flex: '1 1 90px', minWidth: 80 }}
+                  >
+                    {config.enemyUnits.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                  </select>
+                  <select
+                    title="Action"
+                    value={turnAction}
+                    onChange={e => updateEnemyTurn(turn.id, { action: e.target.value as 'attack' | 'move' })}
+                    style={{ flex: '0 0 80px' }}
+                  >
+                    <option value="attack">Attack</option>
+                    <option value="move">Move</option>
+                  </select>
+                  {turnAction === 'attack' ? (
+                    <>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, flex: '0 0 auto' }}>
+                        <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>dmg</span>
+                        <input
+                          type="number" min={0} value={turn.damage}
+                          onChange={e => updateEnemyTurn(turn.id, { damage: +e.target.value })}
+                          style={{ width: 60 }}
+                        />
+                      </div>
+                      <input
+                        type="text" placeholder="Speech text"
+                        value={turn.speechText}
+                        onChange={e => updateEnemyTurn(turn.id, { speechText: e.target.value })}
+                        style={{ flex: '2 1 140px', minWidth: 100 }}
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, flex: '0 0 auto' }}>
+                        <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>col</span>
+                        <input
+                          type="number" min={0} max={4} value={turn.moveTargetCol ?? 0}
+                          onChange={e => updateEnemyTurn(turn.id, { moveTargetCol: +e.target.value })}
+                          style={{ width: 50 }}
+                        />
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, flex: '0 0 auto' }}>
+                        <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>row</span>
+                        <input
+                          type="number" min={0} max={3} value={turn.moveTargetRow ?? 0}
+                          onChange={e => updateEnemyTurn(turn.id, { moveTargetRow: +e.target.value })}
+                          style={{ width: 50 }}
+                        />
+                      </div>
+                    </>
+                  )}
+                  <button className="unit-remove" onClick={() => removeEnemyTurn(turn.id)}>✕</button>
                 </div>
-                <input
-                  type="text" placeholder="Speech text"
-                  value={turn.speechText}
-                  onChange={e => updateEnemyTurn(turn.id, { speechText: e.target.value })}
-                  style={{ flex: '2 1 140px', minWidth: 100 }}
-                />
-                <button className="unit-remove" onClick={() => removeEnemyTurn(turn.id)}>✕</button>
-              </div>
-            ))}
+              );
+            })}
             <button className="btn-add" onClick={addEnemyTurn}>+ Add Enemy Turn</button>
           </div>
 

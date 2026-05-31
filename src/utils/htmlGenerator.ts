@@ -91,7 +91,7 @@ export function generateHTML(config: BattleConfig, network: NetworkTarget): stri
 
   // alternating mode injection values
   const altCfg = config.scenario.alternating ?? { firstTurn: 'player', playerTurns: [], enemyTurns: [], attackReactions: [] };
-  const altEnemyTurns = altCfg.enemyTurns.map(t => ({ id: t.id, unitId: t.attackerUnitId, dmg: t.damage, speech: t.speechText }));
+  const altEnemyTurns = altCfg.enemyTurns.map(t => ({ id: t.id, unitId: t.attackerUnitId, action: t.action ?? 'attack', dmg: t.damage, speech: t.speechText, moveCol: t.moveTargetCol ?? 0, moveRow: t.moveTargetRow ?? 0 }));
   const altReactions  = altCfg.attackReactions.map(r => ({ unitId: r.enemyUnitId, ret: r.retaliates, dmg: r.retaliationDamage, speech: r.retaliationSpeech }));
   const altPlayerTurnsArr = (altCfg.playerTurns && altCfg.playerTurns.length)
     ? altCfg.playerTurns
@@ -479,6 +479,28 @@ function findAttackHex(ec,er,pc,pr,mr){
   }
   return best;
 }
+// Returns the reachable hex within maxRange that is closest to (tc,tr)
+function findBestMoveToward(ec,er,tc,tr,maxRange){
+  let bestC=ec,bestR=er,bestDist=hexDist(ec,er,tc,tr);
+  for(let dc=-maxRange;dc<=maxRange;dc++){for(let dr=-maxRange;dr<=maxRange;dr++){
+    const nc=ec+dc,nr=er+dr;
+    if(nc<0||nr<0||nc>=COLS||nr>=ROWS)continue;
+    if(nc===COLS-1&&nr%2===1)continue;
+    if(nc===ec&&nr===er)continue;
+    if(hexDist(ec,er,nc,nr)>maxRange)continue;
+    if(occupied(nc,nr))continue;
+    const d=hexDist(nc,nr,tc,tr);
+    if(d<bestDist){bestDist=d;bestC=nc;bestR=nr;}
+  }}
+  return[bestC,bestR];
+}
+function animateEnemyMoveAlt(eIdx,toCol,toRow,cb){
+  const e=ENEMIES[eIdx];const el=enemyEls[eIdx];
+  const dst=hexCenter(toCol,toRow);
+  if(el){el.style.transition='left .4s ease,top .4s ease';el.style.left=dst.x+'px';el.style.top=dst.y+'px';el.style.zIndex=String(10+toRow*2);}
+  e.col=toCol;e.row=toRow;
+  setTimeout(()=>{if(el)el.style.transition='';if(cb)cb();},420);
+}
 function highlightMove(){
   clearHex();
   const pi=activePlayerIdx();const ap=gs.allPlayerPos[pi];const mr=ALL_PLAYERS[pi].moveRange;
@@ -750,6 +772,11 @@ function applyDamageToEnemy(eIdx,dmg,cb){
 function runEnemyTurns(){
   if(!gs.enemyAlive.some(Boolean)){checkWin();return;}
   if(!ALT_ENEMY_TURNS.length){gs.state='player_turn';highlightMove();return;}
+  const advancePlayer=()=>{
+    gs.altPlayerTurnIdx++;
+    let safe=0;while(safe++<ALL_PLAYERS.length&&!gs.allPlayerAlive[activePlayerIdx()])gs.altPlayerTurnIdx++;
+    gs.state='player_turn';highlightMove();
+  };
   let found=false;
   for(let tries=0;tries<ALT_ENEMY_TURNS.length*2;tries++){
     const t=ALT_ENEMY_TURNS[altTurnIdx%ALT_ENEMY_TURNS.length];
@@ -758,12 +785,24 @@ function runEnemyTurns(){
     if(eIdx>=0&&gs.enemyAlive[eIdx]){
       found=true;
       gs.state='animating';
-      if(t.speech)showSpeech(t.speech,2000);
-      enemyAttackAlt(eIdx,t.dmg,()=>{
-        gs.altPlayerTurnIdx++;
-        let safe=0;while(safe++<ALL_PLAYERS.length&&!gs.allPlayerAlive[activePlayerIdx()])gs.altPlayerTurnIdx++;
-        gs.state='player_turn';highlightMove();
-      });
+      if(t.action==='move'){
+        // designer-configured move turn
+        animateEnemyMoveAlt(eIdx,t.moveCol,t.moveRow,()=>{advancePlayer();});
+      } else {
+        // attack turn — check range for melee enemies
+        const e=ENEMIES[eIdx];
+        const pi=activePlayerIdx();const apos=gs.allPlayerPos[pi];
+        const dist=hexDist(e.col,e.row,apos.col,apos.row);
+        if(e.type==='melee'&&dist>(e.moveRange??2)+1){
+          // out of reach — move toward player instead of attacking
+          const[mc,mr]=findBestMoveToward(e.col,e.row,apos.col,apos.row,e.moveRange??2);
+          if(mc!==e.col||mr!==e.row){animateEnemyMoveAlt(eIdx,mc,mr,()=>{advancePlayer();});}
+          else{advancePlayer();}
+        } else {
+          if(t.speech)showSpeech(t.speech,2000);
+          enemyAttackAlt(eIdx,t.dmg,()=>{advancePlayer();});
+        }
+      }
       break;
     }
   }

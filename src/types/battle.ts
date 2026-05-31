@@ -69,8 +69,11 @@ export interface PostKillRetaliation {
 export interface EnemyTurnDef {
   id: string;
   attackerUnitId: string;
+  action: 'attack' | 'move';
   damage: number;
   speechText: string;
+  moveTargetCol: number;
+  moveTargetRow: number;
 }
 
 export interface AttackReaction {
