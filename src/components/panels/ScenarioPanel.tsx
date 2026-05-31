@@ -293,6 +293,15 @@ export default function ScenarioPanel() {
                   </select>
                   {turnAction === 'attack' ? (
                     <>
+                      <select
+                        title="Target player unit"
+                        value={turn.targetUnitId ?? ''}
+                        onChange={e => updateEnemyTurn(turn.id, { targetUnitId: e.target.value })}
+                        style={{ flex: '1 1 90px', minWidth: 80 }}
+                      >
+                        <option value="">Active player</option>
+                        {config.playerUnits.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                      </select>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 4, flex: '0 0 auto' }}>
                         <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>dmg</span>
                         <input

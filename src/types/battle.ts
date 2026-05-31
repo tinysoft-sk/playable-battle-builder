@@ -70,6 +70,7 @@ export interface EnemyTurnDef {
   id: string;
   attackerUnitId: string;
   action: 'attack' | 'move';
+  targetUnitId: string;
   damage: number;
   speechText: string;
   moveTargetCol: number;

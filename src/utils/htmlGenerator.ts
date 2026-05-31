@@ -91,7 +91,7 @@ export function generateHTML(config: BattleConfig, network: NetworkTarget): stri
 
   // alternating mode injection values
   const altCfg = config.scenario.alternating ?? { firstTurn: 'player', playerTurns: [], enemyTurns: [], attackReactions: [] };
-  const altEnemyTurns = altCfg.enemyTurns.map(t => ({ id: t.id, unitId: t.attackerUnitId, action: t.action ?? 'attack', dmg: t.damage, speech: t.speechText, moveCol: t.moveTargetCol ?? 0, moveRow: t.moveTargetRow ?? 0 }));
+  const altEnemyTurns = altCfg.enemyTurns.map(t => ({ id: t.id, unitId: t.attackerUnitId, action: t.action ?? 'attack', targetId: t.targetUnitId ?? '', dmg: t.damage, speech: t.speechText, moveCol: t.moveTargetCol ?? 0, moveRow: t.moveTargetRow ?? 0 }));
   const altReactions  = altCfg.attackReactions.map(r => ({ unitId: r.enemyUnitId, ret: r.retaliates, dmg: r.retaliationDamage, speech: r.retaliationSpeech }));
   const altPlayerTurnsArr = (altCfg.playerTurns && altCfg.playerTurns.length)
     ? altCfg.playerTurns
@@ -528,6 +528,51 @@ function setPlayerHP(val){
   flashBadge(playerEls[pi]);
 }
 function setEnemyHP(idx,val){val=Math.max(0,val);gs.enemyHP[idx]=val;if(enemyHpEls[idx])enemyHpEls[idx].textContent=val;}
+function setPlayerHPFor(pi,val){
+  val=Math.max(0,val);gs.allPlayerHP[pi]=val;
+  if(playerHpEls[pi])playerHpEls[pi].textContent=val;
+  flashBadge(playerEls[pi]);
+}
+function playerDiesAt(pi,hint){
+  gs.allPlayerHP[pi]=0;gs.allPlayerAlive[pi]=false;
+  if(playerHpEls[pi])playerHpEls[pi].textContent='0';
+  shakeUnit(playerEls[pi],()=>{
+    const pos=gs.allPlayerPos[pi];const{x,y}=hexCenter(pos.col,pos.row);
+    killUnit(playerEls[pi],x,y,'#ff4400','player_die',()=>{
+      if(SCENARIO_MODE==='alternating'&&gs.allPlayerAlive.some(Boolean)){
+        gs.altPlayerTurnIdx++;
+        let safe=0;while(safe++<ALL_PLAYERS.length&&!gs.allPlayerAlive[activePlayerIdx()])gs.altPlayerTurnIdx++;
+        setTimeout(()=>{gs.state='player_turn';highlightMove();},350);
+      } else {setTimeout(()=>doFail(hint),350);}
+    });
+  });
+}
+function doMeleeWalkAttack(eIdx,targetPi,cb){
+  const e=ENEMIES[eIdx];const el=enemyEls[eIdx];
+  const src=hexCenter(e.col,e.row);
+  const apos=gs.allPlayerPos[targetPi];
+  const[adjC,adjR]=nearestAdjacentTo(apos.col,apos.row,e.col,e.row);
+  const dst=hexCenter(adjC,adjR);
+  if(el){el.style.transition='left .35s ease-in,top .35s ease-in';el.style.left=dst.x+'px';el.style.top=dst.y+'px';}
+  setTimeout(()=>{
+    enemySwingAttack(eIdx,()=>{
+      if(el){el.style.transition='left .35s ease-in,top .35s ease-in';el.style.left=src.x+'px';el.style.top=src.y+'px';}
+      if(cb)cb();setTimeout(()=>{if(el)el.style.transition='';},380);
+    });
+  },360);
+}
+function animateEnemyChargeAt(idx,targetPi,cb){
+  const e=ENEMIES[idx];const flyer=enemyFlyerEls[idx];
+  if(!flyer){if(cb)cb();return;}
+  const apos=gs.allPlayerPos[targetPi];
+  const src=hexCenter(e.col,e.row),dst=hexCenter(apos.col,apos.row);
+  flyer.style.transition='none';flyer.style.left=(src.x-e.aw/2)+'px';flyer.style.top=(src.y-48)+'px';flyer.style.display='block';flyer.style.opacity='1';
+  playSound(SFX.enemy0_atk);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    flyer.style.transition='left .42s ease-in,top .42s ease-in';flyer.style.left=(dst.x-e.aw/2)+'px';flyer.style.top=(dst.y-48)+'px';
+    setTimeout(()=>{flyer.style.display='none';if(cb)cb();},460);
+  }));
+}
 function flashBadge(u){if(!u)return;const b=u.querySelector('.hp-badge');b.classList.remove('flash');requestAnimationFrame(()=>requestAnimationFrame(()=>b.classList.add('flash')));setTimeout(()=>b.classList.remove('flash'),450);}
 function floatText(text,x,y,cls){const el=document.createElement('div');el.className='float-text '+(cls||'');el.textContent=text;el.style.left=(x-24)+'px';el.style.top=(y-70)+'px';vp.appendChild(el);setTimeout(()=>el.remove(),1600);}
 function deathBurst(x,y,color){const el=document.createElement('div');el.className='death-burst';el.style.cssText='left:'+x+'px;top:'+y+'px;width:100px;height:100px;background:radial-gradient(circle,'+color+' 0%,transparent 70%);';vp.appendChild(el);setTimeout(()=>el.remove(),700);}
@@ -586,18 +631,7 @@ function playerFlyAttack(eIdx,dmg,cb){
     applyDamageToEnemy(eIdx,dmg,cb);
   },300);
 }
-function animateEnemyCharge(idx,cb){
-  const e=ENEMIES[idx];const flyer=enemyFlyerEls[idx];
-  if(!flyer){if(cb)cb();return;}
-  const pi=activePlayerIdx();const apos=gs.allPlayerPos[pi];
-  const src=hexCenter(e.col,e.row),dst=hexCenter(apos.col,apos.row);
-  flyer.style.transition='none';flyer.style.left=(src.x-e.aw/2)+'px';flyer.style.top=(src.y-48)+'px';flyer.style.display='block';flyer.style.opacity='1';
-  playSound(SFX.enemy0_atk);
-  requestAnimationFrame(()=>requestAnimationFrame(()=>{
-    flyer.style.transition='left .42s ease-in,top .42s ease-in';flyer.style.left=(dst.x-e.aw/2)+'px';flyer.style.top=(dst.y-48)+'px';
-    setTimeout(()=>{flyer.style.display='none';if(cb)cb();},460);
-  }));
-}
+function animateEnemyCharge(idx,cb){animateEnemyChargeAt(idx,activePlayerIdx(),cb);}
 function killUnit(el,x,y,color,sfxKey,cb){deathBurst(x,y,color);playSound(SFX[sfxKey]||null);setTimeout(()=>{if(el)el.classList.add('dead');if(cb)setTimeout(cb,580);},250);}
 function killEnemy(idx,cb){
   gs.enemyAlive[idx]=false;if(atkIconEls[idx])atkIconEls[idx].style.display='none';
@@ -749,18 +783,17 @@ function applyDamageToEnemy(eIdx,dmg,cb){
       const atkDist=hexDist(apos.col,apos.row,e.col,e.row);
       const retAllowed=!(ap.type==='ranged'&&atkDist>1)&&!(e.type==='melee'&&atkDist>(e.moveRange??2)+1);
       if(reaction&&reaction.ret&&retAllowed){
+        const rpi=activePlayerIdx();
         setTimeout(()=>{
           if(reaction.speech)showSpeech(reaction.speech,2000);
-          enemySwingAttack(eIdx,()=>{
-            const pi=activePlayerIdx();const apos=gs.allPlayerPos[pi];
-            const pc=hexCenter(apos.col,apos.row);
-            setPlayerHP(gs.allPlayerHP[pi]-reaction.dmg);
+          const doHit=()=>{
+            const apos=gs.allPlayerPos[rpi];const pc=hexCenter(apos.col,apos.row);
+            setPlayerHPFor(rpi,gs.allPlayerHP[rpi]-reaction.dmg);
             floatText('-'+reaction.dmg,pc.x,pc.y-40,'damage');
-            shakeUnit(playerEls[pi],()=>{
-              if(gs.allPlayerHP[pi]<=0){playerDies('');return;}
-              if(cb)cb();
-            });
-          });
+            shakeUnit(playerEls[rpi],()=>{if(gs.allPlayerHP[rpi]<=0){playerDiesAt(rpi,'');return;}if(cb)cb();});
+          };
+          if(e.type==='melee'){doMeleeWalkAttack(eIdx,rpi,doHit);}
+          else{enemySwingAttack(eIdx,doHit);}
         },300);
       } else {
         if(cb)cb();
@@ -799,8 +832,11 @@ function runEnemyTurns(){
           if(mc!==e.col||mr!==e.row){animateEnemyMoveAlt(eIdx,mc,mr,()=>{advancePlayer();});}
           else{advancePlayer();}
         } else {
+          // resolve target player (by id, fallback to active player)
+          let tPi=activePlayerIdx();
+          if(t.targetId){const fi=ALL_PLAYERS.findIndex(p=>p.id===t.targetId);if(fi>=0&&gs.allPlayerAlive[fi])tPi=fi;}
           if(t.speech)showSpeech(t.speech,2000);
-          enemyAttackAlt(eIdx,t.dmg,()=>{advancePlayer();});
+          enemyAttackAlt(eIdx,tPi,t.dmg,()=>{advancePlayer();});
         }
       }
       break;
@@ -821,17 +857,18 @@ function enemySwingAttack(idx,cb){
   setTimeout(()=>{if(img&&e.idleImg){img.src=e.idleImg;img.width=e.w;}if(el)el.classList.remove('shake');if(cb)cb();},420);
 }
 
-function enemyAttackAlt(idx,damage,cb){
+function enemyAttackAlt(idx,targetPi,damage,cb){
   const e=ENEMIES[idx];
+  const apos=gs.allPlayerPos[targetPi];const pc=hexCenter(apos.col,apos.row);
   const applyHit=()=>{
-    const pi=activePlayerIdx();const apos=gs.allPlayerPos[pi];
-    const pc=hexCenter(apos.col,apos.row);
-    setPlayerHP(gs.allPlayerHP[pi]-damage);
+    setPlayerHPFor(targetPi,gs.allPlayerHP[targetPi]-damage);
     floatText('-'+damage,pc.x,pc.y-40,'damage');
-    shakeUnit(playerEls[pi],()=>{if(gs.allPlayerHP[pi]<=0){playerDies('');return;}if(cb)cb();});
+    shakeUnit(playerEls[targetPi],()=>{if(gs.allPlayerHP[targetPi]<=0){playerDiesAt(targetPi,'');return;}if(cb)cb();});
   };
   if(e.type==='flying'){
-    animateEnemyCharge(idx,applyHit);
+    animateEnemyChargeAt(idx,targetPi,applyHit);
+  } else if(e.type==='melee'){
+    doMeleeWalkAttack(idx,targetPi,applyHit);
   } else {
     const el=enemyEls[idx];if(el){el.classList.add('shake');playSound(SFX.enemy1_atk);}
     setTimeout(()=>{if(el)el.classList.remove('shake');applyHit();},400);

@@ -134,8 +134,8 @@ export const DEFAULT_CONFIG: BattleConfig = {
       firstTurn: 'player',
       playerTurns: [{ id: 'pt1', unitId: 'knight' }],
       enemyTurns: [
-        { id: 'et1', attackerUnitId: 'valkyrie',      action: 'attack' as const, damage: 30, speechText: 'Valkyrie strikes!',       moveTargetCol: 0, moveTargetRow: 0 },
-        { id: 'et2', attackerUnitId: 'armored_giant', action: 'attack' as const, damage: 40, speechText: 'Armored Giant charges!', moveTargetCol: 0, moveTargetRow: 0 },
+        { id: 'et1', attackerUnitId: 'valkyrie',      action: 'attack' as const, targetUnitId: '', damage: 30, speechText: 'Valkyrie strikes!',       moveTargetCol: 0, moveTargetRow: 0 },
+        { id: 'et2', attackerUnitId: 'armored_giant', action: 'attack' as const, targetUnitId: '', damage: 40, speechText: 'Armored Giant charges!', moveTargetCol: 0, moveTargetRow: 0 },
       ],
       attackReactions: [
         { enemyUnitId: 'valkyrie',      retaliates: false, retaliationDamage: 0,  retaliationSpeech: '' },
@@ -345,7 +345,7 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
 
   addEnemyTurn: () => {
     const enemy = get().config.enemyUnits[0];
-    const turn: EnemyTurnDef = { id: crypto.randomUUID(), attackerUnitId: enemy?.id ?? '', action: 'attack', damage: 20, speechText: '', moveTargetCol: 0, moveTargetRow: 0 };
+    const turn: EnemyTurnDef = { id: crypto.randomUUID(), attackerUnitId: enemy?.id ?? '', action: 'attack', targetUnitId: '', damage: 20, speechText: '', moveTargetCol: 0, moveTargetRow: 0 };
     const alt = get().config.scenario.alternating;
     set(s => ({ ...pushUndo(get), config: { ...s.config, scenario: { ...s.config.scenario, alternating: { ...alt, enemyTurns: [...alt.enemyTurns, turn] } } } }));
   },
