@@ -161,6 +161,14 @@ export interface BattleConfig {
     landscapeFontSize: number;
     portraitFontSize: number;
   };
+  speechLayout: {
+    landscapeX: number;
+    landscapeY: number;
+    landscapeFontSize: number;
+    portraitX: number;
+    portraitY: number;
+    portraitFontSize: number;
+  };
 }
 
 export const AUDIO_EVENTS = [

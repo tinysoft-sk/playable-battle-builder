@@ -2,9 +2,10 @@ import { useBattleStore } from '../../store/battleStore';
 import AssetUpload from '../AssetUpload';
 
 export default function PopupsPanel() {
-  const { config, setPopups, setAppIcon, setHintLayout } = useBattleStore();
+  const { config, setPopups, setAppIcon, setHintLayout, setSpeechLayout } = useBattleStore();
   const { popups } = config;
   const hintLayout = config.hintLayout ?? { landscapeY: 265, portraitY: 265, landscapeFontSize: 13.5, portraitFontSize: 13.5 };
+  const speechLayout = config.speechLayout ?? { landscapeX: 160, landscapeY: 14, landscapeFontSize: 13, portraitX: 14, portraitY: 14, portraitFontSize: 13 };
 
   return (
     <div>
@@ -94,6 +95,49 @@ export default function PopupsPanel() {
             <label>Portrait font size</label>
             <input type="number" step={0.5} min={8} max={32} value={hintLayout.portraitFontSize}
               onChange={e => setHintLayout({ portraitFontSize: +e.target.value })} />
+          </div>
+        </div>
+      </div>
+
+      <div className="popup-section">
+        <div className="popup-section-title">Speech Bubble</div>
+        <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 10 }}>
+          Position and font size of the in-game speech bubble (enemy speech &amp; follow-up messages).
+        </p>
+        <div className="section-title" style={{ marginTop: 4 }}>Landscape</div>
+        <div className="row">
+          <div className="field">
+            <label>X (left)</label>
+            <input type="number" step={5} value={speechLayout.landscapeX}
+              onChange={e => setSpeechLayout({ landscapeX: +e.target.value })} />
+          </div>
+          <div className="field">
+            <label>Y (top)</label>
+            <input type="number" step={5} value={speechLayout.landscapeY}
+              onChange={e => setSpeechLayout({ landscapeY: +e.target.value })} />
+          </div>
+          <div className="field">
+            <label>Font size</label>
+            <input type="number" step={0.5} min={8} max={32} value={speechLayout.landscapeFontSize}
+              onChange={e => setSpeechLayout({ landscapeFontSize: +e.target.value })} />
+          </div>
+        </div>
+        <div className="section-title" style={{ marginTop: 8 }}>Portrait</div>
+        <div className="row">
+          <div className="field">
+            <label>X (left)</label>
+            <input type="number" step={5} value={speechLayout.portraitX}
+              onChange={e => setSpeechLayout({ portraitX: +e.target.value })} />
+          </div>
+          <div className="field">
+            <label>Y (top)</label>
+            <input type="number" step={5} value={speechLayout.portraitY}
+              onChange={e => setSpeechLayout({ portraitY: +e.target.value })} />
+          </div>
+          <div className="field">
+            <label>Font size</label>
+            <input type="number" step={0.5} min={8} max={32} value={speechLayout.portraitFontSize}
+              onChange={e => setSpeechLayout({ portraitFontSize: +e.target.value })} />
           </div>
         </div>
       </div>

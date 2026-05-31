@@ -165,6 +165,7 @@ export const DEFAULT_CONFIG: BattleConfig = {
   appIcon: null,
   gridOffset: { landscape: 0, portrait: 0 },
   hintLayout: { landscapeY: 265, portraitY: 265, landscapeFontSize: 13.5, portraitFontSize: 13.5 },
+  speechLayout: { landscapeX: 160, landscapeY: 14, landscapeFontSize: 13, portraitX: 14, portraitY: 14, portraitFontSize: 13 },
 };
 
 interface BattleStore {
@@ -212,6 +213,7 @@ interface BattleStore {
   setAppIcon: (asset: AssetData | null) => void;
   setGridOffset: (key: 'landscape' | 'portrait', value: number) => void;
   setHintLayout: (patch: Partial<BattleConfig['hintLayout']>) => void;
+  setSpeechLayout: (patch: Partial<BattleConfig['speechLayout']>) => void;
 
   // Library
   addToLibrary: (asset: AssetData) => void;
@@ -420,6 +422,9 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
 
   setHintLayout: (patch) =>
     set(s => ({ ...pushUndo(get), config: { ...s.config, hintLayout: { ...s.config.hintLayout, ...patch } } })),
+
+  setSpeechLayout: (patch) =>
+    set(s => ({ ...pushUndo(get), config: { ...s.config, speechLayout: { ...s.config.speechLayout, ...patch } } })),
 
   addToLibrary: (asset) =>
     set(s => {

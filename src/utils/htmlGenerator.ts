@@ -43,6 +43,12 @@ export function generateHTML(config: BattleConfig, network: NetworkTarget): stri
   const hintPortY    = (config as any).hintLayout?.portraitY     ?? 265;
   const hintLandFS   = (config as any).hintLayout?.landscapeFontSize ?? 13.5;
   const hintPortFS   = (config as any).hintLayout?.portraitFontSize  ?? 13.5;
+  const sbLandX    = (config as any).speechLayout?.landscapeX      ?? 160;
+  const sbLandY    = (config as any).speechLayout?.landscapeY      ?? 14;
+  const sbLandFS   = (config as any).speechLayout?.landscapeFontSize ?? 13;
+  const sbPortX    = (config as any).speechLayout?.portraitX       ?? 14;
+  const sbPortY    = (config as any).speechLayout?.portraitY       ?? 14;
+  const sbPortFS   = (config as any).speechLayout?.portraitFontSize ?? 13;
   const appIconUri  = uri(config.appIcon);
   const appIconHTML = appIconUri
     ? `<img class="popup-app-icon" src="${appIconUri}" alt="">`
@@ -245,8 +251,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;touch-action:no
 #hero-left{position:absolute;left:${config.heroLeft.posX}px;top:${config.heroLeft.posY}px;width:128px;pointer-events:none;z-index:5;${heroLeftFlip ? `transform:${heroLeftFlip};` : ''}}
 #hero-right{position:absolute;right:${config.heroRight.posX}px;top:${config.heroRight.posY}px;width:128px;pointer-events:none;z-index:5;${heroRightFlip ? `transform:${heroRightFlip};` : ''}}
 .portrait #hero-left,.portrait #hero-right{display:none;}
-#speech-bubble{position:absolute;top:14px;left:160px;width:310px;background:rgba(255,255,255,.95);border-radius:14px;padding:10px 14px;font-family:Arial,sans-serif;font-size:13px;color:#222;line-height:1.5;box-shadow:0 4px 16px rgba(0,0,0,.45);display:none;z-index:30;pointer-events:none;}
-.portrait #speech-bubble{left:14px;width:535px;}
+#speech-bubble{position:absolute;top:${sbLandY}px;left:${sbLandX}px;width:310px;background:rgba(255,255,255,.95);border-radius:14px;padding:10px 14px;font-family:Arial,sans-serif;font-size:${sbLandFS}px;color:#222;line-height:1.5;box-shadow:0 4px 16px rgba(0,0,0,.45);display:none;z-index:30;pointer-events:none;}
+.portrait #speech-bubble{left:${sbPortX}px;top:${sbPortY}px;font-size:${sbPortFS}px;width:535px;}
 #speech-bubble::before{content:'';position:absolute;left:-12px;top:18px;border:7px solid transparent;border-right-color:rgba(255,255,255,.95);}
 #grid{position:absolute;left:0;top:0;}
 .hex{position:absolute;width:var(--hw,120px);height:var(--hh,80px);background:url('${uri(config.gridTiles.walkable)}') center/100% 100% no-repeat;opacity:.5;cursor:pointer;transition:opacity .12s,filter .12s;}
@@ -573,7 +579,7 @@ function doRetaliation(killedId,cb){
       setPlayerHP(gs.allPlayerHP[pi]-ret.damage);
       floatText('-'+ret.damage,pc.x,pc.y-40,'damage');
       shakeUnit(playerEls[pi],()=>{
-        if(gs.allPlayerHP[pi]<=0){playerDies('');return;}
+        if(gs.allPlayerHP[pi]<=0){playerDies(ret.followUp||'');return;}
         gs.state='player_turn';highlightMove();
         if(ret.followUp)showSpeech(ret.followUp,2200);
       });
