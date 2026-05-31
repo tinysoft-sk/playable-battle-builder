@@ -367,6 +367,7 @@ function hexDist(c1,r1,c2,r2){const a=toCube(c1,r1),b=toCube(c2,r2);return Math.
 
 // ─── CONFIG (injected) ───
 const ENEMIES=${JSON.stringify(enemiesData)};
+const ENEMY_INIT_POS=ENEMIES.map(e=>({col:e.col,row:e.row}));
 const SPELL_ELS=[${spellElsJS}];
 const SPELL_IMGS=[${spellImgsJS}];
 const SPELL_SHOT_SFX=[${spellShotSfx}];
@@ -1033,7 +1034,9 @@ function startIntro(){gs.state='intro';showSpeech('Defeat the enemies!');showArr
 function resetGame(){
   altTurnIdx=0;lastHoppedIdx=-1;
   gs.state='player_turn';gs.turn=1;gs.failCount=0;
-  gs.playerHP=PLAYER_HP_INIT;gs.enemyHP=ENEMIES.map(e=>e.hp);gs.enemyAlive=ENEMIES.map(()=>true);
+  gs.playerHP=PLAYER_HP_INIT;gs.enemyAlive=ENEMIES.map(()=>true);
+  ENEMIES.forEach((e,i)=>{e.col=ENEMY_INIT_POS[i].col;e.row=ENEMY_INIT_POS[i].row;});
+  gs.enemyHP=ENEMIES.map(e=>e.hp);
   gs.spellUsed={...spellUsedInit};gs.selSpell=null;gs.sbOpen=false;
   gs.pCol=PLAYER_START_COL;gs.pRow=PLAYER_START_ROW;
   gs.allPlayerHP=ALL_PLAYERS.map(p=>p.hp);
