@@ -82,6 +82,7 @@ export function generateHTML(config: BattleConfig, network: NetworkTarget): stri
     type: e.type,
     resistTo: e.resistTo,
     defense: e.defense,
+    moveRange: (e as any).moveRange ?? 2,
     w: e.displayWidth,
     aw: e.assets.attack ? Math.round(e.displayWidth * 1.3) : e.displayWidth,
     idleImg: uri(e.assets.idle),
@@ -450,7 +451,7 @@ function occupied(c,r){return findEnemyAt(c,r)>=0||findPlayerAt(c,r)>=0;}
 // Returns the hex adjacent to enemy (ec,er) that is geometrically closest to (pc,pr)
 // Used for animations (flying, retaliation) — ignores occupancy
 function nearestAdjacentTo(ec,er,pc,pr){
-  const nb=ec%2===0
+  const nb=er%2===0
     ?[[ec-1,er],[ec+1,er],[ec-1,er-1],[ec,er-1],[ec-1,er+1],[ec,er+1]]
     :[[ec-1,er],[ec+1,er],[ec,er-1],[ec+1,er-1],[ec,er+1],[ec+1,er+1]];
   let best=[Math.max(0,ec-1),er],bestD=999;
@@ -604,6 +605,8 @@ function doRetaliation(killedId,cb){
     if(retEnemy.type==='flying'){
       animateEnemyCharge(retIdx,applyHit);
     } else if(retEnemy.type==='melee'){
+      const retDist=hexDist(retEnemy.col,retEnemy.row,apos.col,apos.row);
+      if(retDist>(retEnemy.moveRange??2)+1){if(cb)cb();return;}
       const src=hexCenter(retEnemy.col,retEnemy.row);
       const[adjC,adjR]=nearestAdjacentTo(apos.col,apos.row,retEnemy.col,retEnemy.row);
       const dst=hexCenter(adjC,adjR);
@@ -722,7 +725,7 @@ function applyDamageToEnemy(eIdx,dmg,cb){
       const reaction=ALT_REACTIONS.find(r=>r.unitId===e.id);
       const pi=activePlayerIdx();const ap=ALL_PLAYERS[pi];const apos=gs.allPlayerPos[pi];
       const atkDist=hexDist(apos.col,apos.row,e.col,e.row);
-      const retAllowed=!(ap.type==='ranged'&&atkDist>1);
+      const retAllowed=!(ap.type==='ranged'&&atkDist>1)&&!(e.type==='melee'&&atkDist>(e.moveRange??2)+1);
       if(reaction&&reaction.ret&&retAllowed){
         setTimeout(()=>{
           if(reaction.speech)showSpeech(reaction.speech,2000);
