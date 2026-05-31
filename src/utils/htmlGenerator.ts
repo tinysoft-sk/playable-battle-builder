@@ -564,13 +564,12 @@ function doRetaliation(killedId,cb){
   if(!ret||ret.damage<=0){if(cb)cb();return;}
   const retIdx=ENEMIES.findIndex(en=>en.id===ret.retaliatorId);
   if(retIdx<0||!gs.enemyAlive[retIdx]){if(cb)cb();return;}
+  const retEnemy=ENEMIES[retIdx];const retEl=enemyEls[retIdx];
   setTimeout(()=>{
     if(ret.speech)showSpeech(ret.speech,1800);
-    const retEl=enemyEls[retIdx];if(retEl){retEl.classList.add('shake');playSound(SFX.enemy1_atk);}
-    setTimeout(()=>{
-      if(retEl)retEl.classList.remove('shake');
-      const pi=activePlayerIdx();const apos=gs.allPlayerPos[pi];
-      const pc=hexCenter(apos.col,apos.row);
+    const pi=activePlayerIdx();const apos=gs.allPlayerPos[pi];
+    const pc=hexCenter(apos.col,apos.row);
+    const applyHit=()=>{
       setPlayerHP(gs.allPlayerHP[pi]-ret.damage);
       floatText('-'+ret.damage,pc.x,pc.y-40,'damage');
       shakeUnit(playerEls[pi],()=>{
@@ -578,7 +577,27 @@ function doRetaliation(killedId,cb){
         gs.state='player_turn';highlightMove();
         if(ret.followUp)showSpeech(ret.followUp,2200);
       });
-    },500);
+    };
+    if(retEnemy.type==='flying'){
+      animateEnemyCharge(retIdx,applyHit);
+    } else if(retEnemy.type==='melee'){
+      const src=hexCenter(retEnemy.col,retEnemy.row);
+      const[adjC,adjR]=nearestAdjacentTo(apos.col,apos.row,retEnemy.col,retEnemy.row);
+      const dst=hexCenter(adjC,adjR);
+      if(retEl){retEl.style.transition='left .35s ease-in,top .35s ease-in';retEl.style.left=dst.x+'px';retEl.style.top=dst.y+'px';}
+      playSound(SFX.enemy1_atk);
+      setTimeout(()=>{
+        if(retEl)retEl.classList.add('shake');
+        setTimeout(()=>{
+          if(retEl){retEl.classList.remove('shake');retEl.style.transition='left .35s ease-in,top .35s ease-in';retEl.style.left=src.x+'px';retEl.style.top=src.y+'px';}
+          applyHit();
+          setTimeout(()=>{if(retEl)retEl.style.transition='';},380);
+        },370);
+      },360);
+    } else {
+      if(retEl){retEl.classList.add('shake');playSound(SFX.enemy1_atk);}
+      setTimeout(()=>{if(retEl)retEl.classList.remove('shake');applyHit();},400);
+    }
   },600);
 }
 function movePlayerTo(col,row,cb){
