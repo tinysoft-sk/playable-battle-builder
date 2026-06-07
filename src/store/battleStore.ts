@@ -256,7 +256,24 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
     set({ config: next, redoStack: redoStack.slice(1), undoStack: [...get().undoStack, config] });
   },
 
-  loadConfig: (c) => set({ config: c, undoStack: [], redoStack: [] }),
+  loadConfig: (c) => {
+    // Merge with DEFAULT_CONFIG so fields added after an export still get safe defaults
+    const normalized: BattleConfig = {
+      ...DEFAULT_CONFIG,
+      ...c,
+      audio: {
+        music: c.audio?.music ?? null,
+        sfxMap: { ...emptyAudioMap(), ...(c.audio?.sfxMap ?? {}) },
+      },
+      store: { ...DEFAULT_CONFIG.store, ...(c.store ?? {}) },
+      backgrounds: { ...DEFAULT_CONFIG.backgrounds, ...(c.backgrounds ?? {}) },
+      gridOffset: { ...DEFAULT_CONFIG.gridOffset, ...(c.gridOffset ?? {}) },
+      hintLayout: { ...DEFAULT_CONFIG.hintLayout, ...(c.hintLayout ?? {}) },
+      speechLayout: { ...DEFAULT_CONFIG.speechLayout, ...(c.speechLayout ?? {}) },
+      uiAssets: { ...DEFAULT_CONFIG.uiAssets, ...(c.uiAssets ?? {}) },
+    };
+    set({ config: normalized, undoStack: [], redoStack: [] });
+  },
   resetToDefault: () => set({ config: { ...DEFAULT_CONFIG, id: crypto.randomUUID() }, undoStack: [], redoStack: [] }),
 
   setName: (name) => set(s => ({ ...pushUndo(get), config: { ...s.config, name } })),

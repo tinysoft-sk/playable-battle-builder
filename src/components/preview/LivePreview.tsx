@@ -14,7 +14,7 @@ export default function LivePreview() {
   const refresh = useCallback(() => {
     if (!iframeRef.current) return;
     try {
-      const html = generateHTML(config, 'facebook');
+      const html = generateHTML(config, 'unity');
       iframeRef.current.srcdoc = html;
     } catch (e) {
       console.error('Preview error', e);
