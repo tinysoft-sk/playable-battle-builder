@@ -173,9 +173,11 @@ export function generateHTML(config: BattleConfig, network: NetworkTarget): stri
     walk:'${uri(sfx['walk'])}',grid:'${uri(sfx['grid_select'])}',
     spell0_shot:'${uri(sfx['spell1_shoot'])}',spell0_hit:'${uri(sfx['spell1_hit'])}',
     spell1_shot:'${uri(sfx['spell2_shoot'])}',spell1_hit:'${uri(sfx['spell2_hit'])}',
-    player_atk:'${uri(sfx['player_attack'])}',player_die:'${uri(sfx['player_death'])}',
+    player_atk:'${uri(sfx['player_attack'])}',player_ranged_atk:'${uri(sfx['player_ranged_attack'])}',player_fly_atk:'${uri(sfx['player_flying_attack'])}',
+    player_die:'${uri(sfx['player_death'])}',
     enemy0_atk:'${uri(sfx['flying_attack'])}',enemy0_die:'${uri(sfx['flying_death'])}',
     enemy1_atk:'${uri(sfx['ranged_attack'])}',enemy1_die:'${uri(sfx['ranged_death'])}',
+    enemy_melee_atk:'${uri(sfx['melee_attack'])}',enemy_melee_die:'${uri(sfx['melee_death'])}',
     fail:'${uri(sfx['fail'])}',music:'${uri(config.audio.music)}',
   };` : '\n  const SFX={};';
 
@@ -624,7 +626,7 @@ function playerFlyAttack(eIdx,dmg,cb){
   gs.allPlayerPos[pi]={col:dc,row:dr};gs.pCol=dc;gs.pRow=dr;
   const img=pEl&&pEl.querySelector('img');
   if(img&&ap.atkImg){img.src=ap.atkImg;img.width=ap.aw;}
-  playSound(SFX.player_atk);
+  playSound(SFX.player_fly_atk||SFX.player_atk);
   if(pEl){pEl.style.transition='left .28s ease-in,top .28s ease-in';pEl.style.left=dst.x+'px';pEl.style.top=dst.y+'px';}
   setTimeout(()=>{
     if(pEl)pEl.style.transition='';
@@ -637,7 +639,7 @@ function killUnit(el,x,y,color,sfxKey,cb){deathBurst(x,y,color);playSound(SFX[sf
 function killEnemy(idx,cb){
   gs.enemyAlive[idx]=false;if(atkIconEls[idx])atkIconEls[idx].style.display='none';
   const e=ENEMIES[idx];const{x,y}=hexCenter(e.col,e.row);
-  killUnit(enemyEls[idx],x,y,'#ff6600',e.type==='flying'?'enemy0_die':'enemy1_die',cb);
+  killUnit(enemyEls[idx],x,y,'#ff6600',e.type==='flying'?'enemy0_die':e.type==='melee'?'enemy_melee_die':'enemy1_die',cb);
 }
 function shakeUnit(el,cb){if(!el)return;el.classList.remove('shake');requestAnimationFrame(()=>requestAnimationFrame(()=>{el.classList.add('shake');setTimeout(()=>{if(el)el.classList.remove('shake');if(cb)cb();},370);}));}
 function doRetaliation(killedId,cb){
@@ -668,7 +670,7 @@ function doRetaliation(killedId,cb){
       const[adjC,adjR]=nearestAdjacentTo(apos.col,apos.row,retEnemy.col,retEnemy.row);
       const dst=hexCenter(adjC,adjR);
       if(retEl){retEl.style.transition='left .35s ease-in,top .35s ease-in';retEl.style.left=dst.x+'px';retEl.style.top=dst.y+'px';}
-      playSound(SFX.enemy1_atk);
+      playSound(SFX.enemy_melee_atk||SFX.enemy1_atk);
       setTimeout(()=>{
         if(retEl)retEl.classList.add('shake');
         setTimeout(()=>{
@@ -706,7 +708,9 @@ function enemyAttack(idx,hint){
       const{x,y}=getHitPos();floatText('CRITICAL HIT!',x,y-40,'critical');deathBurst(x,y,'#ff4400');playerDies(hint);
     });
   } else {
-    const el=enemyEls[idx];if(el){el.classList.add('shake');playSound(SFX.enemy1_atk);}
+    const el=enemyEls[idx];
+    const atkSfx=e.type==='melee'?SFX.enemy_melee_atk||SFX.enemy1_atk:SFX.enemy1_atk;
+    if(el){el.classList.add('shake');playSound(atkSfx);}
     setTimeout(()=>{
       if(el)el.classList.remove('shake');
       const{x,y}=getHitPos();floatText('CRITICAL HIT!',x,y-40,'critical');deathBurst(x,y,'#ff4400');playerDies(hint);
@@ -756,6 +760,7 @@ function playerAttackAlt(eIdx,cb){
     const apos=gs.allPlayerPos[pi];const from=hexCenter(apos.col,apos.row);
     const img=playerEls[pi]&&playerEls[pi].querySelector('img');
     if(img&&ap.atkImg){img.src=ap.atkImg;img.width=ap.aw;}
+    playSound(SFX.player_ranged_atk||SFX.player_atk);
     animateSpell(-1,from.x,from.y-30,x,y-30,()=>{
       if(img&&ap.idleImg){img.src=ap.idleImg;img.width=ap.w;}
       applyDamageToEnemy(eIdx,dmg,cb);
@@ -854,7 +859,7 @@ function enemySwingAttack(idx,cb){
   const e=ENEMIES[idx];const el=enemyEls[idx];
   const img=el&&el.querySelector('img');
   if(img&&e.atkImg){img.src=e.atkImg;img.width=e.aw;}
-  if(el)el.classList.add('shake');playSound(SFX.enemy1_atk);
+  if(el)el.classList.add('shake');playSound(e.type==='melee'?SFX.enemy_melee_atk||SFX.enemy1_atk:SFX.enemy1_atk);
   setTimeout(()=>{if(img&&e.idleImg){img.src=e.idleImg;img.width=e.w;}if(el)el.classList.remove('shake');if(cb)cb();},420);
 }
 

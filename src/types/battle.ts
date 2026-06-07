@@ -185,11 +185,15 @@ export const AUDIO_EVENTS = [
   'spell2_shoot',
   'spell2_hit',
   'player_attack',
+  'player_ranged_attack',
+  'player_flying_attack',
   'player_death',
   'flying_attack',
   'flying_death',
   'ranged_attack',
   'ranged_death',
+  'melee_attack',
+  'melee_death',
   'fail',
 ] as const;
 
