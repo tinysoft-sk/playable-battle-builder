@@ -125,7 +125,7 @@ export function generateHTML(config: BattleConfig, network: NetworkTarget): stri
 
   const enemyFlyersHTML = config.enemyUnits
     .map((e, i) => e.assets.attack
-      ? `  <img id="enemy-flyer-${i}" class="enemy-flyer" src="${uri(e.assets.attack)}" style="width:${Math.round(e.displayWidth * 1.3)}px;display:none;position:absolute;pointer-events:none;z-index:40;transform:scaleX(-1);" alt="">`
+      ? `  <img id="enemy-flyer-${i}" class="enemy-flyer" src="${uri(e.assets.attack)}" style="width:${Math.round(e.displayWidth * 1.3)}px;display:none;position:absolute;pointer-events:none;z-index:40;transform:translate(-50%,-88%) scaleX(-1);" alt="">`
       : '')
     .filter(Boolean).join('\n');
 
@@ -211,10 +211,10 @@ export function generateHTML(config: BattleConfig, network: NetworkTarget): stri
   `\n  function playSound(){}\n  function startMusic(){}`;
 
   const ctaFn = {
-    facebook:  `function goStore(){if(typeof FbPlayableAd!=='undefined')FbPlayableAd.onCTAClick();}`,
-    google:    `function goStore(){if(typeof ExitApi!=='undefined'){try{ExitApi.exit();}catch(e){}}else window.open('${storeAndroid}','_blank');}`,
-    unity:     `function goStore(){const url=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1)?'${storeIos}':'${storeAndroid}';if(typeof mraid!=='undefined'){try{mraid.open(url);}catch(e){}}else window.open(url,'_blank');}`,
-    mintegral: `function goStore(){if(typeof window.install==='function')window.install();if(typeof window.gameEnd==='function')window.gameEnd();}`,
+    facebook:  `function goStore(){trackAL('CTA_CLICKED');if(typeof FbPlayableAd!=='undefined')FbPlayableAd.onCTAClick();}`,
+    google:    `function goStore(){trackAL('CTA_CLICKED');if(typeof ExitApi!=='undefined'){try{ExitApi.exit();}catch(e){}}else window.open('${storeAndroid}','_blank');}`,
+    unity:     `function goStore(){trackAL('CTA_CLICKED');const url=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1)?'${storeIos}':'${storeAndroid}';if(typeof mraid!=='undefined'){try{mraid.open(url);}catch(e){}}else window.open(url,'_blank');}`,
+    mintegral: `function goStore(){trackAL('CTA_CLICKED');if(typeof window.install==='function')window.install();if(typeof window.gameEnd==='function')window.gameEnd();}`,
   }[network];
 
   const mraidBootstrap = network === 'unity' ? `
@@ -354,6 +354,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;touch-action:no
 ${rpFooter}
 <script>
 'use strict';
+function trackAL(name){if(typeof window.ALPlayableAnalytics!=='undefined'){try{window.ALPlayableAnalytics.trackEvent(name);}catch(e){}}}
 ${audioVars}
 
 // ─── GRID ───
@@ -569,11 +570,12 @@ function animateEnemyChargeAt(idx,targetPi,cb){
   if(!flyer){if(cb)cb();return;}
   const apos=gs.allPlayerPos[targetPi];
   const src=hexCenter(e.col,e.row),dst=hexCenter(apos.col,apos.row);
-  flyer.style.transition='none';flyer.style.left=(src.x-e.aw/2)+'px';flyer.style.top=(src.y-48)+'px';flyer.style.display='block';flyer.style.opacity='1';
+  const unitEl=enemyEls[idx];if(unitEl)unitEl.style.opacity='0';
+  flyer.style.transition='none';flyer.style.left=src.x+'px';flyer.style.top=src.y+'px';flyer.style.display='block';flyer.style.opacity='1';
   playSound(SFX.enemy0_atk);
   requestAnimationFrame(()=>requestAnimationFrame(()=>{
-    flyer.style.transition='left .42s ease-in,top .42s ease-in';flyer.style.left=(dst.x-e.aw/2)+'px';flyer.style.top=(dst.y-48)+'px';
-    setTimeout(()=>{flyer.style.display='none';if(cb)cb();},460);
+    flyer.style.transition='left .42s ease-in,top .42s ease-in';flyer.style.left=dst.x+'px';flyer.style.top=dst.y+'px';
+    setTimeout(()=>{flyer.style.display='none';if(unitEl)unitEl.style.opacity='';if(cb)cb();},460);
   }));
 }
 function flashBadge(u){if(!u)return;const b=u.querySelector('.hp-badge');b.classList.remove('flash');requestAnimationFrame(()=>requestAnimationFrame(()=>b.classList.add('flash')));setTimeout(()=>b.classList.remove('flash'),450);}
@@ -721,8 +723,11 @@ function enemyAttack(idx,hint){
 // ─── FAIL / WIN ───
 function doFail(hint){
   gs.failCount++;gs.state='fail';$('fail-hint').innerHTML=hint;
-  retryBtn.style.display=gs.failCount<CTA_FAIL_COUNT?'':'none';storeBtn.style.display=gs.failCount>=CTA_FAIL_COUNT?'':'none';
+  const showStoreCta=gs.failCount>=CTA_FAIL_COUNT;
+  retryBtn.style.display=showStoreCta?'none':'';storeBtn.style.display=showStoreCta?'':'none';
   failScr.classList.add('show');playSound(SFX.fail);
+  trackAL('CHALLENGE_FAILED');
+  if(showStoreCta)trackAL('ENDCARD_SHOWN');
 }
 function playerDies(hint){
   const pi=activePlayerIdx();
@@ -745,7 +750,7 @@ function checkWin(){
   else if(SCENARIO_MODE==='alternating'){setTimeout(runEnemyTurns,400);}
   else{gs.state='player_turn';highlightMove();}
 }
-function doWin(){gs.state='win';clearHex();winScr.classList.add('show');$('win-cta').addEventListener('click',goStore);}
+function doWin(){gs.state='win';clearHex();winScr.classList.add('show');trackAL('CHALLENGE_SOLVED');trackAL('ENDCARD_SHOWN');$('win-cta').addEventListener('click',goStore);}
 
 // ─── ALTERNATING MODE ───
 function calcDamage(baseDmg,mult,def){return Math.max(1,Math.floor(baseDmg*mult-def));}
@@ -1019,7 +1024,7 @@ ${enemyUnitClicksJS}
 atkIconEls.forEach((el,i)=>{if(!el)return;el.addEventListener('click',function(ev){ev.stopPropagation();if(gs.state==='intro'){skipIntro();return;}const e=ENEMIES[i];if(gs.state==='spell_target'){castSpell(e.col,e.row);}else if(gs.state==='player_turn'){const k=e.col+','+e.row;if(hexEls[k])onHexClick.call(hexEls[k]);}});});
 sbBtn.addEventListener('click',e=>{e.stopPropagation();if(gs.state==='intro')skipIntro();if(gs.state==='animating'||gs.state==='fail'||gs.state==='win')return;if(gs.sbOpen)closeSpellbook();else openSpellbook();});
 ${spSP_events}
-retryBtn.addEventListener('click',()=>{failScr.classList.remove('show');resetGame();});
+retryBtn.addEventListener('click',()=>{trackAL('CHALLENGE_RETRY');failScr.classList.remove('show');resetGame();});
 storeBtn.addEventListener('click',goStore);
 $('win-cta').addEventListener('click',goStore);
 vp.addEventListener('click',e=>{const isEnemy=enemyEls.some(el=>el&&el.contains(e.target));if(!sbArea.contains(e.target)&&!gridEl.contains(e.target)&&!isEnemy){if(gs.state==='spell_target'||gs.state==='spell_select')closeSpellbook();if(gs.state==='intro')skipIntro();}});
@@ -1027,13 +1032,14 @@ vp.addEventListener('click',e=>{const isEnemy=enemyEls.some(el=>el&&el.contains(
 // ─── INTRO ───
 function skipIntro(){if(gs.state!=='intro')return;startMusic();hideSpeech();hideArrow();startTurn();}
 function startTurn(){
+  trackAL('CHALLENGE_STARTED');
   if(SCENARIO_MODE==='alternating'&&ALT_FIRST==='enemy'){
     setTimeout(runEnemyTurns,600);
   } else {
     gs.state='player_turn';highlightMove();
   }
 }
-function startIntro(){gs.state='intro';showSpeech('Defeat the enemies!');showArrow(gs.pCol,gs.pRow);setTimeout(()=>{if(gs.state!=='intro')return;skipIntro();},1500);}
+function startIntro(){gs.state='intro';trackAL('DISPLAYED');showSpeech('Defeat the enemies!');showArrow(gs.pCol,gs.pRow);setTimeout(()=>{if(gs.state!=='intro')return;skipIntro();},1500);}
 
 // ─── RESET ───
 function resetGame(){
