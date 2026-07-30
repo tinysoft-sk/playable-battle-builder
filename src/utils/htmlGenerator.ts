@@ -9,6 +9,36 @@ function hintFor(config: BattleConfig, trigger: string): string {
   return fc ? fc.hintLines.join('<br>') : '';
 }
 
+// Computes hex-grid geometry for an arbitrary cols/rows count, scaled and
+// centered to occupy the same on-screen footprint the original hand-tuned
+// 5x4 layout occupied (hexW0/hexH0/gx0_0/gy0_0 are that layout's constants
+// for one orientation). Preserves hex aspect ratio (no image stretching).
+// At cols=5, rows=4 this returns hexW0/hexH0/gx0_0/gy0_0 unchanged.
+function fitLayout(hexW0: number, hexH0: number, gx0_0: number, gy0_0: number, cols: number, rows: number) {
+  const BASE_COLS = 5, BASE_ROWS = 4;
+  const footprintW = hexW0 * (BASE_COLS + 0.5);
+  const footprintH = hexH0 * ((BASE_ROWS - 1) * 0.75 + 1);
+  const centerX = gx0_0 - hexW0 / 2 + footprintW / 2;
+  const centerY = gy0_0 - hexH0 / 2 + footprintH / 2;
+
+  const scaleW = footprintW / (hexW0 * (cols + 0.5));
+  const scaleH = footprintH / (hexH0 * ((rows - 1) * 0.75 + 1));
+  const scale = Math.min(scaleW, scaleH);
+
+  const hexW = hexW0 * scale;
+  const hexH = hexH0 * scale;
+  const colSp = hexW;
+  const rowSp = hexH * 0.75;
+  const oddDx = hexW / 2;
+
+  const newFootprintW = hexW * (cols + 0.5);
+  const newFootprintH = hexH * ((rows - 1) * 0.75 + 1);
+  const gx0 = centerX - newFootprintW / 2 + hexW / 2;
+  const gy0 = centerY - newFootprintH / 2 + hexH / 2;
+
+  return { hexW, hexH, colSp, rowSp, oddDx, gx0, gy0 };
+}
+
 export function generateHTML(config: BattleConfig, network: NetworkTarget): string {
   const hasAudio = network !== 'facebook';
 
@@ -39,6 +69,10 @@ export function generateHTML(config: BattleConfig, network: NetworkTarget): stri
   const flyingIconUri = uri((config.uiAssets as any)?.flyingIcon);
   const gridOffsetLand = (config as any).gridOffset?.landscape ?? 0;
   const gridOffsetPort = (config as any).gridOffset?.portrait ?? 0;
+  const gridCols = (config as any).grid?.cols ?? 5;
+  const gridRows = (config as any).grid?.rows ?? 4;
+  const landLayout = fitLayout(120, 80, 240, 275, gridCols, gridRows);
+  const portLayout = fitLayout(90, 60, 79, 420, gridCols, gridRows);
   const hintLandY    = (config as any).hintLayout?.landscapeY    ?? 265;
   const hintPortY    = (config as any).hintLayout?.portraitY     ?? 265;
   const hintLandFS   = (config as any).hintLayout?.landscapeFontSize ?? 13.5;
@@ -377,10 +411,10 @@ function trackAL(name){if(typeof window.ALPlayableAnalytics!=='undefined'){try{w
 ${audioVars}
 
 // ─── GRID ───
-const COLS=5,ROWS=4;
+const COLS=${gridCols},ROWS=${gridRows};
 const LAYOUT={
-  land:{vpW:1000,vpH:563,gx0:240,gy0:${275+gridOffsetLand},hexW:120,hexH:80,colSp:120,rowSp:60,oddDx:60},
-  port:{vpW:563,vpH:1000,gx0:79,gy0:${420+gridOffsetPort},hexW:90,hexH:60,colSp:90,rowSp:45,oddDx:45},
+  land:{vpW:1000,vpH:563,gx0:${landLayout.gx0},gy0:${landLayout.gy0+gridOffsetLand},hexW:${landLayout.hexW},hexH:${landLayout.hexH},colSp:${landLayout.colSp},rowSp:${landLayout.rowSp},oddDx:${landLayout.oddDx}},
+  port:{vpW:563,vpH:1000,gx0:${portLayout.gx0},gy0:${portLayout.gy0+gridOffsetPort},hexW:${portLayout.hexW},hexH:${portLayout.hexH},colSp:${portLayout.colSp},rowSp:${portLayout.rowSp},oddDx:${portLayout.oddDx}},
 };
 let cur=LAYOUT.land;
 function hexCenter(col,row){return{x:cur.gx0+col*cur.colSp+(row%2===1?cur.oddDx:0),y:cur.gy0+row*cur.rowSp};}
