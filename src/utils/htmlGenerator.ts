@@ -89,6 +89,17 @@ export function generateHTML(config: BattleConfig, network: NetworkTarget): stri
     atkImg: uri(e.assets.attack),
   }));
 
+  // guided mode injection values
+  const guidedStepsData = config.scenario.winningSequence.map(s => ({
+    actorId: s.actorUnitId,
+    action: s.action,
+    spellId: s.spellId ?? '',
+    targetId: s.targetUnitId ?? '',
+    moveCol: s.moveTargetCol ?? 0,
+    moveRow: s.moveTargetRow ?? 0,
+    tooltip: s.tooltipText ?? '',
+  }));
+
   // alternating mode injection values
   const altCfg = config.scenario.alternating ?? { firstTurn: 'player', playerTurns: [], enemyTurns: [], attackReactions: [] };
   const altEnemyTurns = altCfg.enemyTurns.map(t => ({ id: t.id, unitId: t.attackerUnitId, action: t.action ?? 'attack', targetId: t.targetUnitId ?? '', dmg: t.damage, speech: t.speechText, moveCol: t.moveTargetCol ?? 0, moveRow: t.moveTargetRow ?? 0 }));
@@ -391,6 +402,7 @@ const ATTACK_ICON_MELEE='${meleeIconUri}';
 const ATTACK_ICON_RANGED='${rangedIconUri}';
 const ATTACK_ICON_FLYING='${flyingIconUri}';
 const SCENARIO_MODE='${config.scenario.mode}';
+const GUIDED_STEPS=${JSON.stringify(guidedStepsData)};
 const ALT_FIRST='${altCfg.firstTurn}';
 const ALT_ENEMY_TURNS=${JSON.stringify(altEnemyTurns)};
 const ALT_REACTIONS=${JSON.stringify(altReactions)};
@@ -407,7 +419,7 @@ let gs={state:'intro',turn:1,failCount:0,playerHP:PLAYER_HP_INIT,
   allPlayerHP:ALL_PLAYERS.map(p=>p.hp),
   allPlayerAlive:ALL_PLAYERS.map(()=>true),
   allPlayerPos:ALL_PLAYERS.map(p=>({col:p.col,row:p.row})),
-  altPlayerTurnIdx:0};
+  altPlayerTurnIdx:0,guidedIdx:0};
 let altTurnIdx=0;
 
 // ─── DOM ───
@@ -436,7 +448,16 @@ window.addEventListener('resize',resize);
 ${audioEngine}
 
 // ─── ACTIVE PLAYER ───
-function activePlayerIdx(){const id=PLT_IDS[gs.altPlayerTurnIdx%PLT_IDS.length];const i=ALL_PLAYERS.findIndex(p=>p.id===id);return i>=0?i:0;}
+function guidedStep(){return GUIDED_STEPS[gs.guidedIdx]||null;}
+function advanceGuided(){gs.guidedIdx++;gs.state='player_turn';highlightMove();}
+function activePlayerIdx(){
+  if(SCENARIO_MODE==='guided'){
+    const st=guidedStep();
+    if(st){const i=ALL_PLAYERS.findIndex(p=>p.id===st.actorId);if(i>=0)return i;}
+    return 0;
+  }
+  const id=PLT_IDS[gs.altPlayerTurnIdx%PLT_IDS.length];const i=ALL_PLAYERS.findIndex(p=>p.id===id);return i>=0?i:0;
+}
 function updateActiveIndicator(){if(SCENARIO_MODE!=='alternating')return;playerEls.forEach((el,i)=>{if(el)el.classList.toggle('active-player',i===activePlayerIdx()&&gs.allPlayerAlive[i]);});}
 let lastHoppedIdx=-1;
 function hopPlayer(pi){
@@ -748,6 +769,7 @@ function playerDies(hint){
 function checkWin(){
   if(!gs.enemyAlive.some(Boolean)){setTimeout(doWin,500);}
   else if(SCENARIO_MODE==='alternating'){setTimeout(runEnemyTurns,400);}
+  else if(SCENARIO_MODE==='guided'){advanceGuided();}
   else{gs.state='player_turn';highlightMove();}
 }
 function doWin(){gs.state='win';clearHex();winScr.classList.add('show');trackAL('CHALLENGE_SOLVED');trackAL('ENDCARD_SHOWN');$('win-cta').addEventListener('click',goStore);}
@@ -1053,7 +1075,7 @@ function resetGame(){
   gs.allPlayerHP=ALL_PLAYERS.map(p=>p.hp);
   gs.allPlayerAlive=ALL_PLAYERS.map(()=>true);
   gs.allPlayerPos=ALL_PLAYERS.map(p=>({col:p.col,row:p.row}));
-  gs.altPlayerTurnIdx=0;
+  gs.altPlayerTurnIdx=0;gs.guidedIdx=0;
   ALL_PLAYERS.forEach((p,i)=>{if(playerHpEls[i])playerHpEls[i].textContent=p.hp;});
   ENEMIES.forEach((_,i)=>{if(enemyHpEls[i])enemyHpEls[i].textContent=ENEMIES[i].hp;});
   ALL_PLAYERS.forEach((p,i)=>{if(playerEls[i]){const img=playerEls[i].querySelector('img');if(p.idleImg){img.src=p.idleImg;img.width=p.w;}}});
