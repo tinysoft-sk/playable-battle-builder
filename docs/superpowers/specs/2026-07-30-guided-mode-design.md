@@ -1,5 +1,7 @@
 # Guided Mode — Design
 
+**Status:** Implemented.
+
 ## Purpose
 
 Add a third battle mode, **Guided**, alongside the existing **Puzzle** and
