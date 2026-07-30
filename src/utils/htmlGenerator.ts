@@ -160,7 +160,9 @@ export function generateHTML(config: BattleConfig, network: NetworkTarget): stri
   const spSP_toggleSel = config.spells.map((_, i) =>
     `if(spSP${i})spSP${i}.classList.toggle('selected',id==='spell${i}');`).join('');
   const spSP_resetAll = config.spells.map((_, i) =>
-    `if(spSP${i})spSP${i}.classList.remove('used','selected');`).join('');
+    `if(spSP${i})spSP${i}.classList.remove('used','selected','guided-locked');`).join('');
+  const spSP_guidedLock = config.spells.map((_, i) =>
+    `if(spSP${i})spSP${i}.classList.toggle('guided-locked',!(st&&st.action==='cast_spell'&&st.spellId==='spell${i}'));`).join('');
   const spSP_events = config.spells.map((_, i) =>
     `if(spSP${i})spSP${i}.addEventListener('click',e=>{e.stopPropagation();selectSpell('spell${i}');});`).join('\n');
   const spellImgsJS = config.spells.map(sp => `'${uri(sp.asset)}'`).join(',');
@@ -268,6 +270,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;touch-action:no
 #speech-bubble{position:absolute;top:${sbLandY}px;left:${sbLandX}px;width:310px;background:rgba(255,255,255,.95);border-radius:14px;padding:10px 14px;font-family:Arial,sans-serif;font-size:${sbLandFS}px;color:#222;line-height:1.5;box-shadow:0 4px 16px rgba(0,0,0,.45);display:none;z-index:30;pointer-events:none;}
 .portrait #speech-bubble{left:${sbPortX}px;top:${sbPortY}px;font-size:${sbPortFS}px;width:535px;}
 #speech-bubble::before{content:'';position:absolute;left:-12px;top:18px;border:7px solid transparent;border-right-color:rgba(255,255,255,.95);}
+@keyframes bubbleNudge{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+#speech-bubble.nudge{animation:bubbleNudge .3s ease;}
 #grid{position:absolute;left:0;top:0;}
 .hex{position:absolute;width:var(--hw,120px);height:var(--hh,80px);background:url('${uri(config.gridTiles.walkable)}') center/100% 100% no-repeat;opacity:.5;cursor:pointer;transition:opacity .12s,filter .12s;}
 .hex:hover{opacity:.75;}
@@ -306,6 +310,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;touch-action:no
 .spell-btn{width:78px;height:78px;position:relative;cursor:pointer;transition:transform .15s,filter .15s;}
 .spell-btn:not(.used):hover{transform:scale(1.1);}
 .spell-btn.used{opacity:.35;pointer-events:none;}
+.spell-btn.guided-locked{opacity:.3;pointer-events:none;filter:grayscale(1);}
 .spell-img{width:100%;height:100%;border-radius:8px;border:3px solid #4af;box-shadow:0 0 10px rgba(0,180,255,.6);display:block;}
 .spell-btn.selected .spell-img{border-color:#ffe600;box-shadow:0 0 18px rgba(255,230,0,.8);}
 .spell-label{position:absolute;bottom:-17px;left:50%;transform:translateX(-50%);color:#fff;font-size:11px;font-weight:700;white-space:nowrap;text-shadow:1px 1px 3px #000;}
@@ -530,6 +535,7 @@ function highlightMove(){
   clearHex();
   const pi=activePlayerIdx();const ap=gs.allPlayerPos[pi];const mr=ALL_PLAYERS[pi].moveRange;
   const k=hexEls[ap.col+','+ap.row];if(k)k.classList.add('selected');
+  if(SCENARIO_MODE==='guided'){highlightGuidedStep();return;}
   for(let c=0;c<COLS;c++)for(let r=0;r<ROWS;r++){
     if(!hexEls[c+','+r])continue;if(c===ap.col&&r===ap.row)continue;
     const eIdx=findEnemyAt(c,r);
@@ -540,7 +546,37 @@ function highlightMove(){
   if(pi!==lastHoppedIdx){lastHoppedIdx=pi;hopPlayer(pi);}
   showAllAttackIcons();
 }
-function highlightTargets(){clearHex();hideAllAttackIcons();ENEMIES.forEach((e,i)=>{if(gs.enemyAlive[i]){const h=hexEls[e.col+','+e.row];if(h)h.classList.add('targetable');}});}
+function highlightGuidedStep(){
+  hideAllAttackIcons();
+  const st=guidedStep();
+  showGuidedTooltip();
+  if(!st)return;
+  if(st.action==='move'){
+    const h=hexEls[st.moveCol+','+st.moveRow];if(h)h.classList.add('reachable');
+    return;
+  }
+  const eIdx=ENEMIES.findIndex(e=>e.id===st.targetId);
+  if(eIdx<0||!gs.enemyAlive[eIdx])return;
+  const e=ENEMIES[eIdx];
+  const h=hexEls[e.col+','+e.row];if(h)h.classList.add('targetable');
+  if(st.action==='cast_spell'){updateGuidedSpellLock();return;}
+  const pi=activePlayerIdx();const ap=ALL_PLAYERS[pi];
+  const src=ap.type==='ranged'?ATTACK_ICON_RANGED:ap.type==='flying'?ATTACK_ICON_FLYING:ATTACK_ICON_MELEE;
+  const el=atkIconEls[eIdx];
+  if(el&&src){const img=el.querySelector('img');if(img)img.src=src;const{x,y}=hexCenter(e.col,e.row);el.style.left=(x-24)+'px';el.style.top=(y-90)+'px';el.style.display='block';}
+}
+function showGuidedTooltip(){const st=guidedStep();if(!st||!st.tooltip){hideSpeech();return;}showSpeech(st.tooltip,0);}
+function updateGuidedSpellLock(){const st=guidedStep();${spSP_guidedLock}}
+function nudgeTooltip(){if(!speechBub)return;speechBub.classList.remove('nudge');requestAnimationFrame(()=>requestAnimationFrame(()=>{speechBub.classList.add('nudge');setTimeout(()=>speechBub.classList.remove('nudge'),320);}));}
+function highlightTargets(){
+  clearHex();hideAllAttackIcons();
+  if(SCENARIO_MODE==='guided'){
+    const st=guidedStep();
+    if(st){const eIdx=ENEMIES.findIndex(e=>e.id===st.targetId);if(eIdx>=0&&gs.enemyAlive[eIdx]){const h=hexEls[ENEMIES[eIdx].col+','+ENEMIES[eIdx].row];if(h)h.classList.add('targetable');}}
+    return;
+  }
+  ENEMIES.forEach((e,i)=>{if(gs.enemyAlive[i]){const h=hexEls[e.col+','+e.row];if(h)h.classList.add('targetable');}});
+}
 
 // ─── PLACEMENT ───
 function placeUnit(el,col,row){if(!el)return;const{x,y}=hexCenter(col,row);el.style.left=x+'px';el.style.top=y+'px';el.style.zIndex=String(10+row*2);}
@@ -912,7 +948,7 @@ function enemyAttackAlt(idx,targetPi,damage,cb){
 ${ctaFn}
 
 // ─── SPELLBOOK ───
-function openSpellbook(){if(!SPELLBOOK_ENABLED)return;startMusic();gs.sbOpen=true;gs.state='spell_select';if(sbIcon&&IMG_SB_OPEN)sbIcon.src=IMG_SB_OPEN;sbPanel.style.display='flex';clearHex();playSound(SFX.sb_open);}
+function openSpellbook(){if(!SPELLBOOK_ENABLED)return;startMusic();gs.sbOpen=true;gs.state='spell_select';if(sbIcon&&IMG_SB_OPEN)sbIcon.src=IMG_SB_OPEN;sbPanel.style.display='flex';clearHex();if(SCENARIO_MODE==='guided')updateGuidedSpellLock();playSound(SFX.sb_open);}
 function closeSpellbook(){gs.sbOpen=false;if(sbIcon&&IMG_SB_CLOSED)sbIcon.src=IMG_SB_CLOSED;sbPanel.style.display='none';gs.selSpell=null;${spSP_reset}if(gs.state==='spell_select'||gs.state==='spell_target'){gs.state='player_turn';highlightMove();}}
 function closeSpellbookSilent(){gs.sbOpen=false;if(sbIcon&&IMG_SB_CLOSED)sbIcon.src=IMG_SB_CLOSED;sbPanel.style.display='none';}
 function selectSpell(id){const idx=parseInt(id.replace('spell',''));if(gs.spellUsed[id])return;gs.selSpell=id;${spSP_toggleSel}gs.state='spell_target';highlightTargets();playSound(SFX.sb_spell);}
