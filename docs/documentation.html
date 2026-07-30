@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Battle Editor — Code Documentation</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #171a21;
+    --border: #2a2f3a;
+    --text: #e6e6e6;
+    --text-muted: #9aa0ab;
+    --accent: #6aa6ff;
+    --accent2: #ffb86a;
+    --code-bg: #11141a;
+    --tag-bg: #232938;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.55;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .layout { display: flex; min-height: 100vh; }
+
+  nav.sidebar {
+    width: 260px;
+    flex-shrink: 0;
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    padding: 24px 16px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  nav.sidebar h1 {
+    font-size: 16px;
+    margin: 0 0 4px;
+    color: var(--text);
+  }
+  nav.sidebar .subtitle {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 20px;
+  }
+  nav.sidebar ul { list-style: none; margin: 0 0 18px; padding: 0; }
+  nav.sidebar li { margin: 2px 0; }
+  nav.sidebar a {
+    display: block;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+  nav.sidebar a:hover { background: var(--tag-bg); color: var(--text); text-decoration: none; }
+  nav.sidebar .group-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--accent2);
+    margin: 18px 0 6px;
+    font-weight: 600;
+  }
+
+  main {
+    flex: 1;
+    padding: 40px 48px 100px;
+    max-width: 920px;
+  }
+  h1, h2, h3, h4 { color: #fff; }
+  h1 { font-size: 28px; }
+  h2 {
+    font-size: 22px;
+    margin-top: 48px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  h3 {
+    font-size: 17px;
+    margin-top: 28px;
+    color: var(--accent);
+  }
+  h4 {
+    font-size: 14px;
+    margin: 18px 0 6px;
+    color: var(--accent2);
+  }
+  p { color: #d6d9de; }
+  .muted { color: var(--text-muted); }
+
+  code, pre, .sig {
+    font-family: "SF Mono", Menlo, Consolas, "Courier New", monospace;
+    font-size: 12.5px;
+  }
+  code {
+    background: var(--code-bg);
+    padding: 2px 5px;
+    border-radius: 4px;
+    color: #c9d6ff;
+  }
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    overflow-x: auto;
+    color: #c9d6ff;
+  }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin: 14px 0;
+  }
+  .card h4 { margin-top: 0; }
+
+  .file-badge {
+    display: inline-block;
+    font-family: monospace;
+    font-size: 11px;
+    background: var(--tag-bg);
+    color: var(--accent2);
+    padding: 2px 8px;
+    border-radius: 5px;
+    margin-bottom: 10px;
+  }
+
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--accent2); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+  tr:last-child td { border-bottom: none; }
+  td code { white-space: nowrap; }
+
+  .pill {
+    display: inline-block;
+    font-size: 10.5px;
+    font-weight: 600;
+    padding: 1px 7px;
+    border-radius: 10px;
+    margin-left: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .pill-action { background: #2d4030; color: #8fe39a; }
+  .pill-type { background: #2d3a4a; color: #8fc4ff; }
+  .pill-component { background: #3a2d4a; color: #d6a6ff; }
+  .pill-util { background: #4a3a2d; color: #ffcf9a; }
+
+  .top-banner {
+    background: linear-gradient(135deg, #1c2333, #161a24);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 8px;
+  }
+  .top-banner p:last-child { margin-bottom: 0; }
+
+  .toc-flow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 16px 0 0;
+  }
+  .toc-flow span {
+    background: var(--tag-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 12px;
+    font-family: monospace;
+    color: var(--accent);
+  }
+  .toc-flow .arrow { color: var(--text-muted); padding: 6px 0; font-family: inherit; background: none; border: none; }
+
+  footer {
+    margin-top: 60px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <nav class="sidebar">
+    <h1>⚔ Battle Editor</h1>
+    <div class="subtitle">Code documentation — generated from <code>src/</code></div>
+
+    <div class="group-title">Overview</div>
+    <ul>
+      <li><a href="#overview">Architecture</a></li>
+      <li><a href="#data-flow">Data flow</a></li>
+    </ul>
+
+    <div class="group-title">Data Model</div>
+    <ul>
+      <li><a href="#types">src/types/battle.ts</a></li>
+    </ul>
+
+    <div class="group-title">State Store</div>
+    <ul>
+      <li><a href="#store-config">DEFAULT_CONFIG</a></li>
+      <li><a href="#store-actions">useBattleStore actions</a></li>
+    </ul>
+
+    <div class="group-title">Utilities</div>
+    <ul>
+      <li><a href="#asset-encoder">assetEncoder.ts</a></li>
+      <li><a href="#html-generator">htmlGenerator.ts</a></li>
+      <li><a href="#runtime-engine">Generated playable engine</a></li>
+    </ul>
+
+    <div class="group-title">Components</div>
+    <ul>
+      <li><a href="#app">App.tsx</a></li>
+      <li><a href="#asset-upload">AssetUpload</a></li>
+      <li><a href="#library">LibraryPanel / LibraryPickerModal</a></li>
+      <li><a href="#templates">TemplatesModal</a></li>
+      <li><a href="#panels">Config panels</a></li>
+      <li><a href="#export">ExportDialog</a></li>
+      <li><a href="#preview">LivePreview</a></li>
+    </ul>
+  </nav>
+
+  <main>
+    <div class="top-banner">
+      <h1 style="margin-top:0">Battle Editor — Function &amp; Module Reference</h1>
+      <p>
+        This is a reference for everyone working on the <strong>Battle Editor</strong> codebase — a React +
+        TypeScript app for visually building "hex-grid battle" HTML5 playable ads, previewing them live,
+        and exporting them for Facebook, Google Ads, Unity/AppLovin and Mintegral.
+      </p>
+      <p>It documents every exported function, store action, component and the embedded playable runtime
+        that gets generated into the final ad file.</p>
+    </div>
+
+    <h2 id="overview">Architecture overview</h2>
+    <p>The app is a single-page editor built around one shared state object, <code>BattleConfig</code>
+      (the entire battle definition: units, heroes, spells, scenario, popups, assets, audio, layout).
+      Every panel in the left navigation reads and writes pieces of this config through a single
+      Zustand store. A live preview and an export dialog both turn the current config into a
+      self-contained, runnable HTML5 playable via one function: <code>generateHTML()</code>.</p>
+
+    <h3 id="data-flow">Data flow</h3>
+    <div class="toc-flow">
+      <span>Config Panels (UnitsPanel, SpellsPanel, …)</span>
+      <span class="arrow">→</span>
+      <span>useBattleStore (Zustand)</span>
+      <span class="arrow">→</span>
+      <span>BattleConfig</span>
+      <span class="arrow">→</span>
+      <span>generateHTML(config, network)</span>
+      <span class="arrow">→</span>
+      <span>LivePreview (iframe) / ExportDialog (download)</span>
+    </div>
+    <p style="margin-top:14px">
+      Assets (images/audio) are uploaded as base64 data URIs (<code>assetEncoder.encodeFile</code>)
+      and stored directly inside <code>BattleConfig</code>, so the exported HTML is fully self-contained
+      with no external file references (except Mintegral, which is split into <code>index.html</code> + <code>main.js</code>).
+    </p>
+
+    <!-- ============ DATA MODEL ============ -->
+    <h2 id="types">Data model — <code>src/types/battle.ts</code></h2>
+    <p>Pure TypeScript types describing the shape of a battle. This is the "schema" that every panel
+      edits and that <code>generateHTML</code> consumes.</p>
+
+    <table>
+      <tr><th>Type</th><th>Description</th></tr>
+      <tr><td><code>UnitType</code></td><td><code>'melee' | 'ranged' | 'flying'</code> — combat behavior &amp; AI used in the generated playable.</td></tr>
+      <tr><td><code>SpellElement</code></td><td><code>'fire' | 'ice'</code> — element used for spell graphics, SFX and unit resistances.</td></tr>
+      <tr><td><code>NetworkTarget</code></td><td><code>'facebook' | 'google' | 'unity' | 'mintegral'</code> — export targets handled by <code>generateHTML</code> and <code>ExportDialog</code>.</td></tr>
+      <tr><td><code>AssetData</code></td><td>An uploaded asset: <code>{ dataUri, mimeType, fileName }</code>. Used everywhere an image/audio file is stored.</td></tr>
+      <tr><td><code>UnitConfig</code></td><td>One player or enemy unit: stats (hp, damage, defense, multiplier), grid position, sprite size, move range, elemental resistances, flip, and idle/attack sprite assets.</td></tr>
+      <tr><td><code>HeroConfig</code></td><td>Decorative hero portrait shown on the left/right of the battle screen: asset, flip, and X/Y position.</td></tr>
+      <tr><td><code>SpellConfig</code></td><td>One spellbook entry: id, name, element, projectile sprite, and shoot/hit sound effects.</td></tr>
+      <tr><td><code>FailCondition</code></td><td>One of four fixed fail scenarios (<code>A–D</code>) with its trigger type and the hint text lines shown to the player on failure.</td></tr>
+      <tr><td><code>WinStep</code></td><td>One step of the "puzzle mode" winning sequence: which unit acts, what action (<code>cast_spell</code> / <code>melee_attack</code> / <code>ranged_attack</code>), optional spell, and target.</td></tr>
+      <tr><td><code>PostKillRetaliation</code></td><td>Defines a scripted retaliation: when <code>killedUnitId</code> dies, <code>retaliatorUnitId</code> deals <code>damage</code> and shows speech/follow-up text.</td></tr>
+      <tr><td><code>EnemyTurnDef</code></td><td>One scripted enemy turn in "alternating mode": attacker, action (<code>attack</code>/<code>move</code>), target, damage, speech, and move-to grid cell.</td></tr>
+      <tr><td><code>AttackReaction</code></td><td>Per-enemy retaliation rule for alternating mode: whether the enemy retaliates when attacked, and with how much damage/speech.</td></tr>
+      <tr><td><code>PlayerTurnDef</code></td><td>One entry in the player turn order for alternating mode (which player unit acts).</td></tr>
+      <tr><td><code>AlternatingConfig</code></td><td>Full alternating-mode setup: who goes first, the player/enemy turn lists, and attack reactions.</td></tr>
+      <tr><td><code>BattleScenario</code></td><td>Top-level scenario config: <code>mode</code> (<code>'puzzle' | 'alternating'</code>), winning sequence, fail conditions, retaliations, and alternating config.</td></tr>
+      <tr><td><code>PopupConfig</code></td><td>Victory and defeat popup assets (banner, board, buttons) plus defeat hint text color.</td></tr>
+      <tr><td><code>BattleConfig</code></td><td>The root object: id, name, spellbook toggle, player/enemy units, heroes, spells, scenario, popups, backgrounds, store URLs/CTA, audio, grid tiles, UI icons, app icon, grid offset, hint &amp; speech bubble layout.</td></tr>
+      <tr><td><code>AUDIO_EVENTS</code> / <code>AudioEvent</code></td><td>Fixed list of 19 sound-effect "slots" (e.g. <code>spell1_shoot</code>, <code>melee_death</code>, <code>fail</code>) that can each have an audio asset assigned in <code>AudioPanel</code>.</td></tr>
+    </table>
+
+    <!-- ============ STORE ============ -->
+    <h2 id="store-config">State store — <code>src/store/battleStore.ts</code></h2>
+    <span class="file-badge">src/store/battleStore.ts</span>
+    <p>A single <a href="https://github.com/pmndrs/zustand" target="_blank">Zustand</a> store
+      (<code>useBattleStore</code>) holds the entire editor state: the active <code>config</code>
+      (<code>BattleConfig</code>), an undo/redo history, the saved asset <strong>library</strong>
+      (persisted to <code>localStorage</code>), and in-session <strong>templates</strong>.</p>
+
+    <h4>DEFAULT_CONFIG</h4>
+    <div class="card">
+      <p><code>export const DEFAULT_CONFIG: BattleConfig</code></p>
+      <p class="muted">The starting battle used on first load and on "Reset to default": one melee
+        player unit ("Frostwolf"), two enemies (a flying "Valkyrie" and a ranged "Armored Giant"),
+        two spells (Fireball / Ice Shard), a puzzle-mode scenario with a 2-step winning sequence,
+        4 fail conditions, one retaliation, and default popup/store/audio/layout settings.</p>
+    </div>
+
+    <h4>Helper functions (internal)</h4>
+    <table>
+      <tr><th>Function</th><th>Description</th></tr>
+      <tr><td><code>loadLibrary(): LibraryAsset[]</code></td><td>Reads the saved asset library from <code>localStorage</code> (key <code>battle-editor-library</code>); returns <code>[]</code> if missing/invalid.</td></tr>
+      <tr><td><code>saveLibrary(lib)</code></td><td>Persists the asset library array to <code>localStorage</code>.</td></tr>
+      <tr><td><code>emptyAudioMap()</code></td><td>Builds a <code>{ [AudioEvent]: null }</code> map used to initialize/normalize <code>config.audio.sfxMap</code>.</td></tr>
+      <tr><td><code>pushUndo(get)</code></td><td>Returns updated <code>undoStack</code>/<code>redoStack</code> values (pushes the current config onto undo, clears redo, caps history at 50 entries). Spread into nearly every mutating action.</td></tr>
+    </table>
+
+    <h3 id="store-actions">useBattleStore actions</h3>
+    <p>All of the following are properties on the store returned by <code>useBattleStore()</code>.
+      Almost every mutating action calls <code>pushUndo</code> first, so any change can be reverted with <code>undo()</code>.</p>
+
+    <h4>History <span class="pill pill-action">actions</span></h4>
+    <table>
+      <tr><th>Action</th><th>Description</th></tr>
+      <tr><td><code>undo()</code></td><td>Restores the previous config from <code>undoStack</code> and pushes the current one onto <code>redoStack</code>.</td></tr>
+      <tr><td><code>redo()</code></td><td>Re-applies the next config from <code>redoStack</code>.</td></tr>
+    </table>
+
+    <h4>Loading / resetting the whole config <span class="pill pill-action">actions</span></h4>
+    <table>
+      <tr><th>Action</th><th>Description</th></tr>
+      <tr><td><code>loadConfig(c: BattleConfig)</code></td><td>Replaces the active config with <code>c</code>, deep-merging it onto <code>DEFAULT_CONFIG</code> so any fields missing from an older/exported JSON get safe defaults. Clears undo/redo history.</td></tr>
+      <tr><td><code>resetToDefault()</code></td><td>Restores <code>DEFAULT_CONFIG</code> (with a fresh <code>id</code>) and clears undo/redo history.</td></tr>
+    </table>
+
+    <h4>Units <span class="pill pill-action">actions</span></h4>
+    <table>
+      <tr><th>Action</th><th>Description</th></tr>
+      <tr><td><code>setName(name: string)</code></td><td>Sets the battle/project name (shown in the header).</td></tr>
+      <tr><td><code>updatePlayerUnit(id, patch)</code></td><td>Merges <code>patch</code> into the player unit with the given <code>id</code>.</td></tr>
+      <tr><td><code>addPlayerUnit()</code></td><td>Adds a new default melee player unit (no-op once 6 units exist).</td></tr>
+      <tr><td><code>removePlayerUnit(id)</code></td><td>Removes a player unit by id (no-op if only 1 remains).</td></tr>
+      <tr><td><code>updateEnemyUnit(id, patch)</code></td><td>Merges <code>patch</code> into the enemy unit with the given <code>id</code>.</td></tr>
+      <tr><td><code>addEnemyUnit()</code></td><td>Adds a new default ranged enemy unit (no-op once 6 units exist).</td></tr>
+      <tr><td><code>removeEnemyUnit(id)</code></td><td>Removes an enemy unit by id (no-op if only 1 remains).</td></tr>
+    </table>
+
+    <h4>Heroes &amp; layout <span class="pill pill-action">actions</span></h4>
+    <table>
+      <tr><th>Action</th><th>Description</th></tr>
+      <tr><td><code>setHeroLeft(patch)</code> / <code>setHeroRight(patch)</code></td><td>Merges a partial update into the left/right hero portrait config (asset, position, flip).</td></tr>
+      <tr><td><code>setGridOffset(key, value)</code></td><td>Sets the vertical pixel offset of the battle grid for <code>'landscape'</code> or <code>'portrait'</code> orientation.</td></tr>
+      <tr><td><code>setHintLayout(patch)</code></td><td>Updates fail-hint text position/font-size for landscape and portrait.</td></tr>
+      <tr><td><code>setSpeechLayout(patch)</code></td><td>Updates speech-bubble position/font-size for landscape and portrait.</td></tr>
+    </table>
+
+    <h4>Spells &amp; spellbook <span class="pill pill-action">actions</span></h4>
+    <table>
+      <tr><th>Action</th><th>Description</th></tr>
+      <tr><td><code>updateSpell(id, patch)</code></td><td>Merges a partial update into the spell with the given id (name, element, projectile/SFX assets).</td></tr>
+      <tr><td><code>setSpellbookEnabled(enabled)</code></td><td>Toggles whether the spellbook UI appears in the generated playable.</td></tr>
+      <tr><td><code>setUiAsset(key, asset)</code></td><td>Sets one of the shared UI icons: <code>spellbookClosed</code>, <code>spellbookOpen</code>, <code>meleeIcon</code>, <code>rangedIcon</code>, <code>flyingIcon</code>.</td></tr>
+    </table>
+
+    <h4>Scenario (puzzle / alternating modes) <span class="pill pill-action">actions</span></h4>
+    <table>
+      <tr><th>Action</th><th>Description</th></tr>
+      <tr><td><code>setScenario(patch)</code></td><td>Merges a partial update into <code>config.scenario</code> (mode, winning sequence, fail conditions, retaliations).</td></tr>
+      <tr><td><code>addEnemyTurn()</code></td><td>Appends a new default enemy turn to <code>scenario.alternating.enemyTurns</code> (attacker defaults to the first enemy unit).</td></tr>
+      <tr><td><code>removeEnemyTurn(id)</code></td><td>Removes an enemy turn from the alternating turn order.</td></tr>
+      <tr><td><code>updateEnemyTurn(id, patch)</code></td><td>Merges a partial update into one enemy turn.</td></tr>
+      <tr><td><code>updateAttackReaction(enemyUnitId, patch)</code></td><td>Updates (or creates) the retaliation rule for a given enemy unit in alternating mode.</td></tr>
+      <tr><td><code>addPlayerTurn()</code></td><td>Appends a new player turn (defaults to the first player unit) to the alternating turn order.</td></tr>
+      <tr><td><code>removePlayerTurn(id)</code></td><td>Removes a player turn (no-op if it would leave the list empty).</td></tr>
+      <tr><td><code>updatePlayerTurn(id, patch)</code></td><td>Merges a partial update into one player turn (e.g. change which unit acts).</td></tr>
+    </table>
+
+    <h4>Popups, backgrounds, store, audio, app icon <span class="pill pill-action">actions</span></h4>
+    <table>
+      <tr><th>Action</th><th>Description</th></tr>
+      <tr><td><code>setPopups(patch)</code></td><td>Merges a partial update into <code>config.popups</code> (victory/defeat banners, boards, buttons, hint color).</td></tr>
+      <tr><td><code>setBackground(key, asset)</code></td><td>Sets the <code>'landscape'</code> or <code>'portrait'</code> background image.</td></tr>
+      <tr><td><code>setGridTile(key, asset)</code></td><td>Sets the <code>'walkable'</code> or <code>'active'</code> hex tile image.</td></tr>
+      <tr><td><code>setAppIcon(asset)</code></td><td>Sets the app icon shown on win/defeat popups.</td></tr>
+      <tr><td><code>setStore(patch)</code></td><td>Merges a partial update into <code>config.store</code> (iOS/Android store URLs, fail count before showing the CTA button).</td></tr>
+      <tr><td><code>setMusic(asset)</code></td><td>Sets the background music track.</td></tr>
+      <tr><td><code>setSfx(event, asset)</code></td><td>Sets the sound effect for one of the 19 <code>AUDIO_EVENTS</code> slots.</td></tr>
+    </table>
+
+    <h4>Library &amp; templates <span class="pill pill-action">actions</span></h4>
+    <table>
+      <tr><th>Action</th><th>Description</th></tr>
+      <tr><td><code>addToLibrary(asset)</code></td><td>Saves an asset (image/audio) into the persistent library with a new id, and writes it to <code>localStorage</code>.</td></tr>
+      <tr><td><code>removeFromLibrary(id)</code></td><td>Removes an asset from the library and updates <code>localStorage</code>.</td></tr>
+      <tr><td><code>saveTemplate(name)</code></td><td>Snapshots the current config as a named, timestamped <code>TemplateEntry</code> (kept in memory for the session).</td></tr>
+      <tr><td><code>loadTemplate(id)</code></td><td>Replaces the active config with a saved template's config (new id, undo/redo cleared).</td></tr>
+      <tr><td><code>deleteTemplate(id)</code></td><td>Removes a saved template from the session list.</td></tr>
+    </table>
+
+    <!-- ============ UTILITIES ============ -->
+    <h2 id="asset-encoder">Utilities — <code>src/utils/assetEncoder.ts</code></h2>
+    <span class="file-badge">src/utils/assetEncoder.ts</span>
+    <table>
+      <tr><th>Function</th><th>Description</th></tr>
+      <tr><td><code>encodeFile(file: File): Promise&lt;AssetData&gt;</code></td><td>Reads a browser <code>File</code> (image/audio upload) and resolves it to an <code>AssetData</code> object containing a base64 <code>dataUri</code>, its <code>mimeType</code>, and <code>fileName</code>.</td></tr>
+      <tr><td><code>formatBytes(bytes: number): string</code></td><td>Formats a byte count as a human-readable string (<code>B</code> / <code>KB</code> / <code>MB</code>), used to show file sizes in the Export dialog.</td></tr>
+      <tr><td><code>estimateSize(html: string): number</code></td><td>Returns the byte size of a generated HTML string (via <code>Blob</code>), used to check it against each network's size limit.</td></tr>
+    </table>
+
+    <h2 id="html-generator">Playable generator — <code>src/utils/htmlGenerator.ts</code></h2>
+    <span class="file-badge">src/utils/htmlGenerator.ts</span>
+    <div class="card">
+      <h4>generateHTML(config: BattleConfig, network: NetworkTarget): string</h4>
+      <p>The single most important function in the project. Takes the full <code>BattleConfig</code> and a
+        target network, and returns a <strong>complete, self-contained HTML document</strong> — markup,
+        CSS, embedded assets (as data URIs) and a JavaScript game engine — that runs the hex-grid battle
+        as a playable ad.</p>
+      <p class="muted">Used by both <code>LivePreview</code> (rendered live in an iframe) and
+        <code>ExportDialog</code> (downloaded per network).</p>
+      <ul>
+        <li>Strips audio entirely when <code>network === 'facebook'</code> (<code>hasAudio</code> flag) to meet its strict size limit.</li>
+        <li>Inlines all unit/spell/UI/background/audio assets as data URIs so the file needs no external resources.</li>
+        <li>Serializes scenario data (enemies, retaliations, fail-condition hints, alternating turn order &amp; reactions, winning sequence) into JS constants consumed by the embedded engine.</li>
+        <li>For Mintegral exports, <code>ExportDialog</code> later splits the returned HTML at the inline <code>&lt;script&gt;</code> tag into <code>index.html</code> + <code>main.js</code>.</li>
+      </ul>
+    </div>
+
+    <h4>Internal helpers</h4>
+    <table>
+      <tr><th>Function</th><th>Description</th></tr>
+      <tr><td><code>uri(asset)</code></td><td>Returns an asset's <code>dataUri</code>, or <code>''</code> if the asset is null/undefined.</td></tr>
+      <tr><td><code>hintFor(config, trigger)</code></td><td>Looks up the fail condition matching <code>trigger</code> and joins its hint lines with <code>&lt;br&gt;</code>, for embedding into the generated hint text.</td></tr>
+    </table>
+
+    <h3 id="runtime-engine">Generated playable runtime (embedded JS engine)</h3>
+    <p>The bulk of <code>htmlGenerator.ts</code> (~700 lines) is a JavaScript template string that becomes
+      the <code>&lt;script&gt;</code> of the exported playable. It implements the actual hex-grid battle
+      game that the player interacts with. These functions <strong>do not run in the editor</strong> —
+      they run inside the generated ad. Grouped by responsibility:</p>
+
+    <h4>Grid &amp; layout</h4>
+    <table>
+      <tr><th>Function</th><th>Description</th></tr>
+      <tr><td><code>resize()</code></td><td>Recomputes hex grid geometry (<code>cur</code>) for the current viewport size/orientation and repositions all units.</td></tr>
+      <tr><td><code>refreshLayout()</code></td><td>Re-applies hint/speech layout values on resize/orientation change.</td></tr>
+      <tr><td><code>buildGrid()</code></td><td>Creates the DOM hex cells for the 5×4 grid and wires up click handlers.</td></tr>
+      <tr><td><code>clearHex()</code></td><td>Removes all highlight classes from grid cells.</td></tr>
+      <tr><td><code>hexCenter(col,row)</code> / <code>toCube(col,row)</code> / <code>hexDist(...)</code></td><td>Hex-grid math: pixel center of a cell, axial→cube coordinate conversion, and distance between two cells (for range checks).</td></tr>
+      <tr><td><code>placeUnit(el,col,row)</code></td><td>Positions a unit's DOM element at a grid cell and sets its stacking order.</td></tr>
+    </table>
+
+    <h4>Occupancy &amp; pathing</h4>
+    <table>
+      <tr><th>Function</th><th>Description</th></tr>
+      <tr><td><code>findEnemyAt(c,r)</code> / <code>findPlayerAt(c,r)</code> / <code>occupied(c,r)</code></td><td>Look up which unit (if any) occupies a grid cell.</td></tr>
+      <tr><td><code>nearestAdjacentTo(...)</code></td><td>Finds the nearest free cell adjacent to a target, used for melee movement.</td></tr>
+      <tr><td><code>findAttackHex(...)</code></td><td>Finds a cell within an enemy's move+attack range from which it can reach the player.</td></tr>
+      <tr><td><code>findBestMoveToward(...)</code></td><td>Greedy pathing helper: picks the best reachable cell toward a target within a move range.</td></tr>
+      <tr><td><code>highlightMove()</code></td><td>Highlights cells the active unit can currently move to.</td></tr>
+      <tr><td><code>highlightTargets()</code></td><td>Highlights enemy cells that are valid spell targets.</td></tr>
+      <tr><td><code>findNearestEnemy(px,py)</code></td><td>Finds the closest living enemy to a pixel position (used for default targeting).</td></tr>
+    </table>
+
+    <h4>Units, HP &amp; death</h4>
+    <table>
+      <tr><th>Function</th><th>Description</th></tr>
+      <tr><td><code>setPlayerHP(val)</code> / <code>setPlayerHPFor(pi,val)</code> / <code>setEnemyHP(idx,val)</code></td><td>Update HP state and the corresponding HP badge UI for player(s)/enemies.</td></tr>
+      <tr><td><code>playerDiesAt(pi,hint)</code> / <code>playerDies(hint)</code></td><td>Handle a player unit's death animation and trigger the fail flow if all players are down.</td></tr>
+      <tr><td><code>killEnemy(idx,cb)</code> / <code>killUnit(el,x,y,color,sfxKey,cb)</code></td><td>Play death VFX/SFX for a unit and mark it dead.</td></tr>
+      <tr><td><code>flashBadge(u)</code></td><td>Flashes a unit's HP badge when it takes damage.</td></tr>
+      <tr><td><code>floatText(text,x,y,cls)</code></td><td>Spawns a floating damage/text number above a unit.</td></tr>
+      <tr><td><code>deathBurst(x,y,color)</code></td><td>Spawns a radial "burst" VFX element at a death location.</td></tr>
+      <tr><td><code>shakeUnit(el,cb)</code></td><td>Applies a screen-shake animation class to a unit element.</td></tr>
+      <tr><td><code>calcDamage(baseDmg,mult,def)</code></td><td>Computes final damage: <code>max(1, floor(base * multiplier - defense))</code>.</td></tr>
+    </table>
+
+    <h4>Combat — movement &amp; attacks</h4>
+    <table>
+      <tr><th>Function</th><th>Description</th></tr>
+      <tr><td><code>movePlayerTo(col,row,cb)</code></td><td>Animates the active player unit moving to a grid cell.</td></tr>
+      <tr><td><code>hopPlayer(pi)</code></td><td>Small hop animation for a player unit.</td></tr>
+      <tr><td><code>playerSwingAttack(cb)</code> / <code>playerAttackAlt(eIdx,cb)</code></td><td>Melee swing attack animation for the player, in puzzle mode and alternating mode respectively.</td></tr>
+      <tr><td><code>playerFlyAttack(eIdx,dmg,cb)</code></td><td>Flying-unit attack animation/damage application for the player.</td></tr>
+      <tr><td><code>applyDamageToEnemy(eIdx,dmg,cb)</code></td><td>Applies computed damage to an enemy, updates HP UI, and triggers death/retaliation if HP reaches 0.</td></tr>
+      <tr><td><code>doMeleeWalkAttack(eIdx,targetPi,cb)</code></td><td>Enemy walks adjacent to a target and performs a melee attack.</td></tr>
+      <tr><td><code>animateEnemyChargeAt(idx,targetPi,cb)</code> / <code>animateEnemyCharge(idx,cb)</code></td><td>Charge attack animation for ranged/flying enemies toward a (specific or active) player target.</td></tr>
+      <tr><td><code>animateEnemyMoveAlt(eIdx,toCol,toRow,cb)</code></td><td>Animates an enemy moving to a cell during its alternating-mode turn.</td></tr>
+      <tr><td><code>enemyAttack(idx,hint)</code> / <code>enemySwingAttack(idx,cb)</code> / <code>enemyAttackAlt(idx,targetPi,damage,cb)</code></td><td>Enemy attack execution in puzzle mode vs. alternating mode, including hit animation and damage.</td></tr>
+      <tr><td><code>doRetaliation(killedId,cb)</code></td><td>Executes a scripted <code>PostKillRetaliation</code> when the matching unit dies (speech + damage + follow-up).</td></tr>
+      <tr><td><code>runEnemyTurns()</code></td><td>Steps through the AI/enemy turns for the current round in alternating mode.</td></tr>
+    </table>
+
+    <h4>Spells &amp; spellbook</h4>
+    <table>
+      <tr><th>Function</th><th>Description</th></tr>
+      <tr><td><code>openSpellbook()</code> / <code>closeSpellbook()</code> / <code>closeSpellbookSilent()</code></td><td>Open/close the spellbook UI panel; "silent" skips state-machine side effects.</td></tr>
+      <tr><td><code>selectSpell(id)</code></td><td>Selects a spell from the spellbook and switches to target-selection state.</td></tr>
+      <tr><td><code>castSpell(targetCol,targetRow)</code></td><td>Resolves casting the selected spell at a target cell: projectile animation, damage, resistances, and marking the spell as used.</td></tr>
+      <tr><td><code>animateSpell(spellIdx,x1,y1,x2,y2,cb)</code></td><td>Animates a spell projectile flying from one point to another.</td></tr>
+    </table>
+
+    <h4>UI feedback (speech, arrows, icons, audio)</h4>
+    <table>
+      <tr><th>Function</th><th>Description</th></tr>
+      <tr><td><code>showSpeech(html,autohide)</code> / <code>hideSpeech()</code></td><td>Show/hide the speech-bubble dialogue with optional auto-hide timeout.</td></tr>
+      <tr><td><code>showArrow(col,row)</code> / <code>hideArrow()</code></td><td>Show/hide the tutorial pointer arrow at a grid cell.</td></tr>
+      <tr><td><code>showAllAttackIcons()</code> / <code>hideAllAttackIcons()</code></td><td>Show/hide the small melee/ranged/flying attack-type icons above units.</td></tr>
+      <tr><td><code>showOutOfReach()</code></td><td>Shows a "Unit is out of reach!" message when the player taps an invalid target.</td></tr>
+      <tr><td><code>trackAL(name)</code></td><td>Fires an AppLovin (MRAID) analytics event if <code>window.ALPlayableAnalytics</code> is present (e.g. <code>DISPLAYED</code>, <code>CHALLENGE_SOLVED</code>, <code>ENDCARD_SHOWN</code>).</td></tr>
+    </table>
+
+    <h4>Game flow &amp; lifecycle</h4>
+    <table>
+      <tr><th>Function</th><th>Description</th></tr>
+      <tr><td><code>initGame()</code></td><td>Entry point — sets up listeners, builds the grid, and starts the intro.</td></tr>
+      <tr><td><code>startIntro()</code> / <code>skipIntro()</code></td><td>Plays (or skips) the opening "Defeat the enemies!" intro with the pointer arrow.</td></tr>
+      <tr><td><code>startTurn()</code></td><td>Begins a turn (player or enemy) according to scenario mode and turn order.</td></tr>
+      <tr><td><code>checkWin()</code> / <code>doWin()</code></td><td>Checks whether the win condition is met and, if so, shows the victory screen and fires analytics.</td></tr>
+      <tr><td><code>doFail(hint)</code></td><td>Shows the fail/defeat screen with the given hint text.</td></tr>
+      <tr><td><code>onHexClick()</code></td><td>Main input handler — interprets a tap on a grid cell depending on game state (move, attack, spell target, etc.).</td></tr>
+      <tr><td><code>resetGame()</code></td><td>Resets all positions, HP, and state back to the initial setup (used by the "Retry" button).</td></tr>
+      <tr><td><code>activePlayerIdx()</code> / <code>updateActiveIndicator()</code></td><td>Track and visually indicate which player unit is acting in alternating mode.</td></tr>
+    </table>
+
+    <!-- ============ COMPONENTS ============ -->
+    <h2 id="app">Components — <code>src/App.tsx</code></h2>
+    <div class="card">
+      <h4>App() <span class="pill pill-component">component</span></h4>
+      <p>The root component. Renders the header (project name, undo/redo, Templates and Export buttons),
+        the left navigation between the 9 config sections (Units, Heroes, Spells, Scenario, Popups,
+        Backgrounds, Store, Audio, Library), the active panel, and the <code>LivePreview</code> pane.
+        Also conditionally renders the <code>ExportDialog</code> and <code>TemplatesModal</code> overlays.</p>
+    </div>
+
+    <h2 id="asset-upload">Shared components</h2>
+
+    <div class="card">
+      <h4 id="asset-upload-fn">AssetUpload({ label, asset, accept, onChange }) <span class="pill pill-component">component</span></h4>
+      <span class="file-badge">src/components/AssetUpload.tsx</span>
+      <p>Generic file-upload control used throughout every panel for images and audio. Shows a thumbnail
+        (image preview or 🔊 icon for audio), lets the user upload a new file (encoded via
+        <code>encodeFile</code>), save the current asset to the library (💾), clear it (✕), or pick an
+        existing asset from the library via <code>LibraryPickerModal</code>.</p>
+    </div>
+
+    <div class="card" id="library">
+      <h4>LibraryPanel() <span class="pill pill-component">component</span></h4>
+      <span class="file-badge">src/components/LibraryPanel.tsx</span>
+      <p>Displays all assets saved to the persistent library (<code>localStorage</code>) with a remove
+        button for each. This is the "Library" tab in the main navigation.</p>
+    </div>
+
+    <div class="card">
+      <h4>LibraryPickerModal({ accept, onSelect, onClose }) <span class="pill pill-component">component</span></h4>
+      <span class="file-badge">src/components/LibraryPickerModal.tsx</span>
+      <p>Modal dialog that lists library assets filtered by type (image vs. audio, based on
+        <code>accept</code>) and lets the user pick one to insert into an <code>AssetUpload</code> slot.</p>
+    </div>
+
+    <div class="card" id="templates">
+      <h4>TemplatesModal({ onClose }) <span class="pill pill-component">component</span></h4>
+      <span class="file-badge">src/components/TemplatesModal.tsx</span>
+      <p>Modal for saving/loading the current config as a named template (session-only), and for
+        exporting/importing the full <code>BattleConfig</code> as a JSON file.</p>
+      <table>
+        <tr><th>Internal function</th><th>Description</th></tr>
+        <tr><td><code>doSave()</code></td><td>Saves the current config as a named template via <code>saveTemplate</code>.</td></tr>
+        <tr><td><code>exportJSON()</code></td><td>Downloads the current <code>BattleConfig</code> as a <code>.json</code> file.</td></tr>
+        <tr><td><code>onImport(e)</code></td><td>Reads a selected <code>.json</code> file, parses it as a <code>BattleConfig</code>, and loads it via <code>loadConfig</code> (with an alert on invalid JSON).</td></tr>
+      </table>
+    </div>
+
+    <h2 id="panels">Config panels — <code>src/components/panels/</code></h2>
+    <p>Each panel is a self-contained form bound directly to <code>useBattleStore</code>, corresponding to one tab in the left navigation.</p>
+
+    <table>
+      <tr><th>Component</th><th>File</th><th>Description</th></tr>
+      <tr><td><code>UnitsPanel()</code></td><td><code>UnitsPanel.tsx</code></td><td>Manages player &amp; enemy units: add/remove (up to 6 each), and edit each unit's stats, sprites, grid position, size, move range and resistances via the internal <code>UnitCard</code> sub-component.</td></tr>
+      <tr><td><code>HeroPanel()</code></td><td><code>HeroPanel.tsx</code></td><td>Configures the left/right hero portraits (image, position, flip) and the landscape/portrait grid vertical offset.</td></tr>
+      <tr><td><code>SpellsPanel()</code></td><td><code>SpellsPanel.tsx</code></td><td>Toggles the spellbook, sets melee/ranged/flying attack-type icons and spellbook open/closed icons, and edits each spell (name, element, projectile, SFX) via the internal <code>SpellCard</code> sub-component.</td></tr>
+      <tr><td><code>ScenarioPanel()</code></td><td><code>ScenarioPanel.tsx</code></td><td>Configures the battle scenario: puzzle vs. alternating mode, winning sequence steps, the 4 fixed fail-condition hint texts, post-kill retaliations, and (for alternating mode) player/enemy turn order and attack reactions.</td></tr>
+      <tr><td><code>PopupsPanel()</code></td><td><code>PopupsPanel.tsx</code></td><td>Sets the app icon and victory/defeat popup assets (banners, boards, buttons), defeat hint text color, and hint/speech bubble layout (position &amp; font size per orientation).</td></tr>
+      <tr><td><code>BackgroundPanel()</code></td><td><code>BackgroundPanel.tsx</code></td><td>Sets landscape/portrait background images and the walkable/active hex tile graphics.</td></tr>
+      <tr><td><code>StorePanel()</code></td><td><code>StorePanel.tsx</code></td><td>Sets the iOS/Android store URLs used for the end-card CTA, and how many fails trigger the store button.</td></tr>
+      <tr><td><code>AudioPanel()</code></td><td><code>AudioPanel.tsx</code></td><td>Sets background music and all 19 <code>AUDIO_EVENTS</code> sound effects, each with a human-readable label.</td></tr>
+    </table>
+
+    <h2 id="export">Export — <code>src/components/export/ExportDialog.tsx</code></h2>
+    <div class="card">
+      <h4>ExportDialog({ onClose }) <span class="pill pill-component">component</span></h4>
+      <p>Modal that, for each of the 4 supported networks, generates the playable HTML via
+        <code>generateHTML</code>, estimates its size with <code>estimateSize</code>, and shows whether
+        it's within that network's size limit (Facebook 2&nbsp;MB; Google Ads, Unity/AppLovin and
+        Mintegral 5&nbsp;MB). Lets the user download a single network's build or all four at once.</p>
+      <table>
+        <tr><th>Function</th><th>Description</th></tr>
+        <tr><td><code>downloadSingle(n)</code></td><td>Generates and downloads the build for one network (zipped for Google/Mintegral, plain <code>.html</code> for Facebook/Unity).</td></tr>
+        <tr><td><code>downloadAll()</code></td><td>Sequentially generates and downloads builds for all 4 networks.</td></tr>
+        <tr><td><code>downloadHtml(filename, html)</code></td><td>Triggers a browser download of a raw HTML string as a <code>.html</code> file.</td></tr>
+        <tr><td><code>downloadZip(network, slug, html)</code></td><td>Builds a <code>.zip</code> via <code>fflate</code>: a single <code>index.html</code> for Google, or an <code>index.html</code> + <code>main.js</code> pair for Mintegral (splitting the inline <code>&lt;script&gt;</code> out of the HTML).</td></tr>
+      </table>
+    </div>
+
+    <h2 id="preview">Live preview — <code>src/components/preview/LivePreview.tsx</code></h2>
+    <div class="card">
+      <h4>LivePreview() <span class="pill pill-component">component</span></h4>
+      <p>Renders the current config as a live, playable iframe (using the <code>'unity'</code> network
+        variant of <code>generateHTML</code>, which includes audio). Regenerates the preview ~400ms
+        after any config change (debounced), and supports toggling landscape/portrait orientation and
+        restarting the playable in place.</p>
+      <table>
+        <tr><th>Function</th><th>Description</th></tr>
+        <tr><td><code>refresh()</code></td><td>Regenerates the HTML for the current config and writes it to the iframe's <code>srcdoc</code>.</td></tr>
+        <tr><td><code>handleRestart()</code></td><td>Clears and re-injects the iframe's <code>srcdoc</code> to restart the playable from scratch without a full reload.</td></tr>
+      </table>
+    </div>
+
+    <footer>
+      Generated for the Battle Editor team — covers <code>src/store</code>, <code>src/utils</code>,
+      <code>src/types</code> and <code>src/components</code> as of the current codebase. Regenerate this
+      document after major changes to <code>battleStore.ts</code> or <code>htmlGenerator.ts</code>.
+    </footer>
+  </main>
+</div>
+</body>
+</html>

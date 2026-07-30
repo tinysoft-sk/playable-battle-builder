@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Battle Editor — Playable Ad Guide (Marketing)</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #171a21;
+    --border: #2a2f3a;
+    --text: #e6e6e6;
+    --text-muted: #9aa0ab;
+    --accent: #7fd9a0;
+    --accent2: #ffb86a;
+    --code-bg: #11141a;
+    --tag-bg: #1f2a24;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .layout { display: flex; min-height: 100vh; }
+
+  nav.sidebar {
+    width: 270px;
+    flex-shrink: 0;
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    padding: 24px 16px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  nav.sidebar h1 { font-size: 16px; margin: 0 0 4px; color: var(--text); }
+  nav.sidebar .subtitle { font-size: 12px; color: var(--text-muted); margin-bottom: 20px; }
+  nav.sidebar ul { list-style: none; margin: 0 0 18px; padding: 0; }
+  nav.sidebar li { margin: 2px 0; }
+  nav.sidebar a {
+    display: block; padding: 4px 8px; border-radius: 6px;
+    font-size: 13px; color: var(--text-muted);
+  }
+  nav.sidebar a:hover { background: var(--tag-bg); color: var(--text); text-decoration: none; }
+  nav.sidebar .group-title {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--accent2); margin: 18px 0 6px; font-weight: 600;
+  }
+
+  main { flex: 1; padding: 40px 48px 100px; max-width: 920px; }
+  h1, h2, h3, h4 { color: #fff; }
+  h1 { font-size: 28px; }
+  h2 {
+    font-size: 22px; margin-top: 48px; padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  h3 { font-size: 17px; margin-top: 26px; color: var(--accent); }
+  h4 { font-size: 14px; margin: 16px 0 6px; color: var(--accent2); }
+  p { color: #d6d9de; }
+  .muted { color: var(--text-muted); font-size: 13px; }
+
+  .card {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px 18px; margin: 14px 0;
+  }
+  .card h4 { margin-top: 0; }
+
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--accent2); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+  tr:last-child td { border-bottom: none; }
+
+  .pill {
+    display: inline-block; font-size: 10.5px; font-weight: 600;
+    padding: 1px 7px; border-radius: 10px; margin-left: 6px;
+    text-transform: uppercase; letter-spacing: 0.03em;
+    background: var(--tag-bg); color: var(--accent);
+  }
+
+  .top-banner {
+    background: linear-gradient(135deg, #19271f, #161a24);
+    border: 1px solid var(--border); border-radius: 12px;
+    padding: 24px; margin-bottom: 8px;
+  }
+  .top-banner p:last-child { margin-bottom: 0; }
+
+  ul.feature-list { padding-left: 20px; }
+  ul.feature-list li { margin: 6px 0; }
+
+  .step-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px; margin: 16px 0;
+  }
+  .step {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px;
+  }
+  .step .num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 24px; height: 24px; border-radius: 50%;
+    background: var(--accent); color: #0f1115; font-weight: 700; font-size: 12px;
+    margin-bottom: 8px;
+  }
+
+  .badge-net {
+    display: inline-block; font-size: 11px; font-weight: 600;
+    padding: 2px 9px; border-radius: 6px; background: var(--tag-bg);
+    color: var(--accent); margin-right: 6px; margin-bottom: 4px;
+  }
+
+  .checklist { list-style: none; padding-left: 0; }
+  .checklist li { margin: 8px 0; padding-left: 26px; position: relative; }
+  .checklist li::before {
+    content: "✔"; position: absolute; left: 0; color: var(--accent); font-weight: 700;
+  }
+
+  .scenario-card {
+    border-left: 3px solid var(--accent);
+    padding: 10px 16px; margin: 12px 0; background: var(--panel);
+    border-radius: 0 8px 8px 0;
+  }
+  .scenario-card h4 { margin-top: 0; }
+
+  footer {
+    margin-top: 60px; padding-top: 16px; border-top: 1px solid var(--border);
+    color: var(--text-muted); font-size: 12px;
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <nav class="sidebar">
+    <h1>⚔ Battle Editor</h1>
+    <div class="subtitle">Playable Ad Guide — for Marketing &amp; Creative</div>
+
+    <div class="group-title">Getting started</div>
+    <ul>
+      <li><a href="#what-is-it">What is this tool?</a></li>
+      <li><a href="#workflow">How a playable gets made</a></li>
+    </ul>
+
+    <div class="group-title">Building blocks</div>
+    <ul>
+      <li><a href="#units">Characters (Units)</a></li>
+      <li><a href="#heroes">Hero Portraits</a></li>
+      <li><a href="#spells">Spells &amp; Spellbook</a></li>
+      <li><a href="#scenario">Battle Scenarios</a></li>
+      <li><a href="#popups">End Screens &amp; CTA</a></li>
+      <li><a href="#backgrounds">Backgrounds &amp; Grid</a></li>
+      <li><a href="#audio">Music &amp; Sound</a></li>
+      <li><a href="#layout">Text &amp; Layout</a></li>
+    </ul>
+
+    <div class="group-title">Production</div>
+    <ul>
+      <li><a href="#library">Asset Library</a></li>
+      <li><a href="#templates">Templates &amp; JSON</a></li>
+      <li><a href="#preview">Live Preview</a></li>
+      <li><a href="#export">Exporting for Ad Networks</a></li>
+    </ul>
+
+    <div class="group-title">Ideas</div>
+    <ul>
+      <li><a href="#combos">Example playable setups</a></li>
+      <li><a href="#checklist">Pre-export checklist</a></li>
+    </ul>
+  </nav>
+
+  <main>
+    <div class="top-banner">
+      <h1 style="margin-top:0">Playable Ad Guide</h1>
+      <p>
+        The <strong>Battle Editor</strong> is a no-code tool for creating "hex-grid battle" HTML5
+        playable ads — the kind of interactive mini-game ad where a user fights enemies on a grid,
+        casts spells, and gets directed to the App/Play Store at the end.
+      </p>
+      <p>
+        This guide explains, in plain terms, <strong>every option available</strong> when building a
+        playable — so creative/marketing can plan a brief, and anyone can self-serve a new variant
+        without touching code.
+      </p>
+    </div>
+
+    <!-- ===================== WHAT IS IT ===================== -->
+    <h2 id="what-is-it">What is this tool?</h2>
+    <p>It's a visual editor with one screen per topic (Units, Spells, Scenario, etc.) and a
+      <strong>live preview</strong> on the right that shows exactly what the final ad will look and
+      play like — including landscape and portrait orientations. When you're happy with it, you
+      export ready-to-upload files for each ad network.</p>
+
+    <h3 id="workflow">How a playable gets made</h3>
+    <div class="step-grid">
+      <div class="step"><span class="num">1</span><div><strong>Pick characters</strong><br>Set up your hero(es) and enemies — art, stats, and where they stand on the battlefield.</div></div>
+      <div class="step"><span class="num">2</span><div><strong>Choose a scenario</strong><br>Decide how the battle plays out: a guided "puzzle" with one correct solution, or a back-and-forth "alternating" fight.</div></div>
+      <div class="step"><span class="num">3</span><div><strong>Add spells &amp; flair</strong><br>Optional spellbook, attack-type icons, sound effects and music.</div></div>
+      <div class="step"><span class="num">4</span><div><strong>Design the end screens</strong><br>Victory and defeat popups, app icon, and store links/CTA.</div></div>
+      <div class="step"><span class="num">5</span><div><strong>Preview &amp; tweak</strong><br>Test it live in landscape and portrait, restart anytime.</div></div>
+      <div class="step"><span class="num">6</span><div><strong>Export</strong><br>Generate ready files for Facebook, Google Ads, Unity/AppLovin and Mintegral.</div></div>
+    </div>
+
+    <!-- ===================== UNITS ===================== -->
+    <h2 id="units">Characters (Units)</h2>
+    <p>A battle has <strong>1–6 player-side units</strong> and <strong>1–6 enemy units</strong>,
+      placed on a 5×4 hex grid. Each unit is fully customizable:</p>
+
+    <table>
+      <tr><th>Option</th><th>What it controls</th></tr>
+      <tr><td>Name</td><td>Internal label only (not shown to players) — useful for keeping track of units in the editor.</td></tr>
+      <tr><td>Type — Melee / Ranged / Flying</td><td>Determines how the unit behaves in battle: melee must walk up to attack, ranged can attack from a distance, flying can move and attack anywhere on the board.</td></tr>
+      <tr><td>HP, Damage, Defense, Damage Multiplier</td><td>Combat stats — how much health it has, how hard it hits, how much incoming damage it blocks, and a multiplier for fine-tuning balance.</td></tr>
+      <tr><td>Grid position (column/row)</td><td>Where the unit starts on the battlefield.</td></tr>
+      <tr><td>Display size</td><td>How large the character's artwork appears.</td></tr>
+      <tr><td>Move range</td><td>How many hexes the unit can move per turn.</td></tr>
+      <tr><td>Elemental resistance (Fire / Ice)</td><td>Makes a unit immune/resistant to a specific spell element — useful for puzzle scenarios ("you can't beat this enemy with the wrong spell").</td></tr>
+      <tr><td>Flip horizontally</td><td>Mirrors the artwork — handy for making the same sprite face left or right.</td></tr>
+      <tr><td>Idle &amp; Attack artwork</td><td>Two images per unit: a resting pose and an attacking pose, used to animate combat.</td></tr>
+    </table>
+    <p class="muted">Add or remove units freely (minimum 1 per side, maximum 6 per side).</p>
+
+    <!-- ===================== HEROES ===================== -->
+    <h2 id="heroes">Hero Portraits</h2>
+    <p>Two optional decorative character portraits — <strong>Left Hero</strong> and
+      <strong>Right Hero</strong> — that frame the battle scene (e.g. your game's main characters
+      watching the fight). For each one you can set:</p>
+    <ul class="feature-list">
+      <li>The portrait artwork</li>
+      <li>Its position on screen (X/Y)</li>
+      <li>Whether it's flipped horizontally</li>
+    </ul>
+    <p>This section also controls the <strong>battlefield grid's vertical position</strong> on screen,
+      separately for landscape and portrait — useful for fitting the grid around your background art.</p>
+
+    <!-- ===================== SPELLS ===================== -->
+    <h2 id="spells">Spells &amp; Spellbook</h2>
+    <p>An optional "spellbook" gives the player access to up to <strong>2 spells</strong>
+      (e.g. Fireball, Ice Shard) that can be cast at enemies during the battle.</p>
+
+    <table>
+      <tr><th>Option</th><th>What it controls</th></tr>
+      <tr><td>Include Spellbook (on/off)</td><td>Turns the entire spell system on or off. If off, the battle is pure melee/ranged combat with no spell UI.</td></tr>
+      <tr><td>Spell name &amp; element (Fire/Ice)</td><td>Each spell has a theme — and enemies can be made resistant to a specific element (see Characters).</td></tr>
+      <tr><td>Spell artwork (projectile)</td><td>The visual that flies from the caster to the target.</td></tr>
+      <tr><td>Cast &amp; impact sound effects</td><td>Separate sounds for "spell launched" and "spell hits target".</td></tr>
+      <tr><td>Spellbook open/closed icons</td><td>The button artwork players tap to open/close the spell menu.</td></tr>
+      <tr><td>Attack-type icons (Melee/Ranged/Flying)</td><td>Small icons that briefly appear over a unit to signal what kind of attack it's performing — purely cosmetic, all optional.</td></tr>
+    </table>
+
+    <!-- ===================== SCENARIO ===================== -->
+    <h2 id="scenario">Battle Scenarios</h2>
+    <p>This is the "gameplay design" section — it determines what the player actually has to <em>do</em>
+      to win, and what happens when they make a mistake. There are <strong>two modes</strong>:</p>
+
+    <div class="scenario-card">
+      <h4>Puzzle Mode <span class="pill">guided</span></h4>
+      <p>The player must perform a <strong>specific sequence of actions</strong> to win — e.g.
+        "cast Fireball on the Valkyrie, then melee-attack the Armored Giant." This is ideal for
+        showcasing a specific mechanic from your game ("only fire beats this enemy") and creating
+        an "aha, I figured it out" moment.</p>
+      <ul class="feature-list">
+        <li><strong>Winning sequence</strong> — the exact ordered steps (which unit, which action — spell/melee/ranged, which target) that lead to victory.</li>
+        <li><strong>Fail conditions &amp; hints</strong> — up to 4 specific mistakes a player can make (e.g. "moved toward the flying enemy", "killed the wrong enemy first", "used the wrong spell element", "wasted a spell"). Each shows a custom multi-line hint to nudge the player toward the right move.</li>
+        <li><strong>Retaliation</strong> — when a specific enemy dies, another enemy can "retaliate" with a scripted counter-attack and dialogue line, adding drama before the final blow.</li>
+      </ul>
+    </div>
+
+    <div class="scenario-card">
+      <h4>Alternating Mode <span class="pill">back-and-forth</span></h4>
+      <p>A more traditional turn-based fight: <strong>player turn, then enemy turn, repeat</strong>
+        until one side is defeated. Good for a more "real game" feel.</p>
+      <ul class="feature-list">
+        <li><strong>Who goes first</strong> — player or enemy.</li>
+        <li><strong>Player turn order</strong> — if you have multiple player units, define which one acts each turn (they can repeat/cycle).</li>
+        <li><strong>Enemy turn script</strong> — for each enemy turn, define the attacker, whether it attacks or moves, the target, damage dealt, a speech/dialogue line, and (for moves) where it moves to.</li>
+        <li><strong>Attack reactions</strong> — per enemy, decide whether being attacked triggers an automatic retaliation, with its own damage amount and dialogue line.</li>
+      </ul>
+    </div>
+
+    <p class="muted">In both modes, the same <strong>fail-condition hint texts</strong> can be used to
+      guide the player back on track, and the same <strong>retaliation</strong> system can add
+      personality to the fight.</p>
+
+    <!-- ===================== POPUPS ===================== -->
+    <h2 id="popups">End Screens &amp; Call-to-Action</h2>
+    <p>What the player sees when the battle ends — this is where the conversion happens.</p>
+
+    <table>
+      <tr><th>Option</th><th>What it controls</th></tr>
+      <tr><td>App icon</td><td>Your game's icon, shown on both the victory and defeat screens.</td></tr>
+      <tr><td>Victory popup</td><td>Banner image, board/background image, and a "Play Now" / CTA button image shown when the player wins.</td></tr>
+      <tr><td>Defeat popup</td><td>Banner, board, a "Retry" button, a "Store" button, and the color of the hint text shown on failure.</td></tr>
+      <tr><td>Store links</td><td>The iOS App Store and Google Play URLs the CTA buttons open.</td></tr>
+      <tr><td>"Show store button after N fails"</td><td>Lets the player retry a few times before the install prompt appears — balances "let them enjoy the game" vs. "drive installs".</td></tr>
+    </table>
+
+    <!-- ===================== BACKGROUNDS ===================== -->
+    <h2 id="backgrounds">Backgrounds &amp; Grid Tiles</h2>
+    <table>
+      <tr><th>Option</th><th>What it controls</th></tr>
+      <tr><td>Landscape background</td><td>Full-screen artwork behind the battle, used when the device is in landscape orientation.</td></tr>
+      <tr><td>Portrait background</td><td>Separate artwork for portrait orientation — the editor's live preview lets you check both.</td></tr>
+      <tr><td>Walkable hex tile</td><td>The graphic shown for grid cells the player can move to.</td></tr>
+      <tr><td>Active/highlighted hex tile</td><td>The graphic shown for the currently selected or targetable cell.</td></tr>
+    </table>
+
+    <!-- ===================== AUDIO ===================== -->
+    <h2 id="audio">Music &amp; Sound</h2>
+    <p>Full audio customization — every sound in the playable can be swapped:</p>
+    <ul class="feature-list">
+      <li><strong>Background music</strong> — looping track for the whole experience.</li>
+      <li><strong>UI sounds</strong> — spellbook open, spell select, walk, grid select.</li>
+      <li><strong>Spell sounds</strong> — separate "cast" and "hit" sounds for each of the two spells.</li>
+      <li><strong>Combat sounds</strong> — distinct attack &amp; death sounds for the player and for each enemy type (melee, ranged, flying).</li>
+      <li><strong>Fail sound</strong> — plays when the player loses.</li>
+    </ul>
+    <p class="muted">Note: for Facebook exports, audio is automatically removed to meet that
+      network's strict 2&nbsp;MB file-size limit (see Exporting below).</p>
+
+    <!-- ===================== LAYOUT ===================== -->
+    <h2 id="layout">Text &amp; Layout Fine-Tuning</h2>
+    <p>For polishing how on-screen text appears in each orientation:</p>
+    <ul class="feature-list">
+      <li><strong>Hint text</strong> (shown on failure) — vertical position and font size, set separately for landscape and portrait.</li>
+      <li><strong>Speech bubble</strong> (dialogue during battle) — horizontal/vertical position and font size, set separately for landscape and portrait.</li>
+    </ul>
+
+    <!-- ===================== PRODUCTION ===================== -->
+    <h2 id="library">Asset Library</h2>
+    <p>Every image or sound you upload can be saved (💾) to a personal <strong>Library</strong> tab.
+      From then on, any upload slot anywhere in the tool can pull that same asset from the library
+      instead of re-uploading — great for reusing a character, icon set, or music track across
+      multiple playable variants.</p>
+
+    <h2 id="templates">Templates &amp; Saved Configs</h2>
+    <p>Two ways to save and reuse a full playable setup:</p>
+    <ul class="feature-list">
+      <li><strong>Templates</strong> — save the current setup with a name for the rest of your session, and reload it instantly. Great for quickly switching between a few variants while iterating.</li>
+      <li><strong>Export/Import as file</strong> — save the entire configuration as a single file you can send to a teammate, archive, or re-load later to continue editing — a full backup of everything: characters, scenario, art, audio, and text settings.</li>
+    </ul>
+    <p class="muted">This makes it easy to produce several creative variants (different art style,
+      different scenario, different CTA) from one base setup without starting from scratch.</p>
+
+    <h2 id="preview">Live Preview</h2>
+    <p>The right-hand panel always shows a <strong>fully playable preview</strong> of the current
+      setup — not a static mockup. You can:</p>
+    <ul class="feature-list">
+      <li>Play through the actual battle exactly as a user would.</li>
+      <li>Toggle between <strong>landscape and portrait</strong> to check both orientations.</li>
+      <li>Hit <strong>Restart</strong> to replay from the beginning after any change.</li>
+      <li><strong>Undo / Redo</strong> any edit from the header at any time.</li>
+    </ul>
+
+    <!-- ===================== EXPORT ===================== -->
+    <h2 id="export">Exporting for Ad Networks</h2>
+    <p>One click generates ready-to-upload files for all major playable ad networks. Each network
+      has its own size limit and file format — the export screen shows the size of your current
+      playable against each limit, with a ✓ or ⚠ warning if it's over budget.</p>
+
+    <table>
+      <tr><th>Network</th><th>File format</th><th>Size limit</th><th>Notes</th></tr>
+      <tr><td><span class="badge-net">Facebook</span></td><td>Single <code>.html</code> file</td><td>2 MB</td><td>Audio is automatically stripped out to help meet this tighter limit.</td></tr>
+      <tr><td><span class="badge-net">Google Ads</span></td><td><code>.zip</code> (containing <code>index.html</code>)</td><td>5 MB</td><td>Includes audio.</td></tr>
+      <tr><td><span class="badge-net">Unity / AppLovin</span></td><td>Single <code>.html</code> file</td><td>5 MB</td><td>Includes audio; this is also the format used for the in-editor Live Preview.</td></tr>
+      <tr><td><span class="badge-net">Mintegral</span></td><td><code>.zip</code> (<code>index.html</code> + <code>main.js</code>)</td><td>5 MB</td><td>Includes audio; code is split into two files as required by Mintegral.</td></tr>
+    </table>
+
+    <p>You can download <strong>one network at a time</strong> or use <strong>"Download All"</strong>
+      to get all four builds in one go.</p>
+
+    <!-- ===================== COMBOS ===================== -->
+    <h2 id="combos">Example playable setups</h2>
+    <p>A few ways the building blocks above can be combined into different creative briefs:</p>
+
+    <div class="scenario-card">
+      <h4>"Spot the trick" puzzle ad</h4>
+      <p>Puzzle mode, spellbook on, one enemy resistant to one element. The player must discover
+        the correct spell before attacking — great for highlighting an RPG's elemental mechanics.
+        Use fail-condition hints to teach the rule if they get it wrong.</p>
+    </div>
+
+    <div class="scenario-card">
+      <h4>"Epic showdown" turn-based ad</h4>
+      <p>Alternating mode with multiple player and enemy units, scripted enemy dialogue each turn,
+        and attack reactions for dramatic counter-attacks — feels closer to the real game's combat
+        loop, good for action/strategy titles.</p>
+    </div>
+
+    <div class="scenario-card">
+      <h4>"Quick win" minimal ad</h4>
+      <p>Spellbook off, 1 player unit vs. 1 enemy, puzzle mode with a 1-step winning sequence
+        (single attack). Fast, simple, and lightweight — easiest to fit Facebook's 2&nbsp;MB limit
+        without dropping much art.</p>
+    </div>
+
+    <div class="scenario-card">
+      <h4>Branded variant via Templates</h4>
+      <p>Build one solid base setup, save it as a Template, then duplicate it and swap only the
+        backgrounds, hero portraits, app icon, and store links to quickly produce localized or
+        seasonal variants from the same gameplay.</p>
+    </div>
+
+    <!-- ===================== CHECKLIST ===================== -->
+    <h2 id="checklist">Pre-export checklist</h2>
+    <ul class="checklist">
+      <li>Every unit has both Idle and Attack artwork uploaded.</li>
+      <li>Scenario mode chosen, and winning sequence / enemy turns make sense in the Live Preview.</li>
+      <li>Fail-condition hints are written and helpful (puzzle mode).</li>
+      <li>Victory and defeat popups have banner, board and button art, and the app icon is set.</li>
+      <li>Store URLs (iOS &amp; Android) are correct and point to the right app listing.</li>
+      <li>Music and key sound effects are uploaded (remember Facebook strips audio).</li>
+      <li>Checked the Live Preview in <strong>both</strong> landscape and portrait.</li>
+      <li>Checked file sizes in the Export screen — no ⚠ warnings for your target networks.</li>
+      <li>Saved a Template or exported the JSON config as a backup before exporting.</li>
+    </ul>
+
+    <footer>
+      This guide describes the creative options available in the Battle Editor as of the current
+      build. For technical/developer documentation, see <code>docs/documentation.html</code>.
+    </footer>
+  </main>
+</div>
+</body>
+</html>
