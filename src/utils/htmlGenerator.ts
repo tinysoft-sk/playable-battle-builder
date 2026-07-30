@@ -93,7 +93,10 @@ export function generateHTML(config: BattleConfig, network: NetworkTarget): stri
   const guidedStepsData = config.scenario.winningSequence.map(s => ({
     actorId: s.actorUnitId,
     action: s.action,
-    spellId: s.spellId ?? '',
+    spellId: (() => {
+      const spellIdx = config.spells.findIndex(sp => sp.id === s.spellId);
+      return spellIdx >= 0 ? 'spell' + spellIdx : '';
+    })(),
     targetId: s.targetUnitId ?? '',
     moveCol: s.moveTargetCol ?? 0,
     moveRow: s.moveTargetRow ?? 0,
@@ -990,10 +993,13 @@ function castSpell(targetCol,targetRow){
       killEnemy(idx,()=>{doRetaliation(e.id,()=>{checkWin();});});
     } else {
       setEnemyHP(idx,Math.max(1,gs.enemyHP[idx]-5));floatText('Resist',to.x,to.y-30,'resist');
-      const hint=e.type==='flying'?HINTS_WRONG_FLY:HINTS_WASTED;
-      const attackerIdx=e.type==='flying'?idx:ENEMIES.findIndex((en,i)=>gs.enemyAlive[i]&&en.type==='flying');
-      const realAttackerIdx=attackerIdx>=0?attackerIdx:ENEMIES.findIndex((_,i)=>gs.enemyAlive[i]);
-      if(realAttackerIdx>=0)setTimeout(()=>enemyAttack(realAttackerIdx,hint),700);
+      if(SCENARIO_MODE==='guided'){advanceGuided();}
+      else{
+        const hint=e.type==='flying'?HINTS_WRONG_FLY:HINTS_WASTED;
+        const attackerIdx=e.type==='flying'?idx:ENEMIES.findIndex((en,i)=>gs.enemyAlive[i]&&en.type==='flying');
+        const realAttackerIdx=attackerIdx>=0?attackerIdx:ENEMIES.findIndex((_,i)=>gs.enemyAlive[i]);
+        if(realAttackerIdx>=0)setTimeout(()=>enemyAttack(realAttackerIdx,hint),700);
+      }
     }
   });
 }
@@ -1035,7 +1041,7 @@ function onHexClick(){
     if(ap.type==='melee'){
       const apos=gs.allPlayerPos[pi];
       const adjHex=findAttackHex(e.col,e.row,apos.col,apos.row,ap.moveRange);
-      if(!adjHex){showOutOfReach();gs.state='player_turn';highlightMove();return;}
+      if(!adjHex){nudgeTooltip();gs.state='player_turn';highlightMove();return;}
       const[dc,dr]=adjHex;
       movePlayerTo(dc,dr,()=>{playerAttackAlt(eIdx,()=>{checkWin();},applyDamageToEnemyGuided);});
     } else {

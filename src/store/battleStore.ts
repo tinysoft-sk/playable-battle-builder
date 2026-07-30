@@ -135,7 +135,7 @@ export const DEFAULT_CONFIG: BattleConfig = {
       playerTurns: [{ id: 'pt1', unitId: 'knight' }],
       enemyTurns: [
         { id: 'et1', attackerUnitId: 'valkyrie',      action: 'attack' as const, targetUnitId: '', damage: 30, speechText: 'Valkyrie strikes!',       moveTargetCol: 0, moveTargetRow: 0 },
-        { id: 'et2', attackerUnitId: 'armored_giant', action: 'attack' as const, targetUnitId: '', damage: 40, speechText: 'Armored Giant charges!', moveTargetCol: 0, moveTargetRow: 0 },
+        { id: 'et2', attackerUnitId: 'armored_giant', action: 'attack' as const, targetUnitId: '', damage: 10, speechText: 'Armored Giant charges!', moveTargetCol: 0, moveTargetRow: 0 },
       ],
       attackReactions: [
         { enemyUnitId: 'valkyrie',      retaliates: false, retaliationDamage: 0,  retaliationSpeech: '' },
