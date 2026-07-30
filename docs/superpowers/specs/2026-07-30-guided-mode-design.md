@@ -155,10 +155,42 @@ path can also drain HP to 0 via the same retaliation config). Guided mode's
 guarantee is specifically "can't fail by clicking the wrong thing," not
 "can never lose HP" — no new fail-avoidance mechanism is added here.
 
+Similarly, a Guided script whose steps reference an already-dead target, or
+that runs out before all enemies are defeated, is a designer-authoring
+error the runtime does not self-heal from (the board simply stops
+responding to that step). This mirrors the same pre-existing precedent as
+Puzzle mode's `winningSequence`, which likewise assumes a coherent,
+game-state-consistent script — no new recovery mechanism was added for
+Guided's step list either. A future iteration could add auto-advance past
+a dead target or a free-play fallback when steps run out, but that was
+explicitly deferred as out of scope for this design.
+
+### Alternating mode behavior correction (discovered during implementation)
+
+`doRetaliation()` — the Puzzle-style Post-Kill Retaliation function this
+design reuses for Guided — turned out to have a latent bug: its callback
+parameter was only invoked on its early-return paths, never after a live
+retaliation actually resolved. Making Guided mode work correctly required
+fixing this (otherwise Guided's step pointer would never advance after a
+retaliating kill). Because `doRetaliation()` is shared code, reachable from
+Alternating mode too (the spellbook is available regardless of scenario
+mode), this fix also corrects an existing Alternating-mode bug: previously,
+an enemy turn immediately following a Post-Kill-Retaliation-triggering kill
+was silently skipped; now it correctly resumes. This was an explicit,
+considered decision (not an accidental side effect) — the alternative was
+scoping the callback fix away from Alternating and leaving that skip-bug in
+place, which was rejected in favor of correctness. The default scenario's
+Alternating `enemyTurns` damage for `armored_giant` (`et2`) was reduced from
+40 to 10 to keep the default scenario winnable under the corrected behavior
+(85 retaliation damage + 10 enemy-turn damage stays under the player's 100
+HP, versus 85 + 40 which would not have).
+
 ## Out of scope
 
 - No changes to Puzzle mode's own heuristic fail-condition engine.
-- No changes to Alternating mode.
+- Alternating mode's turn-order/attack logic is otherwise unchanged; the
+  one behavior correction it did receive is documented above, not a design
+  goal of this work.
 - The two stray untracked files `src/types/battleStore.ts` and
   `src/types/htmlGenerator.ts` (older, unused duplicates of
   `src/store/battleStore.ts` / `src/utils/htmlGenerator.ts`, confirmed
