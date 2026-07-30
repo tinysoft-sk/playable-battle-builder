@@ -676,7 +676,8 @@ function animateSpell(spellIdx,x1,y1,x2,y2,cb){
     setTimeout(()=>{spellProj.style.display='none';if(spellIdx>=0)playSound(SPELL_HIT_SFX[spellIdx]);if(cb)cb();},420);
   }));
 }
-function playerFlyAttack(eIdx,dmg,cb){
+function playerFlyAttack(eIdx,dmg,cb,applyFn){
+  applyFn=applyFn||applyDamageToEnemy;
   const pi=activePlayerIdx();const pEl=playerEls[pi];const ap=ALL_PLAYERS[pi];
   const e=ENEMIES[eIdx];
   const orig=gs.allPlayerPos[pi];
@@ -690,7 +691,7 @@ function playerFlyAttack(eIdx,dmg,cb){
   setTimeout(()=>{
     if(pEl)pEl.style.transition='';
     if(img&&ap.idleImg){img.src=ap.idleImg;img.width=ap.w;}
-    applyDamageToEnemy(eIdx,dmg,cb);
+    applyFn(eIdx,dmg,cb);
   },300);
 }
 function animateEnemyCharge(idx,cb){animateEnemyChargeAt(idx,activePlayerIdx(),cb);}
@@ -813,7 +814,8 @@ function doWin(){gs.state='win';clearHex();winScr.classList.add('show');trackAL(
 // ─── ALTERNATING MODE ───
 function calcDamage(baseDmg,mult,def){return Math.max(1,Math.floor(baseDmg*mult-def));}
 
-function playerAttackAlt(eIdx,cb){
+function playerAttackAlt(eIdx,cb,applyFn){
+  applyFn=applyFn||applyDamageToEnemy;
   const e=ENEMIES[eIdx];
   const pi=activePlayerIdx();const ap=ALL_PLAYERS[pi];
   const dmg=calcDamage(ap.baseDmg,ap.dmgMult,e.defense||0);
@@ -826,15 +828,26 @@ function playerAttackAlt(eIdx,cb){
     playSound(SFX.player_ranged_atk||SFX.player_atk);
     animateSpell(-1,from.x,from.y-30,x,y-30,()=>{
       if(img&&ap.idleImg){img.src=ap.idleImg;img.width=ap.w;}
-      applyDamageToEnemy(eIdx,dmg,cb);
+      applyFn(eIdx,dmg,cb);
     });
   } else if(ap.type==='flying'){
-    playerFlyAttack(eIdx,dmg,cb);
+    playerFlyAttack(eIdx,dmg,cb,applyFn);
   } else {
-    playerSwingAttack(()=>{applyDamageToEnemy(eIdx,dmg,cb);});
+    playerSwingAttack(()=>{applyFn(eIdx,dmg,cb);});
   }
 }
 
+function applyDamageToEnemyGuided(eIdx,dmg,cb){
+  const e=ENEMIES[eIdx];const{x,y}=hexCenter(e.col,e.row);
+  setEnemyHP(eIdx,gs.enemyHP[eIdx]-dmg);
+  floatText('-'+dmg,x,y-30,'damage');
+  flashBadge(enemyEls[eIdx]);
+  if(gs.enemyHP[eIdx]<=0){
+    killEnemy(eIdx,()=>{doRetaliation(e.id,()=>{if(cb)cb();});});
+  } else {
+    shakeUnit(enemyEls[eIdx],()=>{if(cb)cb();});
+  }
+}
 function applyDamageToEnemy(eIdx,dmg,cb){
   const e=ENEMIES[eIdx];const{x,y}=hexCenter(e.col,e.row);
   setEnemyHP(eIdx,gs.enemyHP[eIdx]-dmg);
@@ -951,7 +964,11 @@ ${ctaFn}
 function openSpellbook(){if(!SPELLBOOK_ENABLED)return;startMusic();gs.sbOpen=true;gs.state='spell_select';if(sbIcon&&IMG_SB_OPEN)sbIcon.src=IMG_SB_OPEN;sbPanel.style.display='flex';clearHex();if(SCENARIO_MODE==='guided')updateGuidedSpellLock();playSound(SFX.sb_open);}
 function closeSpellbook(){gs.sbOpen=false;if(sbIcon&&IMG_SB_CLOSED)sbIcon.src=IMG_SB_CLOSED;sbPanel.style.display='none';gs.selSpell=null;${spSP_reset}if(gs.state==='spell_select'||gs.state==='spell_target'){gs.state='player_turn';highlightMove();}}
 function closeSpellbookSilent(){gs.sbOpen=false;if(sbIcon&&IMG_SB_CLOSED)sbIcon.src=IMG_SB_CLOSED;sbPanel.style.display='none';}
-function selectSpell(id){const idx=parseInt(id.replace('spell',''));if(gs.spellUsed[id])return;gs.selSpell=id;${spSP_toggleSel}gs.state='spell_target';highlightTargets();playSound(SFX.sb_spell);}
+function selectSpell(id){
+  const idx=parseInt(id.replace('spell',''));if(gs.spellUsed[id])return;
+  if(SCENARIO_MODE==='guided'){const st=guidedStep();if(!st||st.action!=='cast_spell'||id!==st.spellId){nudgeTooltip();return;}}
+  gs.selSpell=id;${spSP_toggleSel}gs.state='spell_target';highlightTargets();playSound(SFX.sb_spell);
+}
 
 // ─── CAST ───
 function castSpell(targetCol,targetRow){
@@ -964,7 +981,8 @@ function castSpell(targetCol,targetRow){
   const sel2=sel;${spSP_addUsed}
   gs.selSpell=null;${spSP_reset}
   closeSpellbookSilent();gs.state='animating';clearHex();
-  const from=hexCenter(gs.pCol,gs.pRow),to=hexCenter(e.col,e.row);
+  const pi=activePlayerIdx();const apos=gs.allPlayerPos[pi];
+  const from=hexCenter(apos.col,apos.row),to=hexCenter(e.col,e.row);
   animateSpell(spellIdx,from.x,from.y-40,to.x,to.y-40,()=>{
     if(!isResisted){
       floatText('Critical!',to.x,to.y-30,'critical');
@@ -983,10 +1001,47 @@ function castSpell(targetCol,targetRow){
 function onHexClick(){
   startMusic();
   const col=parseInt(this.dataset.col),row=parseInt(this.dataset.row);
-  if(gs.state==='spell_target'){castSpell(col,row);return;}
+  if(gs.state==='spell_target'){
+    if(SCENARIO_MODE==='guided'){
+      const st=guidedStep();
+      if(st&&st.action==='cast_spell'&&gs.selSpell===st.spellId){
+        const eIdxSpell=findEnemyAt(col,row);
+        if(eIdxSpell>=0&&ENEMIES[eIdxSpell].id===st.targetId){castSpell(col,row);return;}
+      }
+      nudgeTooltip();return;
+    }
+    castSpell(col,row);return;
+  }
   if(gs.state==='intro'){skipIntro();return;}
   if(gs.state!=='player_turn')return;
   const eIdx=findEnemyAt(col,row);
+
+  if(SCENARIO_MODE==='guided'){
+    const st=guidedStep();
+    if(!st)return;
+    if(st.action==='move'){
+      if(col===st.moveCol&&row===st.moveRow&&!occupied(col,row)){
+        gs.state='animating';clearHex();hideSpeech();hideAllAttackIcons();playSound(SFX.grid,.7);
+        movePlayerTo(col,row,()=>{advanceGuided();});
+      } else nudgeTooltip();
+      return;
+    }
+    if(st.action==='cast_spell'){nudgeTooltip();return;}
+    if(eIdx<0||ENEMIES[eIdx].id!==st.targetId){nudgeTooltip();return;}
+    const e=ENEMIES[eIdx];
+    gs.state='animating';clearHex();hideSpeech();hideAllAttackIcons();
+    const pi=activePlayerIdx();const ap=ALL_PLAYERS[pi];
+    if(ap.type==='melee'){
+      const apos=gs.allPlayerPos[pi];
+      const adjHex=findAttackHex(e.col,e.row,apos.col,apos.row,ap.moveRange);
+      if(!adjHex){showOutOfReach();gs.state='player_turn';highlightMove();return;}
+      const[dc,dr]=adjHex;
+      movePlayerTo(dc,dr,()=>{playerAttackAlt(eIdx,()=>{checkWin();},applyDamageToEnemyGuided);});
+    } else {
+      playerAttackAlt(eIdx,()=>{checkWin();},applyDamageToEnemyGuided);
+    }
+    return;
+  }
 
   if(SCENARIO_MODE==='alternating'){
     if(eIdx>=0){
