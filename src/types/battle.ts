@@ -158,6 +158,10 @@ export interface BattleConfig {
     flyingIcon: AssetData | null;
   };
   appIcon: AssetData | null;
+  grid: {
+    cols: number;
+    rows: number;
+  };
   gridOffset: {
     landscape: number;
     portrait: number;

@@ -163,6 +163,7 @@ export const DEFAULT_CONFIG: BattleConfig = {
   gridTiles: { walkable: null, active: null },
   uiAssets: { spellbookClosed: null, spellbookOpen: null, meleeIcon: null, rangedIcon: null, flyingIcon: null },
   appIcon: null,
+  grid: { cols: 5, rows: 4 },
   gridOffset: { landscape: 0, portrait: 0 },
   hintLayout: { landscapeY: 265, portraitY: 265, landscapeFontSize: 13.5, portraitFontSize: 13.5 },
   speechLayout: { landscapeX: 160, landscapeY: 14, landscapeFontSize: 13, portraitX: 14, portraitY: 14, portraitFontSize: 13 },
@@ -209,6 +210,7 @@ interface BattleStore {
   setMusic: (asset: AssetData | null) => void;
   setSfx: (event: string, asset: AssetData | null) => void;
   setGridTile: (key: 'walkable' | 'active', asset: AssetData | null) => void;
+  setGridSize: (patch: Partial<{ cols: number; rows: number }>) => void;
   setUiAsset: (key: keyof BattleConfig['uiAssets'], asset: AssetData | null) => void;
   setAppIcon: (asset: AssetData | null) => void;
   setGridOffset: (key: 'landscape' | 'portrait', value: number) => void;
@@ -267,6 +269,7 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
       },
       store: { ...DEFAULT_CONFIG.store, ...(c.store ?? {}) },
       backgrounds: { ...DEFAULT_CONFIG.backgrounds, ...(c.backgrounds ?? {}) },
+      grid: { ...DEFAULT_CONFIG.grid, ...(c.grid ?? {}) },
       gridOffset: { ...DEFAULT_CONFIG.gridOffset, ...(c.gridOffset ?? {}) },
       hintLayout: { ...DEFAULT_CONFIG.hintLayout, ...(c.hintLayout ?? {}) },
       speechLayout: { ...DEFAULT_CONFIG.speechLayout, ...(c.speechLayout ?? {}) },
@@ -427,6 +430,9 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
 
   setGridTile: (key, asset) =>
     set(s => ({ ...pushUndo(get), config: { ...s.config, gridTiles: { ...s.config.gridTiles, [key]: asset } } })),
+
+  setGridSize: (patch) =>
+    set(s => ({ ...pushUndo(get), config: { ...s.config, grid: { ...s.config.grid, ...patch } } })),
 
   setUiAsset: (key, asset) =>
     set(s => ({ ...pushUndo(get), config: { ...s.config, uiAssets: { ...s.config.uiAssets, [key]: asset } } })),
