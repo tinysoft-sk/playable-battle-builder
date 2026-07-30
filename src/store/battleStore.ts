@@ -96,8 +96,8 @@ export const DEFAULT_CONFIG: BattleConfig = {
   scenario: {
     mode: 'puzzle',
     winningSequence: [
-      { order: 0, actorUnitId: 'knight', action: 'cast_spell', spellId: 'fireball', targetUnitId: 'valkyrie' },
-      { order: 1, actorUnitId: 'knight', action: 'melee_attack', targetUnitId: 'armored_giant' },
+      { order: 0, actorUnitId: 'knight', action: 'cast_spell', spellId: 'fireball', targetUnitId: 'valkyrie', tooltipText: 'Cast Fireball on the Valkyrie first — she flies and can always reach you, and only fire hurts her.' },
+      { order: 1, actorUnitId: 'knight', action: 'melee_attack', targetUnitId: 'armored_giant', tooltipText: 'Now finish off the Armored Giant with a melee strike.' },
     ],
     failConditions: [
       {

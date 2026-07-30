@@ -53,9 +53,12 @@ export interface FailCondition {
 export interface WinStep {
   order: number;
   actorUnitId: string;
-  action: 'cast_spell' | 'melee_attack' | 'ranged_attack';
+  action: 'cast_spell' | 'melee_attack' | 'ranged_attack' | 'move';
   spellId?: string;
   targetUnitId: string;
+  moveTargetCol?: number;
+  moveTargetRow?: number;
+  tooltipText?: string;
 }
 
 export interface PostKillRetaliation {
@@ -97,7 +100,7 @@ export interface AlternatingConfig {
 }
 
 export interface BattleScenario {
-  mode: 'puzzle' | 'alternating';
+  mode: 'puzzle' | 'alternating' | 'guided';
   winningSequence: WinStep[];
   failConditions: FailCondition[];
   retaliations: PostKillRetaliation[];
