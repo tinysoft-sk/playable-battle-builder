@@ -53,6 +53,7 @@ export default function ScenarioPanel() {
         actorUnitId: config.playerUnits[0]?.id ?? '',
         action: 'melee_attack',
         targetUnitId: config.enemyUnits[0]?.id ?? '',
+        tooltipText: '',
       }],
     });
   }
@@ -75,14 +76,15 @@ export default function ScenarioPanel() {
 
       <div className="field" style={{ marginBottom: 16 }}>
         <label>Battle Mode</label>
-        <select value={scenario.mode} onChange={e => setScenario({ mode: e.target.value as 'puzzle' | 'alternating' })}>
+        <select value={scenario.mode} onChange={e => setScenario({ mode: e.target.value as 'puzzle' | 'alternating' | 'guided' })}>
           <option value="puzzle">Puzzle (one winning path)</option>
           <option value="alternating">Alternating turns</option>
+          <option value="guided">Guided (one option per turn)</option>
         </select>
       </div>
 
       {/* ── PUZZLE MODE ── */}
-      {scenario.mode === 'puzzle' && (
+      {(scenario.mode === 'puzzle' || scenario.mode === 'guided') && (
         <>
           <div className="section-title">Winning Sequence</div>
           <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 8 }}>
@@ -114,6 +116,7 @@ export default function ScenarioPanel() {
                 <option value="cast_spell">Cast Spell</option>
                 <option value="melee_attack">Melee Attack</option>
                 <option value="ranged_attack">Ranged Attack</option>
+                <option value="move">Move</option>
               </select>
 
               {/* Spell (if cast) */}
@@ -130,45 +133,80 @@ export default function ScenarioPanel() {
                 </select>
               )}
 
-              {/* Target */}
-              <select
-                title="Target enemy"
-                value={step.targetUnitId}
-                onChange={e => updateStep(i, { targetUnitId: e.target.value })}
-                style={{ flex: '1 1 90px', minWidth: 80 }}
-              >
-                {config.enemyUnits.map(u => (
-                  <option key={u.id} value={u.id}>{u.name}</option>
-                ))}
-              </select>
+              {/* Target: enemy select, or move col/row */}
+              {step.action === 'move' ? (
+                <>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, flex: '0 0 auto' }}>
+                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>col</span>
+                    <input
+                      type="number" min={0} max={4} value={step.moveTargetCol ?? 0}
+                      onChange={e => updateStep(i, { moveTargetCol: +e.target.value })}
+                      style={{ width: 50 }}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, flex: '0 0 auto' }}>
+                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>row</span>
+                    <input
+                      type="number" min={0} max={3} value={step.moveTargetRow ?? 0}
+                      onChange={e => updateStep(i, { moveTargetRow: +e.target.value })}
+                      style={{ width: 50 }}
+                    />
+                  </div>
+                </>
+              ) : (
+                <select
+                  title="Target enemy"
+                  value={step.targetUnitId}
+                  onChange={e => updateStep(i, { targetUnitId: e.target.value })}
+                  style={{ flex: '1 1 90px', minWidth: 80 }}
+                >
+                  {config.enemyUnits.map(u => (
+                    <option key={u.id} value={u.id}>{u.name}</option>
+                  ))}
+                </select>
+              )}
 
               <button className="unit-remove" onClick={() => removeStep(i)}>✕</button>
+
+              {scenario.mode === 'guided' && (
+                <div className="field" style={{ flex: '1 1 100%' }}>
+                  <label>Tooltip (what &amp; why)</label>
+                  <textarea
+                    value={step.tooltipText ?? ''}
+                    onChange={e => updateStep(i, { tooltipText: e.target.value })}
+                  />
+                </div>
+              )}
             </div>
           ))}
           <button className="btn-add" onClick={addStep}>+ Add Step</button>
 
-          <div className="section-title">Fail Conditions</div>
-          {scenario.failConditions.map(fc => (
-            <div key={fc.id} className="fail-card">
-              <div className="fail-card-header">
-                <span className="fail-id">{fc.id}</span>
-                <select
-                  value={fc.trigger}
-                  onChange={e => updateFailCondition(fc.id, { trigger: e.target.value as FailCondition['trigger'] })}
-                  style={{ flex: 1 }}
-                >
-                  {TRIGGERS.map(t => <option key={t} value={t}>{t}</option>)}
-                </select>
-              </div>
-              <div className="field">
-                <label>Hint Lines (one per line → shown with line breaks)</label>
-                <textarea
-                  value={fc.hintLines.join('\n')}
-                  onChange={e => updateFailCondition(fc.id, { hintLines: e.target.value.split('\n') })}
-                />
-              </div>
-            </div>
-          ))}
+          {scenario.mode === 'puzzle' && (
+            <>
+              <div className="section-title">Fail Conditions</div>
+              {scenario.failConditions.map(fc => (
+                <div key={fc.id} className="fail-card">
+                  <div className="fail-card-header">
+                    <span className="fail-id">{fc.id}</span>
+                    <select
+                      value={fc.trigger}
+                      onChange={e => updateFailCondition(fc.id, { trigger: e.target.value as FailCondition['trigger'] })}
+                      style={{ flex: 1 }}
+                    >
+                      {TRIGGERS.map(t => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                  </div>
+                  <div className="field">
+                    <label>Hint Lines (one per line → shown with line breaks)</label>
+                    <textarea
+                      value={fc.hintLines.join('\n')}
+                      onChange={e => updateFailCondition(fc.id, { hintLines: e.target.value.split('\n') })}
+                    />
+                  </div>
+                </div>
+              ))}
+            </>
+          )}
 
           <div className="section-title">Post-Kill Retaliations</div>
           <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 8 }}>
