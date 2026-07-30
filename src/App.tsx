@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useBattleStore } from './store/battleStore';
+import GridPanel from './components/panels/GridPanel';
 import UnitsPanel from './components/panels/UnitsPanel';
 import HeroPanel from './components/panels/HeroPanel';
 import SpellsPanel from './components/panels/SpellsPanel';
@@ -14,9 +15,10 @@ import ExportDialog from './components/export/ExportDialog';
 import TemplatesModal from './components/TemplatesModal';
 import './App.css';
 
-type NavItem = 'units' | 'heroes' | 'spells' | 'scenario' | 'popups' | 'backgrounds' | 'store' | 'audio' | 'library';
+type NavItem = 'grid' | 'units' | 'heroes' | 'spells' | 'scenario' | 'popups' | 'backgrounds' | 'store' | 'audio' | 'library';
 
 const NAV_ITEMS: { id: NavItem; label: string }[] = [
+  { id: 'grid',        label: 'Grid' },
   { id: 'units',       label: 'Units' },
   { id: 'heroes',      label: 'Heroes' },
   { id: 'spells',      label: 'Spells' },
@@ -65,6 +67,7 @@ export default function App() {
         </nav>
 
         <main className="app-config">
+          {section === 'grid'        && <GridPanel />}
           {section === 'units'       && <UnitsPanel />}
           {section === 'heroes'      && <HeroPanel />}
           {section === 'spells'      && <SpellsPanel />}
