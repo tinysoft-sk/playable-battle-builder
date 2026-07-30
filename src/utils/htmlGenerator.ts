@@ -719,6 +719,7 @@ function doRetaliation(killedId,cb){
         if(gs.allPlayerHP[pi]<=0){playerDies(ret.followUp||'');return;}
         gs.state='player_turn';highlightMove();
         if(ret.followUp)showSpeech(ret.followUp,2200);
+        if(cb)cb();
       });
     };
     if(retEnemy.type==='flying'){
