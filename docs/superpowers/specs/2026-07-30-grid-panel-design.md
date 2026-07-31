@@ -192,4 +192,18 @@ calculation) — the same technique used to verify the Guided mode feature.
   farther out — the number input's `max` simply changes going forward;
   existing out-of-range values are a pre-existing category of designer
   error (the same as e.g. overlapping unit positions today) and not
-  newly introduced or specially handled by this feature.
+  newly introduced or specially handled by this feature. The same applies
+  to `WinStep`/`EnemyTurnDef`'s `moveTargetCol`/`moveTargetRow` in the
+  Scenario panel — not called out separately in the original draft of this
+  section, but the same accepted risk.
+- Unit sprite `displayWidth` stays an absolute pixel value and does not
+  scale down when the grid is configured larger (smaller hexes). At small
+  grids this is unnoticeable; at the largest allowed size (10 cols /
+  8 rows), landscape `hexW` shrinks from 120px to well under half that,
+  and a default-sized unit sprite (~110px) will visibly overlap its
+  neighbors. This was not anticipated when this design was written and is
+  left as a known follow-up rather than fixed here — a designer raising
+  the grid size will need to manually shrink `displayWidth` on their units
+  to compensate. A future iteration could scale `displayWidth` by the same
+  factor `fitLayout`'s `scale` computes, but that couples two independently
+  designer-tunable values in a way this design doesn't attempt.
