@@ -477,6 +477,8 @@ const HINTS_MOVE_FLY=${JSON.stringify(hintMoveToFlying)};
 const HINTS_RANGED_FIRST=${JSON.stringify(hintKillRangedFirst)};
 const HINTS_WRONG_FLY=${JSON.stringify(hintWrongSpellFly)};
 const HINTS_WASTED=${JSON.stringify(hintWastedSpell)};
+const INTRO_SPEECH=${JSON.stringify(config.scenario.introSpeech || 'Defeat the enemies!')};
+const INTRO_AUTOSKIP_MS=${config.scenario.introSpeech ? 3000 : 1500};
 const ATTACK_ICON_MELEE='${meleeIconUri}';
 const ATTACK_ICON_RANGED='${rangedIconUri}';
 const ATTACK_ICON_FLYING='${flyingIconUri}';
@@ -1268,7 +1270,7 @@ function startTurn(){
     gs.state='player_turn';highlightMove();
   }
 }
-function startIntro(){gs.state='intro';trackAL('DISPLAYED');showSpeech('Defeat the enemies!');showArrow(gs.pCol,gs.pRow);setTimeout(()=>{if(gs.state!=='intro')return;skipIntro();},1500);}
+function startIntro(){gs.state='intro';trackAL('DISPLAYED');showSpeech(INTRO_SPEECH);showArrow(gs.pCol,gs.pRow);setTimeout(()=>{if(gs.state!=='intro')return;skipIntro();},INTRO_AUTOSKIP_MS);}
 
 // ─── RESET ───
 function resetGame(){

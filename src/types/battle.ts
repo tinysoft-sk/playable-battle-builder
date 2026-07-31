@@ -106,6 +106,7 @@ export interface AlternatingConfig {
 
 export interface BattleScenario {
   mode: 'puzzle' | 'alternating' | 'guided';
+  introSpeech: string;
   winningSequence: WinStep[];
   failConditions: FailCondition[];
   retaliations: PostKillRetaliation[];

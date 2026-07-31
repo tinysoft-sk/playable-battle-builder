@@ -85,6 +85,16 @@ export default function ScenarioPanel() {
         </select>
       </div>
 
+      <div className="field" style={{ marginBottom: 16 }}>
+        <label>Intro Speech</label>
+        <input
+          type="text"
+          value={scenario.introSpeech ?? ''}
+          placeholder="Defeat the enemies!"
+          onChange={e => setScenario({ introSpeech: e.target.value })}
+        />
+      </div>
+
       {/* ── PUZZLE MODE ── */}
       {(scenario.mode === 'puzzle' || scenario.mode === 'guided') && (
         <>
