@@ -1,5 +1,7 @@
 # Grid Panel — Design
 
+**Status:** Implemented.
+
 ## Purpose
 
 Add a dedicated "Grid" section to the editor, first in the nav (above
