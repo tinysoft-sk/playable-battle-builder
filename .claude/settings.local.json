@@ -64,7 +64,20 @@
       "Bash(curl -s -o /dev/null -w \"template via relative path HTTP %{http_code}\\\\n\" http://localhost:8099/playable-battle-builder/templates/HAM_Battle_alt_02.json)",
       "Bash(git stash *)",
       "Bash(./node_modules/.bin/esbuild src/utils/htmlGenerator.ts --bundle --platform=node --format=cjs --outfile=/tmp/name-verify/before.cjs)",
-      "Bash(./node_modules/.bin/esbuild src/utils/htmlGenerator.ts --bundle --platform=node --format=cjs --outfile=/tmp/name-verify/after.cjs)"
+      "Bash(./node_modules/.bin/esbuild src/utils/htmlGenerator.ts --bundle --platform=node --format=cjs --outfile=/tmp/name-verify/after.cjs)",
+      "Bash(./node_modules/.bin/esbuild src/utils/htmlGenerator.ts --bundle --platform=node --format=cjs --outfile=/tmp/bug-verify/htmlGenerator.cjs)",
+      "Bash(git fetch *)",
+      "Bash(curl -s \"https://api.github.com/repos/tinysoft-sk/playable-battle-builder/actions/workflows\")",
+      "Bash(curl -s \"https://api.github.com/repos/tinysoft-sk/playable-battle-builder\")",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\('private:', d.get\\('private'\\)\\); print\\('has_pages:', d.get\\('has_pages'\\)\\)\")",
+      "Bash(curl -s \"https://api.github.com/repos/tinysoft-sk/playable-battle-builder/pages\")",
+      "Bash(python3 -m json.tool)",
+      "Bash(curl -s \"https://api.github.com/repos/tinysoft-sk/playable-battle-builder/actions/workflows/285653371/runs?per_page=10\")",
+      "Bash(python3 -c ' *)",
+      "Bash(./node_modules/.bin/esbuild src/utils/htmlGenerator.ts --bundle --platform=node --format=cjs --outfile=/tmp/bug-verify2/htmlGenerator.cjs)",
+      "Bash(./node_modules/.bin/esbuild src/utils/htmlGenerator.ts --bundle --platform=node --format=cjs --outfile=/tmp/bug-verify3/htmlGenerator.cjs)",
+      "Bash(./node_modules/.bin/esbuild src/utils/htmlGenerator.ts --bundle --platform=node --format=cjs --outfile=/tmp/regress-check/htmlGenerator.cjs)",
+      "Bash(./node_modules/.bin/esbuild src/utils/htmlGenerator.ts --bundle --platform=node --format=cjs --outfile=/tmp/retaliation-verify/htmlGenerator.cjs)"
     ]
   }
 }

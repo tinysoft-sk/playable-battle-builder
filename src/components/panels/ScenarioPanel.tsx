@@ -112,7 +112,14 @@ export default function ScenarioPanel() {
               <select
                 title="Action"
                 value={step.action}
-                onChange={e => updateStep(i, { action: e.target.value as WinStep['action'] })}
+                onChange={e => {
+                  const action = e.target.value as WinStep['action'];
+                  const patch: Partial<WinStep> = { action };
+                  if (action === 'cast_spell' && !step.spellId) {
+                    patch.spellId = config.spells[0]?.id;
+                  }
+                  updateStep(i, patch);
+                }}
                 style={{ flex: '1 1 120px', minWidth: 100 }}
               >
                 <option value="cast_spell">Cast Spell</option>

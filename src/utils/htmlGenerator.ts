@@ -84,6 +84,11 @@ export function generateHTML(config: BattleConfig, network: NetworkTarget, optio
   const sbPortX    = (config as any).speechLayout?.portraitX       ?? 14;
   const sbPortY    = (config as any).speechLayout?.portraitY       ?? 14;
   const sbPortFS   = (config as any).speechLayout?.portraitFontSize ?? 13;
+  // Mirrors the configured (player-side) speech bubble X position to the
+  // opposite edge, so enemy-attributed speech (retaliation) can appear to
+  // come from the enemy side instead of always the player/left side.
+  const sbLandXEnemy = 1000 - sbLandX - 310;
+  const sbPortXEnemy = 563 - sbPortX - 535;
   const appIconUri  = uri(config.appIcon);
   const appIconHTML = appIconUri
     ? `<img class="popup-app-icon" src="${appIconUri}" alt="">`
@@ -132,7 +137,12 @@ export function generateHTML(config: BattleConfig, network: NetworkTarget, optio
     action: s.action,
     spellId: (() => {
       const spellIdx = config.spells.findIndex(sp => sp.id === s.spellId);
-      return spellIdx >= 0 ? 'spell' + spellIdx : '';
+      if (spellIdx >= 0) return 'spell' + spellIdx;
+      // A cast_spell step saved without a real spellId (e.g. the Action was
+      // switched to "Cast Spell" without the Spell dropdown ever being
+      // touched) would otherwise match no spell button at all, locking the
+      // whole spellbook. Fall back to the first configured spell instead.
+      return s.action === 'cast_spell' && config.spells[0] ? 'spell0' : '';
     })(),
     targetId: s.targetUnitId ?? '',
     moveCol: s.moveTargetCol ?? 0,
@@ -776,19 +786,21 @@ function doRetaliation(killedId,cb){
       const src=hexCenter(retEnemy.col,retEnemy.row);
       const[adjC,adjR]=nearestAdjacentTo(apos.col,apos.row,retEnemy.col,retEnemy.row);
       const dst=hexCenter(adjC,adjR);
+      const retImg=retEl&&retEl.querySelector('img');
       if(retEl){retEl.style.transition='left .35s ease-in,top .35s ease-in';retEl.style.left=dst.x+'px';retEl.style.top=dst.y+'px';}
       playSound(SFX.enemy_melee_atk||SFX.enemy1_atk);
       setTimeout(()=>{
         if(retEl)retEl.classList.add('shake');
+        if(retImg&&retEnemy.atkImg){retImg.src=retEnemy.atkImg;retImg.width=retEnemy.aw;}
         setTimeout(()=>{
           if(retEl){retEl.classList.remove('shake');retEl.style.transition='left .35s ease-in,top .35s ease-in';retEl.style.left=src.x+'px';retEl.style.top=src.y+'px';}
+          if(retImg&&retEnemy.idleImg){retImg.src=retEnemy.idleImg;retImg.width=retEnemy.w;}
           applyHit();
           setTimeout(()=>{if(retEl)retEl.style.transition='';},380);
         },370);
       },360);
     } else {
-      if(retEl){retEl.classList.add('shake');playSound(SFX.enemy1_atk);}
-      setTimeout(()=>{if(retEl)retEl.classList.remove('shake');applyHit();},400);
+      enemySwingAttack(retIdx,applyHit);
     }
   },600);
 }
@@ -815,13 +827,9 @@ function enemyAttack(idx,hint){
       const{x,y}=getHitPos();floatText('CRITICAL HIT!',x,y-40,'critical');deathBurst(x,y,'#ff4400');playerDies(hint);
     });
   } else {
-    const el=enemyEls[idx];
-    const atkSfx=e.type==='melee'?SFX.enemy_melee_atk||SFX.enemy1_atk:SFX.enemy1_atk;
-    if(el){el.classList.add('shake');playSound(atkSfx);}
-    setTimeout(()=>{
-      if(el)el.classList.remove('shake');
+    enemySwingAttack(idx,()=>{
       const{x,y}=getHitPos();floatText('CRITICAL HIT!',x,y-40,'critical');deathBurst(x,y,'#ff4400');playerDies(hint);
-    },400);
+    });
   }
 }
 
@@ -999,8 +1007,7 @@ function enemyAttackAlt(idx,targetPi,damage,cb){
   } else if(e.type==='melee'){
     doMeleeWalkAttack(idx,targetPi,applyHit);
   } else {
-    const el=enemyEls[idx];if(el){el.classList.add('shake');playSound(SFX.enemy1_atk);}
-    setTimeout(()=>{if(el)el.classList.remove('shake');applyHit();},400);
+    enemySwingAttack(idx,applyHit);
   }
 }
 
