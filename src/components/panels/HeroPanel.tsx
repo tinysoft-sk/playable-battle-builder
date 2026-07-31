@@ -23,6 +23,10 @@ export default function HeroPanel() {
           <label>Pos Y (from top)</label>
           <input type="number" value={heroLeft.posY} onChange={e => setHeroLeft({ posY: +e.target.value })} />
         </div>
+        <div className="field">
+          <label>Display Width</label>
+          <input type="number" min={40} max={300} value={heroLeft.displayWidth} onChange={e => setHeroLeft({ displayWidth: +e.target.value })} />
+        </div>
       </div>
       <div className="field">
         <label>
@@ -44,6 +48,10 @@ export default function HeroPanel() {
         <div className="field">
           <label>Pos Y (from top)</label>
           <input type="number" value={heroRight.posY} onChange={e => setHeroRight({ posY: +e.target.value })} />
+        </div>
+        <div className="field">
+          <label>Display Width</label>
+          <input type="number" min={40} max={300} value={heroRight.displayWidth} onChange={e => setHeroRight({ displayWidth: +e.target.value })} />
         </div>
       </div>
       <div className="field">

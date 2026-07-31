@@ -51,7 +51,8 @@
       "Bash(./node_modules/.bin/esbuild src/utils/htmlGenerator.ts --bundle --platform=node --format=cjs --outfile=/tmp/grid-verify/htmlGenerator.cjs)",
       "Bash(/home/karol/.claude/plugins/cache/claude-plugins-official/superpowers/6.2.0/skills/subagent-driven-development/scripts/review-package docs/superpowers/plans/2026-07-30-grid-panel.md d75ee0a53359e88cbaad3e35a02dc9d99eab77de HEAD)",
       "Bash(./node_modules/.bin/esbuild src/store/battleStore.ts --bundle --platform=node --format=cjs --outfile=/tmp/claude-1000/-mnt-c-Users-karol-github-playable-battle-builder/01145828-523d-44d2-84e6-f3a0c6aa8ec9/scratchpad/store.cjs --log-level=error)",
-      "Bash(git status *)"
+      "Bash(git status *)",
+      "Bash(./node_modules/.bin/esbuild src/utils/htmlGenerator.ts --bundle --platform=node --format=cjs --outfile=/tmp/hero-verify/htmlGenerator.cjs)"
     ]
   }
 }

@@ -91,6 +91,8 @@ export function generateHTML(config: BattleConfig, network: NetworkTarget): stri
   const sfx = config.audio.sfxMap;
   const heroLeftFlip  = config.heroLeft.flipped  ? '' : 'scaleX(-1)';
   const heroRightFlip = config.heroRight.flipped ? '' : 'scaleX(-1)';
+  const heroLeftWidth  = (config.heroLeft as any).displayWidth ?? 128;
+  const heroRightWidth = (config.heroRight as any).displayWidth ?? 128;
 
   // ── build JS injection values ─────────────────────────────────────
   const p0AtkW = p0.assets.attack ? Math.round(p0.displayWidth * 1.3) : p0.displayWidth;
@@ -301,8 +303,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;touch-action:no
 #viewport{position:fixed;${network==='google'?'width:1000px;height:563px;':''}transform-origin:top left;overflow:hidden;}
 #bg{position:absolute;inset:0;background:url('${uri(config.backgrounds.landscape)}') center/cover no-repeat;}
 .portrait #bg{background-image:url('${uri(config.backgrounds.portrait)}');}
-#hero-left{position:absolute;left:${config.heroLeft.posX}px;top:${config.heroLeft.posY}px;width:128px;pointer-events:none;z-index:5;${heroLeftFlip ? `transform:${heroLeftFlip};` : ''}}
-#hero-right{position:absolute;right:${config.heroRight.posX}px;top:${config.heroRight.posY}px;width:128px;pointer-events:none;z-index:5;${heroRightFlip ? `transform:${heroRightFlip};` : ''}}
+#hero-left{position:absolute;left:${config.heroLeft.posX}px;top:${config.heroLeft.posY}px;width:${heroLeftWidth}px;pointer-events:none;z-index:5;${heroLeftFlip ? `transform:${heroLeftFlip};` : ''}}
+#hero-right{position:absolute;right:${config.heroRight.posX}px;top:${config.heroRight.posY}px;width:${heroRightWidth}px;pointer-events:none;z-index:5;${heroRightFlip ? `transform:${heroRightFlip};` : ''}}
 .portrait #hero-left,.portrait #hero-right{display:none;}
 #speech-bubble{position:absolute;top:${sbLandY}px;left:${sbLandX}px;width:310px;background:rgba(255,255,255,.95);border-radius:14px;padding:10px 14px;font-family:Arial,sans-serif;font-size:${sbLandFS}px;color:#222;line-height:1.5;box-shadow:0 4px 16px rgba(0,0,0,.45);display:none;z-index:30;pointer-events:none;}
 .portrait #speech-bubble{left:${sbPortX}px;top:${sbPortY}px;font-size:${sbPortFS}px;width:535px;}

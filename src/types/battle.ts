@@ -33,6 +33,7 @@ export interface HeroConfig {
   flipped: boolean;
   posX: number;
   posY: number;
+  displayWidth: number;
 }
 
 export interface SpellConfig {

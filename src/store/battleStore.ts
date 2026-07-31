@@ -73,8 +73,8 @@ export const DEFAULT_CONFIG: BattleConfig = {
       assets: { idle: null, attack: null },
     },
   ],
-  heroLeft: { asset: null, flipped: true, posX: 42, posY: 170 },
-  heroRight: { asset: null, flipped: false, posX: 42, posY: 150 },
+  heroLeft: { asset: null, flipped: true, posX: 42, posY: 170, displayWidth: 128 },
+  heroRight: { asset: null, flipped: false, posX: 42, posY: 150, displayWidth: 128 },
   spells: [
     {
       id: 'fireball',
@@ -269,6 +269,8 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
       },
       store: { ...DEFAULT_CONFIG.store, ...(c.store ?? {}) },
       backgrounds: { ...DEFAULT_CONFIG.backgrounds, ...(c.backgrounds ?? {}) },
+      heroLeft: { ...DEFAULT_CONFIG.heroLeft, ...(c.heroLeft ?? {}) },
+      heroRight: { ...DEFAULT_CONFIG.heroRight, ...(c.heroRight ?? {}) },
       grid: { ...DEFAULT_CONFIG.grid, ...(c.grid ?? {}) },
       gridOffset: { ...DEFAULT_CONFIG.gridOffset, ...(c.gridOffset ?? {}) },
       hintLayout: { ...DEFAULT_CONFIG.hintLayout, ...(c.hintLayout ?? {}) },
