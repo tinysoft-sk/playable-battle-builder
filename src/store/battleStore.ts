@@ -431,8 +431,17 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
   setGridTile: (key, asset) =>
     set(s => ({ ...pushUndo(get), config: { ...s.config, gridTiles: { ...s.config.gridTiles, [key]: asset } } })),
 
-  setGridSize: (patch) =>
-    set(s => ({ ...pushUndo(get), config: { ...s.config, grid: { ...s.config.grid, ...patch } } })),
+  setGridSize: (patch) => {
+    const clamp = (v: number, lo: number, hi: number, dflt: number) =>
+      Number.isFinite(v) ? Math.min(hi, Math.max(lo, Math.round(v))) : dflt;
+    set(s => {
+      const next = { ...s.config.grid, ...patch };
+      return {
+        ...pushUndo(get),
+        config: { ...s.config, grid: { cols: clamp(next.cols, 2, 10, 5), rows: clamp(next.rows, 2, 8, 4) } },
+      };
+    });
+  },
 
   setUiAsset: (key, asset) =>
     set(s => ({ ...pushUndo(get), config: { ...s.config, uiAssets: { ...s.config.uiAssets, [key]: asset } } })),
