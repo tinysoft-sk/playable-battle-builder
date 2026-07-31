@@ -114,6 +114,15 @@ function SpellCard({
         <AssetUpload label="Spell icon" asset={spell.asset} onChange={a => onUpdate({ asset: a })} />
       </div>
       <div className="field">
+        <label>Projectile Image (optional — falls back to the Spell Icon above if empty)</label>
+        <AssetUpload label="Spell projectile" asset={spell.projectileAsset ?? null} onChange={a => onUpdate({ projectileAsset: a })} />
+      </div>
+      <div className="field" style={{ maxWidth: 120 }}>
+        <label>Projectile Size</label>
+        <input type="number" min={16} max={200} value={spell.projectileSize ?? 60}
+          onChange={e => onUpdate({ projectileSize: +e.target.value })} />
+      </div>
+      <div className="field">
         <label>SFX – Shoot</label>
         <AssetUpload label="Shoot sound" asset={spell.sfxShoot} accept="audio/*" onChange={a => onUpdate({ sfxShoot: a })} />
       </div>

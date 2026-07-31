@@ -112,6 +112,8 @@ export function generateHTML(config: BattleConfig, network: NetworkTarget, optio
     moveRange: (p as any).moveRange ?? 2,
     baseDmg: p.baseDamage, dmgMult: p.damageMultiplier,
     idleImg: uri(p.assets.idle), atkImg: uri(p.assets.attack),
+    projImg: uri(p.assets.projectile) || rangedProjectileUri,
+    projSize: (p as any).projectileSize ?? 60,
   }));
 
   const spellbookEnabled = (config as any).spellbookEnabled !== false;
@@ -130,6 +132,8 @@ export function generateHTML(config: BattleConfig, network: NetworkTarget, optio
     aw: e.assets.attack ? Math.round(e.displayWidth * 1.3) : e.displayWidth,
     idleImg: uri(e.assets.idle),
     atkImg: uri(e.assets.attack),
+    projImg: uri(e.assets.projectile) || rangedProjectileUri,
+    projSize: (e as any).projectileSize ?? 60,
   }));
 
   // guided mode injection values
@@ -218,7 +222,8 @@ export function generateHTML(config: BattleConfig, network: NetworkTarget, optio
     `if(spSP${i})spSP${i}.classList.toggle('guided-locked',!(st&&st.action==='cast_spell'&&st.spellId==='spell${i}'));`).join('');
   const spSP_events = config.spells.map((_, i) =>
     `if(spSP${i})spSP${i}.addEventListener('click',e=>{e.stopPropagation();selectSpell('spell${i}');});`).join('\n');
-  const spellImgsJS = config.spells.map(sp => `'${uri(sp.asset)}'`).join(',');
+  const spellImgsJS = config.spells.map(sp => `'${uri(sp.projectileAsset) || uri(sp.asset)}'`).join(',');
+  const spellProjSizeJS = config.spells.map(sp => (sp as any).projectileSize ?? 60).join(',');
   const spellElsJS  = config.spells.map(sp => `'${sp.element}'`).join(',');
   const spellShotSfx = config.spells.map((_, i) =>
     i === 0 ? 'SFX.spell0_shot' : i === 1 ? 'SFX.spell1_shot' : 'null').join(',');
@@ -443,12 +448,17 @@ let cur=LAYOUT.land;
 function hexCenter(col,row){return{x:cur.gx0+col*cur.colSp+(row%2===1?cur.oddDx:0),y:cur.gy0+row*cur.rowSp};}
 function toCube(col,row){const x=col-(row-(row&1))/2,z=row;return{x,y:-x-z,z};}
 function hexDist(c1,r1,c2,r2){const a=toCube(c1,r1),b=toCube(c2,r2);return Math.max(Math.abs(a.x-b.x),Math.abs(a.y-b.y),Math.abs(a.z-b.z));}
+// Vertical launch/impact point for a projectile relative to a unit's hex
+// center, scaled by that unit's own display width so bigger sprites launch
+// (and get hit) higher up instead of a one-size-fits-all offset.
+function projOriginY(width){return Math.round(width*0.35);}
 
 // ─── CONFIG (injected) ───
 const ENEMIES=${JSON.stringify(enemiesData)};
 const ENEMY_INIT_POS=ENEMIES.map(e=>({col:e.col,row:e.row}));
 const SPELL_ELS=[${spellElsJS}];
 const SPELL_IMGS=[${spellImgsJS}];
+const SPELL_PROJ_SIZE=[${spellProjSizeJS}];
 const SPELL_SHOT_SFX=[${spellShotSfx}];
 const SPELL_HIT_SFX=[${spellHitSfx}];
 const PLAYER_HP_INIT=${p0.hp},PLAYER_W=${p0.displayWidth},PLAYER_ATK_W=${p0AtkW};
@@ -466,7 +476,6 @@ const HINTS_WASTED=${JSON.stringify(hintWastedSpell)};
 const ATTACK_ICON_MELEE='${meleeIconUri}';
 const ATTACK_ICON_RANGED='${rangedIconUri}';
 const ATTACK_ICON_FLYING='${flyingIconUri}';
-const RANGED_PROJECTILE_IMG='${rangedProjectileUri}';
 const SCENARIO_MODE='${config.scenario.mode}';
 const GUIDED_STEPS=${JSON.stringify(guidedStepsData)};
 const ALT_FIRST='${altCfg.firstTurn}';
@@ -726,18 +735,21 @@ function hideAllAttackIcons(){atkIconEls.forEach(el=>{if(el)el.style.display='no
 function showOutOfReach(){showSpeech('Unit is out of reach!',1800);}
 
 // ─── ANIMATIONS ───
-function animateProjectile(img,x1,y1,x2,y2,cb){
+function animateProjectile(img,size,x1,y1,x2,y2,cb){
+  const half=size/2;
+  spellProj.style.width=size+'px';spellProj.style.height=size+'px';
   spellProj.style.backgroundImage=img?'url(\\''+img+'\\')':'radial-gradient(circle,rgba(255,220,80,.9) 0%,transparent 70%)';
-  spellProj.style.transition='none';spellProj.style.left=(x1-30)+'px';spellProj.style.top=(y1-30)+'px';spellProj.style.display='block';
+  spellProj.style.transition='none';spellProj.style.left=(x1-half)+'px';spellProj.style.top=(y1-half)+'px';spellProj.style.display='block';
   requestAnimationFrame(()=>requestAnimationFrame(()=>{
-    spellProj.style.transition='left .38s ease-in,top .38s ease-in';spellProj.style.left=(x2-30)+'px';spellProj.style.top=(y2-30)+'px';
+    spellProj.style.transition='left .38s ease-in,top .38s ease-in';spellProj.style.left=(x2-half)+'px';spellProj.style.top=(y2-half)+'px';
     setTimeout(()=>{spellProj.style.display='none';if(cb)cb();},420);
   }));
 }
 function animateSpell(spellIdx,x1,y1,x2,y2,cb){
   const img=spellIdx>=0?(SPELL_IMGS[spellIdx]||''):'';
+  const size=spellIdx>=0?(SPELL_PROJ_SIZE[spellIdx]||60):60;
   if(spellIdx>=0)playSound(SPELL_SHOT_SFX[spellIdx]);
-  animateProjectile(img,x1,y1,x2,y2,()=>{if(spellIdx>=0)playSound(SPELL_HIT_SFX[spellIdx]);if(cb)cb();});
+  animateProjectile(img,size,x1,y1,x2,y2,()=>{if(spellIdx>=0)playSound(SPELL_HIT_SFX[spellIdx]);if(cb)cb();});
 }
 function playerFlyAttack(eIdx,dmg,cb,applyFn){
   applyFn=applyFn||applyDamageToEnemy;
@@ -819,7 +831,7 @@ function doRetaliation(killedId,cb){
       const retImg=retEl&&retEl.querySelector('img');
       if(retImg&&retEnemy.atkImg){retImg.src=retEnemy.atkImg;retImg.width=retEnemy.aw;}
       playSound(SFX.enemy1_atk);
-      animateProjectile(RANGED_PROJECTILE_IMG,src.x,src.y-30,pc.x,pc.y-30,()=>{
+      animateProjectile(retEnemy.projImg,retEnemy.projSize,src.x,src.y-projOriginY(retEnemy.w),pc.x,pc.y-projOriginY(ALL_PLAYERS[pi].w),()=>{
         if(retImg&&retEnemy.idleImg){retImg.src=retEnemy.idleImg;retImg.width=retEnemy.w;}
         applyHit();
       });
@@ -858,7 +870,8 @@ function enemyAttack(idx,hint){
     if(img&&e.atkImg){img.src=e.atkImg;img.width=e.aw;}
     playSound(SFX.enemy1_atk);
     const{x,y}=getHitPos();
-    animateProjectile(RANGED_PROJECTILE_IMG,src.x,src.y-30,x,y-30,()=>{
+    const pi=activePlayerIdx();
+    animateProjectile(e.projImg,e.projSize,src.x,src.y-projOriginY(e.w),x,y-projOriginY(ALL_PLAYERS[pi].w),()=>{
       if(img&&e.idleImg){img.src=e.idleImg;img.width=e.w;}
       floatText('CRITICAL HIT!',x,y-40,'critical');deathBurst(x,y,'#ff4400');playerDies(hint);
     });
@@ -913,7 +926,7 @@ function playerAttackAlt(eIdx,cb,applyFn){
     const img=playerEls[pi]&&playerEls[pi].querySelector('img');
     if(img&&ap.atkImg){img.src=ap.atkImg;img.width=ap.aw;}
     playSound(SFX.player_ranged_atk||SFX.player_atk);
-    animateProjectile(RANGED_PROJECTILE_IMG,from.x,from.y-30,x,y-30,()=>{
+    animateProjectile(ap.projImg,ap.projSize,from.x,from.y-projOriginY(ap.w),x,y-projOriginY(e.w),()=>{
       if(img&&ap.idleImg){img.src=ap.idleImg;img.width=ap.w;}
       applyFn(eIdx,dmg,cb);
     });
@@ -1043,7 +1056,7 @@ function enemyAttackAlt(idx,targetPi,damage,cb){
     const src=hexCenter(e.col,e.row);
     if(img&&e.atkImg){img.src=e.atkImg;img.width=e.aw;}
     playSound(SFX.enemy1_atk);
-    animateProjectile(RANGED_PROJECTILE_IMG,src.x,src.y-30,pc.x,pc.y-30,()=>{
+    animateProjectile(e.projImg,e.projSize,src.x,src.y-projOriginY(e.w),pc.x,pc.y-projOriginY(ALL_PLAYERS[targetPi].w),()=>{
       if(img&&e.idleImg){img.src=e.idleImg;img.width=e.w;}
       applyHit();
     });
@@ -1078,7 +1091,7 @@ function castSpell(targetCol,targetRow){
   const from=hexCenter(apos.col,apos.row),to=hexCenter(e.col,e.row);
   const img=playerEls[pi]&&playerEls[pi].querySelector('img');
   if(img&&ap.atkImg){img.src=ap.atkImg;img.width=ap.aw;}
-  animateSpell(spellIdx,from.x,from.y-40,to.x,to.y-40,()=>{
+  animateSpell(spellIdx,from.x,from.y-projOriginY(ap.w),to.x,to.y-projOriginY(e.w),()=>{
     if(img&&ap.idleImg){img.src=ap.idleImg;img.width=ap.w;}
     if(!isResisted){
       floatText('Critical!',to.x,to.y-30,'critical');
@@ -1176,7 +1189,7 @@ function onHexClick(){
       const from=hexCenter(gs.pCol,gs.pRow);const to=hexCenter(e.col,e.row);
       const img=playerEls[pi0]&&playerEls[pi0].querySelector('img');
       if(img&&ap0.atkImg){img.src=ap0.atkImg;img.width=ap0.aw;}
-      animateProjectile(RANGED_PROJECTILE_IMG,from.x,from.y-30,to.x,to.y-30,()=>{
+      animateProjectile(ap0.projImg,ap0.projSize,from.x,from.y-projOriginY(ap0.w),to.x,to.y-projOriginY(e.w),()=>{
         if(img&&ap0.idleImg){img.src=ap0.idleImg;img.width=ap0.w;}
         if(flyingAlive&&e.type!=='flying'){floatText('KILL',to.x,to.y-30,'critical');killEnemy(eIdx,()=>{const flyIdx=ENEMIES.findIndex((en,i)=>gs.enemyAlive[i]&&en.type==='flying');if(flyIdx>=0)setTimeout(()=>enemyAttack(flyIdx,HINTS_RANGED_FIRST),400);else checkWin();});}
         else{killEnemy(eIdx,()=>{doRetaliation(e.id,()=>{checkWin();});});}

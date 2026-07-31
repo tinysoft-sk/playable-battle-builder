@@ -20,11 +20,13 @@ export interface UnitConfig {
   gridRow: number;
   displayWidth: number;
   moveRange: number;
+  projectileSize: number;
   resistTo: SpellElement[];
   flipped: boolean;
   assets: {
     idle: AssetData | null;
     attack: AssetData | null;
+    projectile: AssetData | null;
   };
 }
 
@@ -41,6 +43,8 @@ export interface SpellConfig {
   name: string;
   element: SpellElement;
   asset: AssetData | null;
+  projectileAsset: AssetData | null;
+  projectileSize: number;
   sfxShoot: AssetData | null;
   sfxHit: AssetData | null;
 }

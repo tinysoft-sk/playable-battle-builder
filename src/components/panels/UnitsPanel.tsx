@@ -121,6 +121,23 @@ function UnitCard({
             onChange={a => onUpdate({ assets: { ...unit.assets, attack: a } })}
           />
         </div>
+        {unit.type === 'ranged' && (
+          <>
+            <div className="field">
+              <label>Projectile Image</label>
+              <AssetUpload
+                label="Projectile"
+                asset={unit.assets.projectile ?? null}
+                onChange={a => onUpdate({ assets: { ...unit.assets, projectile: a } })}
+              />
+            </div>
+            <div className="field" style={{ maxWidth: 120 }}>
+              <label>Projectile Size</label>
+              <input type="number" min={16} max={200} value={unit.projectileSize ?? 60}
+                onChange={e => onUpdate({ projectileSize: +e.target.value })} />
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
