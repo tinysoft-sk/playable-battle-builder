@@ -16,6 +16,8 @@ export default function ScenarioPanel() {
   } = useBattleStore();
   const { scenario } = config;
   const alt = scenario.alternating;
+  const gridCols = config.grid?.cols ?? 5;
+  const gridRows = config.grid?.rows ?? 4;
 
   // ── puzzle helpers ──────────────────────────────────────────────────
 
@@ -139,7 +141,7 @@ export default function ScenarioPanel() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 4, flex: '0 0 auto' }}>
                     <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>col</span>
                     <input
-                      type="number" min={0} max={4} value={step.moveTargetCol ?? 0}
+                      type="number" min={0} max={gridCols - 1} value={step.moveTargetCol ?? 0}
                       onChange={e => updateStep(i, { moveTargetCol: +e.target.value })}
                       style={{ width: 50 }}
                     />
@@ -147,7 +149,7 @@ export default function ScenarioPanel() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 4, flex: '0 0 auto' }}>
                     <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>row</span>
                     <input
-                      type="number" min={0} max={3} value={step.moveTargetRow ?? 0}
+                      type="number" min={0} max={gridRows - 1} value={step.moveTargetRow ?? 0}
                       onChange={e => updateStep(i, { moveTargetRow: +e.target.value })}
                       style={{ width: 50 }}
                     />
@@ -360,7 +362,7 @@ export default function ScenarioPanel() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: 4, flex: '0 0 auto' }}>
                         <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>col</span>
                         <input
-                          type="number" min={0} max={4} value={turn.moveTargetCol ?? 0}
+                          type="number" min={0} max={gridCols - 1} value={turn.moveTargetCol ?? 0}
                           onChange={e => updateEnemyTurn(turn.id, { moveTargetCol: +e.target.value })}
                           style={{ width: 50 }}
                         />
@@ -368,7 +370,7 @@ export default function ScenarioPanel() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: 4, flex: '0 0 auto' }}>
                         <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>row</span>
                         <input
-                          type="number" min={0} max={3} value={turn.moveTargetRow ?? 0}
+                          type="number" min={0} max={gridRows - 1} value={turn.moveTargetRow ?? 0}
                           onChange={e => updateEnemyTurn(turn.id, { moveTargetRow: +e.target.value })}
                           style={{ width: 50 }}
                         />

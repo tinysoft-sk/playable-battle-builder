@@ -8,11 +8,15 @@ function UnitCard({
   onUpdate,
   onRemove,
   canRemove,
+  gridCols,
+  gridRows,
 }: {
   unit: UnitConfig;
   onUpdate: (patch: Partial<UnitConfig>) => void;
   onRemove: () => void;
   canRemove: boolean;
+  gridCols: number;
+  gridRows: number;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -64,11 +68,11 @@ function UnitCard({
         <div className="row">
           <div className="field">
             <label>Grid Col</label>
-            <input type="number" min={0} max={4} value={unit.gridCol} onChange={e => onUpdate({ gridCol: +e.target.value })} />
+            <input type="number" min={0} max={gridCols - 1} value={unit.gridCol} onChange={e => onUpdate({ gridCol: +e.target.value })} />
           </div>
           <div className="field">
             <label>Grid Row</label>
-            <input type="number" min={0} max={3} value={unit.gridRow} onChange={e => onUpdate({ gridRow: +e.target.value })} />
+            <input type="number" min={0} max={gridRows - 1} value={unit.gridRow} onChange={e => onUpdate({ gridRow: +e.target.value })} />
           </div>
           <div className="field">
             <label>Display Width</label>
@@ -128,6 +132,7 @@ export default function UnitsPanel() {
     updatePlayerUnit, addPlayerUnit, removePlayerUnit,
     updateEnemyUnit,  addEnemyUnit,  removeEnemyUnit,
   } = useBattleStore();
+  const grid = config.grid ?? { cols: 5, rows: 4 };
 
   return (
     <div>
@@ -142,6 +147,8 @@ export default function UnitsPanel() {
               onUpdate={patch => updatePlayerUnit(u.id, patch)}
               onRemove={() => removePlayerUnit(u.id)}
               canRemove={config.playerUnits.length > 1}
+              gridCols={grid.cols}
+              gridRows={grid.rows}
             />
           ))}
           <button className="btn-add" disabled={config.playerUnits.length >= 6} onClick={addPlayerUnit}>
@@ -157,6 +164,8 @@ export default function UnitsPanel() {
               onUpdate={patch => updateEnemyUnit(u.id, patch)}
               onRemove={() => removeEnemyUnit(u.id)}
               canRemove={config.enemyUnits.length > 1}
+              gridCols={grid.cols}
+              gridRows={grid.rows}
             />
           ))}
           <button className="btn-add" disabled={config.enemyUnits.length >= 6} onClick={addEnemyUnit}>
