@@ -61,7 +61,10 @@
       "Bash(cp -r dist/* /tmp/subpath-test/playable-battle-builder/)",
       "Bash(python3 -m http.server 8099)",
       "Bash(curl -s -o /dev/null -w \"index HTTP %{http_code}\\\\n\" http://localhost:8099/playable-battle-builder/)",
-      "Bash(curl -s -o /dev/null -w \"template via relative path HTTP %{http_code}\\\\n\" http://localhost:8099/playable-battle-builder/templates/HAM_Battle_alt_02.json)"
+      "Bash(curl -s -o /dev/null -w \"template via relative path HTTP %{http_code}\\\\n\" http://localhost:8099/playable-battle-builder/templates/HAM_Battle_alt_02.json)",
+      "Bash(git stash *)",
+      "Bash(./node_modules/.bin/esbuild src/utils/htmlGenerator.ts --bundle --platform=node --format=cjs --outfile=/tmp/name-verify/before.cjs)",
+      "Bash(./node_modules/.bin/esbuild src/utils/htmlGenerator.ts --bundle --platform=node --format=cjs --outfile=/tmp/name-verify/after.cjs)"
     ]
   }
 }

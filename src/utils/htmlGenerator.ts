@@ -39,7 +39,8 @@ function fitLayout(hexW0: number, hexH0: number, gx0_0: number, gy0_0: number, c
   return { hexW, hexH, colSp, rowSp, oddDx, gx0, gy0 };
 }
 
-export function generateHTML(config: BattleConfig, network: NetworkTarget): string {
+export function generateHTML(config: BattleConfig, network: NetworkTarget, options?: { showUnitNames?: boolean }): string {
+  const showUnitNames = options?.showUnitNames ?? false;
   const hasAudio = network !== 'facebook';
 
   const p0 = config.playerUnits[0];
@@ -161,14 +162,16 @@ export function generateHTML(config: BattleConfig, network: NetworkTarget): stri
   const playerElsInit     = config.playerUnits.map((_, i) => `$('unit-player-${i}')`).join(',');
 
   // HTML sections
+  const nameLabelHTML = (name: string) => showUnitNames ? `\n    <div class="unit-name-label">${name}</div>` : '';
+
   const playerUnitsHTML = config.playerUnits.map((p, i) => `
-  <div id="unit-player-${i}" class="unit">
+  <div id="unit-player-${i}" class="unit">${nameLabelHTML(p.name)}
     <img src="${uri(p.assets.idle)}" width="${p.displayWidth}" alt="${p.name}">
     <div class="hp-badge"><span id="player-${i}-hp">${p.hp}</span></div>
   </div>`).join('');
 
   const enemyUnitsHTML = config.enemyUnits.map((e, i) => `
-  <div id="unit-enemy-${i}" class="unit">
+  <div id="unit-enemy-${i}" class="unit">${nameLabelHTML(e.name)}
     <img src="${uri(e.assets.idle)}" width="${e.displayWidth}" style="transform:scaleX(-1)" alt="${e.name}">
     <div class="hp-badge"><span id="enemy-${i}-hp">${e.hp}</span></div>
   </div>`).join('');
@@ -285,6 +288,10 @@ export function generateHTML(config: BattleConfig, network: NetworkTarget): stri
     else{${network==='mintegral'?'/* wait for gameStart() */':network==='unity'?"if(typeof actx!=='undefined'&&actx&&typeof mraid!=='undefined'&&mraid.isViewable())actx.resume();":"if(typeof actx!=='undefined'&&actx)actx.resume();"}}
   });`;
 
+  const unitNameLabelCSS = showUnitNames
+    ? `\n.unit-name-label{position:absolute;top:-20px;left:50%;transform:translateX(-50%);background:rgba(10,10,20,.75);color:#fff;font-family:Arial,sans-serif;font-size:11px;font-weight:700;padding:1px 7px;border-radius:8px;white-space:nowrap;pointer-events:none;z-index:20;}`
+    : '';
+
   const rpFooter = network === 'google' ? `
   <div style="position:fixed;bottom:4px;left:0;right:0;text-align:center;font-size:10px;color:rgba(255,255,255,.6);pointer-events:none;z-index:9999;">
     18+ | Play Responsibly | gamblingtherapy.org
@@ -329,7 +336,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;touch-action:no
 .unit.hop{animation:hopUnit .36s ease-out;}
 .unit.active-player::after{content:'';position:absolute;left:50%;bottom:-28px;transform:translateX(-50%);width:36px;height:3px;background:#4af;border-radius:2px;box-shadow:0 0 8px rgba(64,170,255,.8);}
 .hp-badge{position:absolute;bottom:-24px;left:50%;transform:translateX(-50%);background:rgba(10,10,20,.8);color:#fff;font-family:'Arial Black',Arial,sans-serif;font-size:12px;font-weight:900;padding:2px 8px;border-radius:10px;border:1.5px solid #8cf;white-space:nowrap;pointer-events:none;z-index:20;}
-.hp-badge.flash{animation:hpFlash .4s ease;}
+.hp-badge.flash{animation:hpFlash .4s ease;}${unitNameLabelCSS}
 @keyframes hpFlash{0%,100%{background:rgba(10,10,20,.8)}50%{background:rgba(200,30,30,.9);border-color:#f44;}}
 .enemy-flyer{position:absolute;pointer-events:none;z-index:40;}
 .float-text{position:absolute;font-family:'Arial Black',Arial,sans-serif;font-size:26px;font-weight:900;pointer-events:none;z-index:55;text-shadow:2px 2px 4px #000,0 0 8px #000;animation:floatUp 1.5s ease forwards;}

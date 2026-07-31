@@ -15,7 +15,7 @@ export default function LivePreview() {
   const refresh = useCallback(() => {
     if (!iframeRef.current) return;
     try {
-      const html = generateHTML(config, 'unity');
+      const html = generateHTML(config, 'unity', { showUnitNames: true });
       htmlRef.current = html;
       iframeRef.current.srcdoc = html;
     } catch (e) {
