@@ -452,6 +452,10 @@ function hexDist(c1,r1,c2,r2){const a=toCube(c1,r1),b=toCube(c2,r2);return Math.
 // center, scaled by that unit's own display width so bigger sprites launch
 // (and get hit) higher up instead of a one-size-fits-all offset.
 function projOriginY(width){return Math.round(width*0.35);}
+// Sprite art faces right by default; mirror it when the target is to the
+// attacker's left so units always visually face what they're attacking,
+// regardless of which side of the board they've moved to.
+function faceDir(fromCol,toCol){return toCol<fromCol?'scaleX(-1)':'';}
 
 // ─── CONFIG (injected) ───
 const ENEMIES=${JSON.stringify(enemiesData)};
@@ -686,7 +690,7 @@ function doMeleeWalkAttack(eIdx,targetPi,cb){
   const dst=hexCenter(adjC,adjR);
   if(el){el.style.transition='left .35s ease-in,top .35s ease-in';el.style.left=dst.x+'px';el.style.top=dst.y+'px';}
   setTimeout(()=>{
-    enemySwingAttack(eIdx,()=>{
+    enemySwingAttack(eIdx,apos.col,()=>{
       if(el){el.style.transition='left .35s ease-in,top .35s ease-in';el.style.left=src.x+'px';el.style.top=src.y+'px';}
       if(cb)cb();setTimeout(()=>{if(el)el.style.transition='';},380);
     });
@@ -760,7 +764,7 @@ function playerFlyAttack(eIdx,dmg,cb,applyFn){
   const dst=hexCenter(dc,dr);
   gs.allPlayerPos[pi]={col:dc,row:dr};gs.pCol=dc;gs.pRow=dr;
   const img=pEl&&pEl.querySelector('img');
-  if(img&&ap.atkImg){img.src=ap.atkImg;img.width=ap.aw;}
+  if(img){img.style.transform=faceDir(orig.col,e.col);if(ap.atkImg){img.src=ap.atkImg;img.width=ap.aw;}}
   playSound(SFX.player_fly_atk||SFX.player_atk);
   if(pEl){pEl.style.transition='left .28s ease-in,top .28s ease-in';pEl.style.left=dst.x+'px';pEl.style.top=dst.y+'px';}
   setTimeout(()=>{
@@ -818,7 +822,7 @@ function doRetaliation(killedId,cb){
       playSound(SFX.enemy_melee_atk||SFX.enemy1_atk);
       setTimeout(()=>{
         if(retEl)retEl.classList.add('shake');
-        if(retImg&&retEnemy.atkImg){retImg.src=retEnemy.atkImg;retImg.width=retEnemy.aw;}
+        if(retImg){retImg.style.transform=faceDir(retEnemy.col,apos.col);if(retEnemy.atkImg){retImg.src=retEnemy.atkImg;retImg.width=retEnemy.aw;}}
         setTimeout(()=>{
           if(retEl){retEl.classList.remove('shake');retEl.style.transition='left .35s ease-in,top .35s ease-in';retEl.style.left=src.x+'px';retEl.style.top=src.y+'px';}
           if(retImg&&retEnemy.idleImg){retImg.src=retEnemy.idleImg;retImg.width=retEnemy.w;}
@@ -829,7 +833,7 @@ function doRetaliation(killedId,cb){
     } else {
       const src=hexCenter(retEnemy.col,retEnemy.row);
       const retImg=retEl&&retEl.querySelector('img');
-      if(retImg&&retEnemy.atkImg){retImg.src=retEnemy.atkImg;retImg.width=retEnemy.aw;}
+      if(retImg){retImg.style.transform=faceDir(retEnemy.col,apos.col);if(retEnemy.atkImg){retImg.src=retEnemy.atkImg;retImg.width=retEnemy.aw;}}
       playSound(SFX.enemy1_atk);
       animateProjectile(retEnemy.projImg,retEnemy.projSize,src.x,src.y-projOriginY(retEnemy.w),pc.x,pc.y-projOriginY(ALL_PLAYERS[pi].w),()=>{
         if(retImg&&retEnemy.idleImg){retImg.src=retEnemy.idleImg;retImg.width=retEnemy.w;}
@@ -844,10 +848,10 @@ function movePlayerTo(col,row,cb){
   placeUnit(playerEls[pi],col,row);playSound(SFX.walk);
   setTimeout(()=>{if(cb)cb();},460);
 }
-function playerSwingAttack(cb){
-  const pi=activePlayerIdx();const ap=ALL_PLAYERS[pi];
+function playerSwingAttack(targetCol,cb){
+  const pi=activePlayerIdx();const ap=ALL_PLAYERS[pi];const apos=gs.allPlayerPos[pi];
   const img=playerEls[pi]&&playerEls[pi].querySelector('img');
-  if(img&&ap.atkImg){img.src=ap.atkImg;img.width=ap.aw;}
+  if(img){img.style.transform=faceDir(apos.col,targetCol);if(ap.atkImg){img.src=ap.atkImg;img.width=ap.aw;}}
   playSound(SFX.player_atk);
   setTimeout(()=>{if(img&&ap.idleImg){img.src=ap.idleImg;img.width=ap.w;}if(cb)cb();},420);
 }
@@ -861,16 +865,17 @@ function enemyAttack(idx,hint){
       const{x,y}=getHitPos();floatText('CRITICAL HIT!',x,y-40,'critical');deathBurst(x,y,'#ff4400');playerDies(hint);
     });
   } else if(e.type==='melee'){
-    enemySwingAttack(idx,()=>{
+    const tpos=gs.allPlayerPos[activePlayerIdx()];
+    enemySwingAttack(idx,tpos.col,()=>{
       const{x,y}=getHitPos();floatText('CRITICAL HIT!',x,y-40,'critical');deathBurst(x,y,'#ff4400');playerDies(hint);
     });
   } else {
     const el=enemyEls[idx];const img=el&&el.querySelector('img');
     const src=hexCenter(e.col,e.row);
-    if(img&&e.atkImg){img.src=e.atkImg;img.width=e.aw;}
+    const pi=activePlayerIdx();const tpos=gs.allPlayerPos[pi];
+    if(img){img.style.transform=faceDir(e.col,tpos.col);if(e.atkImg){img.src=e.atkImg;img.width=e.aw;}}
     playSound(SFX.enemy1_atk);
     const{x,y}=getHitPos();
-    const pi=activePlayerIdx();
     animateProjectile(e.projImg,e.projSize,src.x,src.y-projOriginY(e.w),x,y-projOriginY(ALL_PLAYERS[pi].w),()=>{
       if(img&&e.idleImg){img.src=e.idleImg;img.width=e.w;}
       floatText('CRITICAL HIT!',x,y-40,'critical');deathBurst(x,y,'#ff4400');playerDies(hint);
@@ -924,7 +929,7 @@ function playerAttackAlt(eIdx,cb,applyFn){
   if(ap.type==='ranged'){
     const apos=gs.allPlayerPos[pi];const from=hexCenter(apos.col,apos.row);
     const img=playerEls[pi]&&playerEls[pi].querySelector('img');
-    if(img&&ap.atkImg){img.src=ap.atkImg;img.width=ap.aw;}
+    if(img){img.style.transform=faceDir(apos.col,e.col);if(ap.atkImg){img.src=ap.atkImg;img.width=ap.aw;}}
     playSound(SFX.player_ranged_atk||SFX.player_atk);
     animateProjectile(ap.projImg,ap.projSize,from.x,from.y-projOriginY(ap.w),x,y-projOriginY(e.w),()=>{
       if(img&&ap.idleImg){img.src=ap.idleImg;img.width=ap.w;}
@@ -933,7 +938,7 @@ function playerAttackAlt(eIdx,cb,applyFn){
   } else if(ap.type==='flying'){
     playerFlyAttack(eIdx,dmg,cb,applyFn);
   } else {
-    playerSwingAttack(()=>{applyFn(eIdx,dmg,cb);});
+    playerSwingAttack(e.col,()=>{applyFn(eIdx,dmg,cb);});
   }
 }
 
@@ -975,7 +980,7 @@ function applyDamageToEnemy(eIdx,dmg,cb){
             shakeUnit(playerEls[rpi],()=>{if(gs.allPlayerHP[rpi]<=0){playerDiesAt(rpi,'');return;}if(cb)cb();});
           };
           if(e.type==='melee'){doMeleeWalkAttack(eIdx,rpi,doHit);}
-          else{enemySwingAttack(eIdx,doHit);}
+          else{enemySwingAttack(eIdx,gs.allPlayerPos[rpi].col,doHit);}
         },300);
       } else {
         if(cb)cb();
@@ -1031,10 +1036,10 @@ function runEnemyTurns(){
   }
 }
 
-function enemySwingAttack(idx,cb){
+function enemySwingAttack(idx,targetCol,cb){
   const e=ENEMIES[idx];const el=enemyEls[idx];
   const img=el&&el.querySelector('img');
-  if(img&&e.atkImg){img.src=e.atkImg;img.width=e.aw;}
+  if(img){img.style.transform=faceDir(e.col,targetCol);if(e.atkImg){img.src=e.atkImg;img.width=e.aw;}}
   if(el)el.classList.add('shake');playSound(e.type==='melee'?SFX.enemy_melee_atk||SFX.enemy1_atk:SFX.enemy1_atk);
   setTimeout(()=>{if(img&&e.idleImg){img.src=e.idleImg;img.width=e.w;}if(el)el.classList.remove('shake');if(cb)cb();},420);
 }
@@ -1054,7 +1059,7 @@ function enemyAttackAlt(idx,targetPi,damage,cb){
   } else {
     const el=enemyEls[idx];const img=el&&el.querySelector('img');
     const src=hexCenter(e.col,e.row);
-    if(img&&e.atkImg){img.src=e.atkImg;img.width=e.aw;}
+    if(img){img.style.transform=faceDir(e.col,apos.col);if(e.atkImg){img.src=e.atkImg;img.width=e.aw;}}
     playSound(SFX.enemy1_atk);
     animateProjectile(e.projImg,e.projSize,src.x,src.y-projOriginY(e.w),pc.x,pc.y-projOriginY(ALL_PLAYERS[targetPi].w),()=>{
       if(img&&e.idleImg){img.src=e.idleImg;img.width=e.w;}
@@ -1090,7 +1095,7 @@ function castSpell(targetCol,targetRow){
   const pi=activePlayerIdx();const apos=gs.allPlayerPos[pi];const ap=ALL_PLAYERS[pi];
   const from=hexCenter(apos.col,apos.row),to=hexCenter(e.col,e.row);
   const img=playerEls[pi]&&playerEls[pi].querySelector('img');
-  if(img&&ap.atkImg){img.src=ap.atkImg;img.width=ap.aw;}
+  if(img){img.style.transform=faceDir(apos.col,e.col);if(ap.atkImg){img.src=ap.atkImg;img.width=ap.aw;}}
   animateSpell(spellIdx,from.x,from.y-projOriginY(ap.w),to.x,to.y-projOriginY(e.w),()=>{
     if(img&&ap.idleImg){img.src=ap.idleImg;img.width=ap.w;}
     if(!isResisted){
@@ -1187,7 +1192,7 @@ function onHexClick(col,row){
       const flyingAlive=ENEMIES.some((en,i)=>gs.enemyAlive[i]&&en.type==='flying');
       const from=hexCenter(gs.pCol,gs.pRow);const to=hexCenter(e.col,e.row);
       const img=playerEls[pi0]&&playerEls[pi0].querySelector('img');
-      if(img&&ap0.atkImg){img.src=ap0.atkImg;img.width=ap0.aw;}
+      if(img){img.style.transform=faceDir(gs.pCol,e.col);if(ap0.atkImg){img.src=ap0.atkImg;img.width=ap0.aw;}}
       animateProjectile(ap0.projImg,ap0.projSize,from.x,from.y-projOriginY(ap0.w),to.x,to.y-projOriginY(e.w),()=>{
         if(img&&ap0.idleImg){img.src=ap0.idleImg;img.width=ap0.w;}
         if(flyingAlive&&e.type!=='flying'){floatText('KILL',to.x,to.y-30,'critical');killEnemy(eIdx,()=>{const flyIdx=ENEMIES.findIndex((en,i)=>gs.enemyAlive[i]&&en.type==='flying');if(flyIdx>=0)setTimeout(()=>enemyAttack(flyIdx,HINTS_RANGED_FIRST),400);else checkWin();});}
@@ -1207,9 +1212,9 @@ function onHexClick(col,row){
     gs.state='animating';clearHex();hideSpeech();hideAllAttackIcons();
     const flyingAlive=ENEMIES.some((en,i)=>gs.enemyAlive[i]&&en.type==='flying');
     if(!flyingAlive){
-      movePlayerTo(dc,dr,()=>{playerSwingAttack(()=>{killEnemy(eIdx,()=>{doRetaliation(e.id,()=>{checkWin();});});});});
+      movePlayerTo(dc,dr,()=>{playerSwingAttack(e.col,()=>{killEnemy(eIdx,()=>{doRetaliation(e.id,()=>{checkWin();});});});});
     } else {
-      movePlayerTo(dc,dr,()=>{playerSwingAttack(()=>{const fc=hexCenter(e.col,e.row);floatText('KILL',fc.x,fc.y-30,'critical');killEnemy(eIdx,()=>{const flyIdx=ENEMIES.findIndex((en,i)=>gs.enemyAlive[i]&&en.type==='flying');if(flyIdx>=0)setTimeout(()=>enemyAttack(flyIdx,HINTS_RANGED_FIRST),400);else checkWin();});});});
+      movePlayerTo(dc,dr,()=>{playerSwingAttack(e.col,()=>{const fc=hexCenter(e.col,e.row);floatText('KILL',fc.x,fc.y-30,'critical');killEnemy(eIdx,()=>{const flyIdx=ENEMIES.findIndex((en,i)=>gs.enemyAlive[i]&&en.type==='flying');if(flyIdx>=0)setTimeout(()=>enemyAttack(flyIdx,HINTS_RANGED_FIRST),400);else checkWin();});});});
     }
     return;
   }
