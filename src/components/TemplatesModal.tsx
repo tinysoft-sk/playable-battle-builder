@@ -1,12 +1,14 @@
 import { useRef, useState } from 'react';
 import { useBattleStore } from '../store/battleStore';
 import type { BattleConfig } from '../types/battle';
+import { BUILT_IN_TEMPLATES } from '../data/builtInTemplates';
 
 interface Props { onClose: () => void; }
 
 export default function TemplatesModal({ onClose }: Props) {
   const { config, templates, saveTemplate, loadTemplate, deleteTemplate, loadConfig } = useBattleStore();
   const [saveName, setSaveName] = useState(config.name);
+  const [loadingBuiltIn, setLoadingBuiltIn] = useState<string | null>(null);
   const importRef = useRef<HTMLInputElement>(null);
 
   function doSave() {
@@ -14,6 +16,22 @@ export default function TemplatesModal({ onClose }: Props) {
     if (!name) return;
     saveTemplate(name);
     setSaveName('');
+  }
+
+  async function loadBuiltIn(file: string, id: string) {
+    setLoadingBuiltIn(id);
+    try {
+      const res = await fetch(`templates/${file}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const parsed = await res.json() as BattleConfig;
+      loadConfig(parsed);
+      onClose();
+    } catch (err) {
+      console.error('Failed to load built-in template', err);
+      alert(`Could not load built-in template: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setLoadingBuiltIn(null);
+    }
   }
 
   function exportJSON() {
@@ -66,6 +84,23 @@ export default function TemplatesModal({ onClose }: Props) {
             <button className="btn-primary" onClick={doSave}>Save</button>
           </div>
         </div>
+
+        {/* Built-in templates */}
+        {BUILT_IN_TEMPLATES.length > 0 && (
+          <div className="popup-section" style={{ marginBottom: 14 }}>
+            <div className="popup-section-title">Built-in templates</div>
+            {BUILT_IN_TEMPLATES.map(t => (
+              <div key={t.id} className="template-item">
+                <span className="template-name">{t.name}</span>
+                <button className="btn-secondary" style={{ fontSize: 11, padding: '3px 10px' }}
+                  disabled={loadingBuiltIn === t.id}
+                  onClick={() => loadBuiltIn(t.file, t.id)}>
+                  {loadingBuiltIn === t.id ? 'Loading…' : 'Load'}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Saved list */}
         {templates.length > 0 && (

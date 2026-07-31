@@ -52,7 +52,16 @@
       "Bash(/home/karol/.claude/plugins/cache/claude-plugins-official/superpowers/6.2.0/skills/subagent-driven-development/scripts/review-package docs/superpowers/plans/2026-07-30-grid-panel.md d75ee0a53359e88cbaad3e35a02dc9d99eab77de HEAD)",
       "Bash(./node_modules/.bin/esbuild src/store/battleStore.ts --bundle --platform=node --format=cjs --outfile=/tmp/claude-1000/-mnt-c-Users-karol-github-playable-battle-builder/01145828-523d-44d2-84e6-f3a0c6aa8ec9/scratchpad/store.cjs --log-level=error)",
       "Bash(git status *)",
-      "Bash(./node_modules/.bin/esbuild src/utils/htmlGenerator.ts --bundle --platform=node --format=cjs --outfile=/tmp/hero-verify/htmlGenerator.cjs)"
+      "Bash(./node_modules/.bin/esbuild src/utils/htmlGenerator.ts --bundle --platform=node --format=cjs --outfile=/tmp/hero-verify/htmlGenerator.cjs)",
+      "Bash(netstat -tlnp)",
+      "Bash(pkill -f vite)",
+      "Bash(./node_modules/.bin/esbuild src/store/battleStore.ts --bundle --platform=node --format=cjs --outfile=/tmp/store-verify/battleStore.cjs)",
+      "Bash(GITHUB_ACTIONS=true npm run build)",
+      "Bash(mkdir -p /tmp/subpath-test/playable-battle-builder)",
+      "Bash(cp -r dist/* /tmp/subpath-test/playable-battle-builder/)",
+      "Bash(python3 -m http.server 8099)",
+      "Bash(curl -s -o /dev/null -w \"index HTTP %{http_code}\\\\n\" http://localhost:8099/playable-battle-builder/)",
+      "Bash(curl -s -o /dev/null -w \"template via relative path HTTP %{http_code}\\\\n\" http://localhost:8099/playable-battle-builder/templates/HAM_Battle_alt_02.json)"
     ]
   }
 }
