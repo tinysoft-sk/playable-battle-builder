@@ -68,6 +68,7 @@ export function generateHTML(config: BattleConfig, network: NetworkTarget, optio
   const meleeIconUri  = uri((config.uiAssets as any)?.meleeIcon);
   const rangedIconUri = uri((config.uiAssets as any)?.rangedIcon);
   const flyingIconUri = uri((config.uiAssets as any)?.flyingIcon);
+  const rangedProjectileUri = uri((config.uiAssets as any)?.rangedProjectile);
   const gridOffsetLand = (config as any).gridOffset?.landscape ?? 0;
   const gridOffsetPort = (config as any).gridOffset?.portrait ?? 0;
   const gridCols = (config as any).grid?.cols ?? 5;
@@ -465,6 +466,7 @@ const HINTS_WASTED=${JSON.stringify(hintWastedSpell)};
 const ATTACK_ICON_MELEE='${meleeIconUri}';
 const ATTACK_ICON_RANGED='${rangedIconUri}';
 const ATTACK_ICON_FLYING='${flyingIconUri}';
+const RANGED_PROJECTILE_IMG='${rangedProjectileUri}';
 const SCENARIO_MODE='${config.scenario.mode}';
 const GUIDED_STEPS=${JSON.stringify(guidedStepsData)};
 const ALT_FIRST='${altCfg.firstTurn}';
@@ -724,16 +726,18 @@ function hideAllAttackIcons(){atkIconEls.forEach(el=>{if(el)el.style.display='no
 function showOutOfReach(){showSpeech('Unit is out of reach!',1800);}
 
 // ─── ANIMATIONS ───
-function animateSpell(spellIdx,x1,y1,x2,y2,cb){
-  const img=spellIdx>=0?(SPELL_IMGS[spellIdx]||''):'';
-  spellProj.style.backgroundImage=img?'url(\\''+img+'\\')':'';
-  spellProj.style.background=img?'':'radial-gradient(circle,rgba(255,220,80,.9) 0%,transparent 70%)';
+function animateProjectile(img,x1,y1,x2,y2,cb){
+  spellProj.style.backgroundImage=img?'url(\\''+img+'\\')':'radial-gradient(circle,rgba(255,220,80,.9) 0%,transparent 70%)';
   spellProj.style.transition='none';spellProj.style.left=(x1-30)+'px';spellProj.style.top=(y1-30)+'px';spellProj.style.display='block';
-  if(spellIdx>=0)playSound(SPELL_SHOT_SFX[spellIdx]);
   requestAnimationFrame(()=>requestAnimationFrame(()=>{
     spellProj.style.transition='left .38s ease-in,top .38s ease-in';spellProj.style.left=(x2-30)+'px';spellProj.style.top=(y2-30)+'px';
-    setTimeout(()=>{spellProj.style.display='none';if(spellIdx>=0)playSound(SPELL_HIT_SFX[spellIdx]);if(cb)cb();},420);
+    setTimeout(()=>{spellProj.style.display='none';if(cb)cb();},420);
   }));
+}
+function animateSpell(spellIdx,x1,y1,x2,y2,cb){
+  const img=spellIdx>=0?(SPELL_IMGS[spellIdx]||''):'';
+  if(spellIdx>=0)playSound(SPELL_SHOT_SFX[spellIdx]);
+  animateProjectile(img,x1,y1,x2,y2,()=>{if(spellIdx>=0)playSound(SPELL_HIT_SFX[spellIdx]);if(cb)cb();});
 }
 function playerFlyAttack(eIdx,dmg,cb,applyFn){
   applyFn=applyFn||applyDamageToEnemy;
@@ -811,7 +815,14 @@ function doRetaliation(killedId,cb){
         },370);
       },360);
     } else {
-      enemySwingAttack(retIdx,applyHit);
+      const src=hexCenter(retEnemy.col,retEnemy.row);
+      const retImg=retEl&&retEl.querySelector('img');
+      if(retImg&&retEnemy.atkImg){retImg.src=retEnemy.atkImg;retImg.width=retEnemy.aw;}
+      playSound(SFX.enemy1_atk);
+      animateProjectile(RANGED_PROJECTILE_IMG,src.x,src.y-30,pc.x,pc.y-30,()=>{
+        if(retImg&&retEnemy.idleImg){retImg.src=retEnemy.idleImg;retImg.width=retEnemy.w;}
+        applyHit();
+      });
     }
   },600);
 }
@@ -837,9 +848,19 @@ function enemyAttack(idx,hint){
     animateEnemyCharge(idx,()=>{
       const{x,y}=getHitPos();floatText('CRITICAL HIT!',x,y-40,'critical');deathBurst(x,y,'#ff4400');playerDies(hint);
     });
-  } else {
+  } else if(e.type==='melee'){
     enemySwingAttack(idx,()=>{
       const{x,y}=getHitPos();floatText('CRITICAL HIT!',x,y-40,'critical');deathBurst(x,y,'#ff4400');playerDies(hint);
+    });
+  } else {
+    const el=enemyEls[idx];const img=el&&el.querySelector('img');
+    const src=hexCenter(e.col,e.row);
+    if(img&&e.atkImg){img.src=e.atkImg;img.width=e.aw;}
+    playSound(SFX.enemy1_atk);
+    const{x,y}=getHitPos();
+    animateProjectile(RANGED_PROJECTILE_IMG,src.x,src.y-30,x,y-30,()=>{
+      if(img&&e.idleImg){img.src=e.idleImg;img.width=e.w;}
+      floatText('CRITICAL HIT!',x,y-40,'critical');deathBurst(x,y,'#ff4400');playerDies(hint);
     });
   }
 }
@@ -892,7 +913,7 @@ function playerAttackAlt(eIdx,cb,applyFn){
     const img=playerEls[pi]&&playerEls[pi].querySelector('img');
     if(img&&ap.atkImg){img.src=ap.atkImg;img.width=ap.aw;}
     playSound(SFX.player_ranged_atk||SFX.player_atk);
-    animateSpell(-1,from.x,from.y-30,x,y-30,()=>{
+    animateProjectile(RANGED_PROJECTILE_IMG,from.x,from.y-30,x,y-30,()=>{
       if(img&&ap.idleImg){img.src=ap.idleImg;img.width=ap.w;}
       applyFn(eIdx,dmg,cb);
     });
@@ -1018,7 +1039,14 @@ function enemyAttackAlt(idx,targetPi,damage,cb){
   } else if(e.type==='melee'){
     doMeleeWalkAttack(idx,targetPi,applyHit);
   } else {
-    enemySwingAttack(idx,applyHit);
+    const el=enemyEls[idx];const img=el&&el.querySelector('img');
+    const src=hexCenter(e.col,e.row);
+    if(img&&e.atkImg){img.src=e.atkImg;img.width=e.aw;}
+    playSound(SFX.enemy1_atk);
+    animateProjectile(RANGED_PROJECTILE_IMG,src.x,src.y-30,pc.x,pc.y-30,()=>{
+      if(img&&e.idleImg){img.src=e.idleImg;img.width=e.w;}
+      applyHit();
+    });
   }
 }
 
@@ -1046,9 +1074,12 @@ function castSpell(targetCol,targetRow){
   const sel2=sel;${spSP_addUsed}
   gs.selSpell=null;${spSP_reset}
   closeSpellbookSilent();gs.state='animating';clearHex();
-  const pi=activePlayerIdx();const apos=gs.allPlayerPos[pi];
+  const pi=activePlayerIdx();const apos=gs.allPlayerPos[pi];const ap=ALL_PLAYERS[pi];
   const from=hexCenter(apos.col,apos.row),to=hexCenter(e.col,e.row);
+  const img=playerEls[pi]&&playerEls[pi].querySelector('img');
+  if(img&&ap.atkImg){img.src=ap.atkImg;img.width=ap.aw;}
   animateSpell(spellIdx,from.x,from.y-40,to.x,to.y-40,()=>{
+    if(img&&ap.idleImg){img.src=ap.idleImg;img.width=ap.w;}
     if(!isResisted){
       floatText('Critical!',to.x,to.y-30,'critical');
       killEnemy(idx,()=>{doRetaliation(e.id,()=>{checkWin();});});
@@ -1145,7 +1176,7 @@ function onHexClick(){
       const from=hexCenter(gs.pCol,gs.pRow);const to=hexCenter(e.col,e.row);
       const img=playerEls[pi0]&&playerEls[pi0].querySelector('img');
       if(img&&ap0.atkImg){img.src=ap0.atkImg;img.width=ap0.aw;}
-      animateSpell(-1,from.x,from.y-30,to.x,to.y-30,()=>{
+      animateProjectile(RANGED_PROJECTILE_IMG,from.x,from.y-30,to.x,to.y-30,()=>{
         if(img&&ap0.idleImg){img.src=ap0.idleImg;img.width=ap0.w;}
         if(flyingAlive&&e.type!=='flying'){floatText('KILL',to.x,to.y-30,'critical');killEnemy(eIdx,()=>{const flyIdx=ENEMIES.findIndex((en,i)=>gs.enemyAlive[i]&&en.type==='flying');if(flyIdx>=0)setTimeout(()=>enemyAttack(flyIdx,HINTS_RANGED_FIRST),400);else checkWin();});}
         else{killEnemy(eIdx,()=>{doRetaliation(e.id,()=>{checkWin();});});}

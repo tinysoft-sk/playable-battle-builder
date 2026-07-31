@@ -157,6 +157,7 @@ export interface BattleConfig {
     meleeIcon: AssetData | null;
     rangedIcon: AssetData | null;
     flyingIcon: AssetData | null;
+    rangedProjectile: AssetData | null;
   };
   appIcon: AssetData | null;
   grid: {

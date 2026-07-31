@@ -161,7 +161,7 @@ export const DEFAULT_CONFIG: BattleConfig = {
   },
   audio: { music: null, sfxMap: emptyAudioMap() },
   gridTiles: { walkable: null, active: null },
-  uiAssets: { spellbookClosed: null, spellbookOpen: null, meleeIcon: null, rangedIcon: null, flyingIcon: null },
+  uiAssets: { spellbookClosed: null, spellbookOpen: null, meleeIcon: null, rangedIcon: null, flyingIcon: null, rangedProjectile: null },
   appIcon: null,
   grid: { cols: 5, rows: 4 },
   gridOffset: { landscape: 0, portrait: 0 },

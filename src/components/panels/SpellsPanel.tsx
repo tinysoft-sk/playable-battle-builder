@@ -45,6 +45,18 @@ export default function SpellsPanel() {
         </div>
       </div>
 
+      <div className="popup-section" style={{ marginBottom: 14 }}>
+        <div className="popup-section-title">Ranged Projectile</div>
+        <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 10 }}>
+          The image that travels from attacker to target during a ranged attack (player or enemy). Optional — leave empty for a plain glowing shot.
+        </p>
+        <div className="field">
+          <label>Projectile Image</label>
+          <AssetUpload label="Ranged projectile" asset={config.uiAssets?.rangedProjectile ?? null}
+            onChange={a => setUiAsset('rangedProjectile', a)} />
+        </div>
+      </div>
+
       {sbEnabled && (
         <>
           <div className="popup-section" style={{ marginBottom: 14 }}>
