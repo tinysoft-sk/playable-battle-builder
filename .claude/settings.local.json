@@ -78,7 +78,10 @@
       "Bash(./node_modules/.bin/esbuild src/utils/htmlGenerator.ts --bundle --platform=node --format=cjs --outfile=/tmp/bug-verify3/htmlGenerator.cjs)",
       "Bash(./node_modules/.bin/esbuild src/utils/htmlGenerator.ts --bundle --platform=node --format=cjs --outfile=/tmp/regress-check/htmlGenerator.cjs)",
       "Bash(./node_modules/.bin/esbuild src/utils/htmlGenerator.ts --bundle --platform=node --format=cjs --outfile=/tmp/retaliation-verify/htmlGenerator.cjs)",
-      "Bash(./node_modules/.bin/esbuild src/utils/htmlGenerator.ts --bundle --platform=node --format=cjs --outfile=/tmp/speech-verify/htmlGenerator.cjs)"
+      "Bash(./node_modules/.bin/esbuild src/utils/htmlGenerator.ts --bundle --platform=node --format=cjs --outfile=/tmp/speech-verify/htmlGenerator.cjs)",
+      "Bash(curl -s \"https://api.github.com/repos/tinysoft-sk/playable-battle-builder/actions/workflows/285653371/runs?per_page=8\")",
+      "Bash(curl -s \"https://api.github.com/repos/tinysoft-sk/playable-battle-builder/actions/runs/30627759911/jobs\")",
+      "Bash(curl -s \"https://api.github.com/repos/tinysoft-sk/playable-battle-builder/actions/workflows/285653371/runs?per_page=5\")"
     ]
   }
 }

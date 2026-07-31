@@ -778,7 +778,7 @@ function doRetaliation(killedId,cb){
         if(gs.allPlayerHP[pi]<=0){playerDies(ret.followUp||'');return;}
         gs.state='player_turn';highlightMove();
         if(ret.followUp){
-          showSpeech(ret.followUp,2800,true);
+          showSpeech(ret.followUp,2800);
           // Give the follow-up line real time on screen before advancing —
           // in Guided mode, advancing immediately (via cb) re-renders the
           // next step's tooltip in the same tick, so the follow-up would
