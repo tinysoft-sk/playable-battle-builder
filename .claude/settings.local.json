@@ -77,7 +77,8 @@
       "Bash(./node_modules/.bin/esbuild src/utils/htmlGenerator.ts --bundle --platform=node --format=cjs --outfile=/tmp/bug-verify2/htmlGenerator.cjs)",
       "Bash(./node_modules/.bin/esbuild src/utils/htmlGenerator.ts --bundle --platform=node --format=cjs --outfile=/tmp/bug-verify3/htmlGenerator.cjs)",
       "Bash(./node_modules/.bin/esbuild src/utils/htmlGenerator.ts --bundle --platform=node --format=cjs --outfile=/tmp/regress-check/htmlGenerator.cjs)",
-      "Bash(./node_modules/.bin/esbuild src/utils/htmlGenerator.ts --bundle --platform=node --format=cjs --outfile=/tmp/retaliation-verify/htmlGenerator.cjs)"
+      "Bash(./node_modules/.bin/esbuild src/utils/htmlGenerator.ts --bundle --platform=node --format=cjs --outfile=/tmp/retaliation-verify/htmlGenerator.cjs)",
+      "Bash(./node_modules/.bin/esbuild src/utils/htmlGenerator.ts --bundle --platform=node --format=cjs --outfile=/tmp/speech-verify/htmlGenerator.cjs)"
     ]
   }
 }

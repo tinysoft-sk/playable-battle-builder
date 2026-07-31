@@ -326,6 +326,9 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;touch-action:no
 #speech-bubble{position:absolute;top:${sbLandY}px;left:${sbLandX}px;width:310px;background:rgba(255,255,255,.95);border-radius:14px;padding:10px 14px;font-family:Arial,sans-serif;font-size:${sbLandFS}px;color:#222;line-height:1.5;box-shadow:0 4px 16px rgba(0,0,0,.45);display:none;z-index:30;pointer-events:none;}
 .portrait #speech-bubble{left:${sbPortX}px;top:${sbPortY}px;font-size:${sbPortFS}px;width:535px;}
 #speech-bubble::before{content:'';position:absolute;left:-12px;top:18px;border:7px solid transparent;border-right-color:rgba(255,255,255,.95);}
+#speech-bubble.from-enemy{left:${sbLandXEnemy}px;}
+.portrait #speech-bubble.from-enemy{left:${sbPortXEnemy}px;}
+#speech-bubble.from-enemy::before{left:auto;right:-12px;border-right-color:transparent;border-left-color:rgba(255,255,255,.95);}
 @keyframes bubbleNudge{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
 #speech-bubble.nudge{animation:bubbleNudge .3s ease;}
 #grid{position:absolute;left:0;top:0;}
@@ -697,7 +700,7 @@ function deathBurst(x,y,color){const el=document.createElement('div');el.classNa
 
 // ─── SPEECH / ARROW ───
 let speechTimer=null;
-function showSpeech(html,autohide){speechBub.innerHTML=html;speechBub.style.display='block';if(speechTimer)clearTimeout(speechTimer);if(autohide>0)speechTimer=setTimeout(hideSpeech,autohide);}
+function showSpeech(html,autohide,fromEnemy){speechBub.innerHTML=html;speechBub.style.display='block';speechBub.classList.toggle('from-enemy',!!fromEnemy);if(speechTimer)clearTimeout(speechTimer);if(autohide>0)speechTimer=setTimeout(hideSpeech,autohide);}
 function hideSpeech(){speechBub.style.display='none';}
 function showArrow(col,row){const{x,y}=hexCenter(col,row);arrowEl.style.left=(x-18)+'px';arrowEl.style.top=(y-110)+'px';arrowEl.classList.add('visible');}
 function hideArrow(){arrowEl.classList.remove('visible');}
@@ -765,7 +768,7 @@ function doRetaliation(killedId,cb){
   if(retIdx<0||!gs.enemyAlive[retIdx]){if(cb)cb();return;}
   const retEnemy=ENEMIES[retIdx];const retEl=enemyEls[retIdx];
   setTimeout(()=>{
-    if(ret.speech)showSpeech(ret.speech,1800);
+    if(ret.speech)showSpeech(ret.speech,2400,true);
     const pi=activePlayerIdx();const apos=gs.allPlayerPos[pi];
     const pc=hexCenter(apos.col,apos.row);
     const applyHit=()=>{
@@ -774,8 +777,16 @@ function doRetaliation(killedId,cb){
       shakeUnit(playerEls[pi],()=>{
         if(gs.allPlayerHP[pi]<=0){playerDies(ret.followUp||'');return;}
         gs.state='player_turn';highlightMove();
-        if(ret.followUp)showSpeech(ret.followUp,2200);
-        if(cb)cb();
+        if(ret.followUp){
+          showSpeech(ret.followUp,2800,true);
+          // Give the follow-up line real time on screen before advancing —
+          // in Guided mode, advancing immediately (via cb) re-renders the
+          // next step's tooltip in the same tick, so the follow-up would
+          // otherwise never actually get painted.
+          setTimeout(()=>{if(cb)cb();},2800);
+        } else {
+          if(cb)cb();
+        }
       });
     };
     if(retEnemy.type==='flying'){
@@ -922,7 +933,7 @@ function applyDamageToEnemy(eIdx,dmg,cb){
       if(reaction&&reaction.ret&&retAllowed){
         const rpi=activePlayerIdx();
         setTimeout(()=>{
-          if(reaction.speech)showSpeech(reaction.speech,2000);
+          if(reaction.speech)showSpeech(reaction.speech,2400,true);
           const doHit=()=>{
             const apos=gs.allPlayerPos[rpi];const pc=hexCenter(apos.col,apos.row);
             setPlayerHPFor(rpi,gs.allPlayerHP[rpi]-reaction.dmg);
