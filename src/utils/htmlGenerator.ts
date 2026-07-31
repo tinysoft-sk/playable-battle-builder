@@ -543,7 +543,7 @@ function hopPlayer(pi){
 
 // ─── GRID BUILD ───
 const hexEls={};
-function buildGrid(){gridEl.innerHTML='';for(const k in hexEls)delete hexEls[k];vp.style.setProperty('--hw',cur.hexW+'px');vp.style.setProperty('--hh',cur.hexH+'px');for(let col=0;col<COLS;col++)for(let row=0;row<ROWS;row++){if(col===COLS-1&&row%2===1)continue;const{x,y}=hexCenter(col,row);const d=document.createElement('div');d.className='hex';d.dataset.col=col;d.dataset.row=row;d.style.left=(x-cur.hexW/2)+'px';d.style.top=(y-cur.hexH/2)+'px';d.addEventListener('click',onHexClick);gridEl.appendChild(d);hexEls[col+','+row]=d;}}
+function buildGrid(){gridEl.innerHTML='';for(const k in hexEls)delete hexEls[k];vp.style.setProperty('--hw',cur.hexW+'px');vp.style.setProperty('--hh',cur.hexH+'px');for(let col=0;col<COLS;col++)for(let row=0;row<ROWS;row++){if(col===COLS-1&&row%2===1)continue;const{x,y}=hexCenter(col,row);const d=document.createElement('div');d.className='hex';d.dataset.col=col;d.dataset.row=row;d.style.left=(x-cur.hexW/2)+'px';d.style.top=(y-cur.hexH/2)+'px';d.addEventListener('click',()=>onHexClick(col,row));gridEl.appendChild(d);hexEls[col+','+row]=d;}}
 function clearHex(){for(const h of Object.values(hexEls))h.className='hex';}
 function findEnemyAt(c,r){return ENEMIES.findIndex((e,i)=>gs.enemyAlive[i]&&e.col===c&&e.row===r);}
 function findPlayerAt(c,r){return gs.allPlayerAlive.findIndex((alive,i)=>alive&&gs.allPlayerPos[i].col===c&&gs.allPlayerPos[i].row===r);}
@@ -1017,7 +1017,7 @@ function runEnemyTurns(){
           // resolve target player (by id, fallback to active player)
           let tPi=activePlayerIdx();
           if(t.targetId){const fi=ALL_PLAYERS.findIndex(p=>p.id===t.targetId);if(fi>=0&&gs.allPlayerAlive[fi])tPi=fi;}
-          if(t.speech)showSpeech(t.speech,2000);
+          if(t.speech)showSpeech(t.speech,2400,true);
           enemyAttackAlt(eIdx,tPi,t.dmg,()=>{advancePlayer();});
         }
       }
@@ -1110,9 +1110,8 @@ function castSpell(targetCol,targetRow){
 }
 
 // ─── HEX CLICK ───
-function onHexClick(){
+function onHexClick(col,row){
   startMusic();
-  const col=parseInt(this.dataset.col),row=parseInt(this.dataset.row);
   if(gs.state==='spell_target'){
     if(SCENARIO_MODE==='guided'){
       const st=guidedStep();
@@ -1240,13 +1239,13 @@ vp.addEventListener('click',function(ev){
   ev.stopPropagation();
   if(gs.state==='spell_target'){castSpell(ENEMIES[eIdx].col,ENEMIES[eIdx].row);}
   else if(gs.state==='intro'){skipIntro();}
-  else{const k=ENEMIES[eIdx].col+','+ENEMIES[eIdx].row;if(hexEls[k])onHexClick.call(hexEls[k]);}
+  else{onHexClick(ENEMIES[eIdx].col,ENEMIES[eIdx].row);}
 },true);
 
 // ─── UNIT CLICKS ───
 playerEls.forEach((el,i)=>{if(el)el.querySelector('img').addEventListener('click',e=>{e.stopPropagation();if(gs.state==='intro'){skipIntro();return;}if(gs.state==='player_turn'&&i===activePlayerIdx())highlightMove();});});
 ${enemyUnitClicksJS}
-atkIconEls.forEach((el,i)=>{if(!el)return;el.addEventListener('click',function(ev){ev.stopPropagation();if(gs.state==='intro'){skipIntro();return;}const e=ENEMIES[i];if(gs.state==='spell_target'){castSpell(e.col,e.row);}else if(gs.state==='player_turn'){const k=e.col+','+e.row;if(hexEls[k])onHexClick.call(hexEls[k]);}});});
+atkIconEls.forEach((el,i)=>{if(!el)return;el.addEventListener('click',function(ev){ev.stopPropagation();if(gs.state==='intro'){skipIntro();return;}const e=ENEMIES[i];if(gs.state==='spell_target'){castSpell(e.col,e.row);}else if(gs.state==='player_turn'){onHexClick(e.col,e.row);}});});
 sbBtn.addEventListener('click',e=>{e.stopPropagation();if(gs.state==='intro')skipIntro();if(gs.state==='animating'||gs.state==='fail'||gs.state==='win')return;if(gs.sbOpen)closeSpellbook();else openSpellbook();});
 ${spSP_events}
 retryBtn.addEventListener('click',()=>{trackAL('CHALLENGE_RETRY');failScr.classList.remove('show');resetGame();});
