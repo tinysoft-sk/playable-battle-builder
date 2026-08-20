@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useBattleStore } from './store/battleStore';
 import GridPanel from './components/panels/GridPanel';
 import UnitsPanel from './components/panels/UnitsPanel';
@@ -34,7 +34,11 @@ export default function App() {
   const [section, setSection] = useState<NavItem>('units');
   const [showExport, setShowExport] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
-  const { config, setName, undo, redo, undoStack, redoStack } = useBattleStore();
+  const { config, setName, undo, redo, undoStack, redoStack, initLibrary } = useBattleStore();
+
+  useEffect(() => {
+    initLibrary();
+  }, [initLibrary]);
 
   return (
     <div className="app">

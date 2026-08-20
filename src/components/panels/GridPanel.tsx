@@ -1,5 +1,6 @@
 import { useBattleStore } from '../../store/battleStore';
 import AssetUpload from '../AssetUpload';
+import { FIXED_ROLE_KEYS } from '../../utils/roleKeys';
 
 export default function GridPanel() {
   const { config, setGridSize, setGridOffset, setGridTile } = useBattleStore();
@@ -45,11 +46,13 @@ export default function GridPanel() {
       <div className="field">
         <label>Walkable Hex Tile</label>
         <AssetUpload label="Walkable hex" asset={config.gridTiles.walkable}
+          roleKey={FIXED_ROLE_KEYS.gridTileWalkable}
           onChange={a => setGridTile('walkable', a)} />
       </div>
       <div className="field">
         <label>Active Hex Tile</label>
         <AssetUpload label="Active hex" asset={config.gridTiles.active}
+          roleKey={FIXED_ROLE_KEYS.gridTileActive}
           onChange={a => setGridTile('active', a)} />
       </div>
     </div>

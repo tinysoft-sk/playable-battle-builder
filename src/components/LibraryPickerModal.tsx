@@ -1,9 +1,9 @@
 import { useBattleStore } from '../store/battleStore';
-import type { AssetData } from '../types/battle';
+import type { LibraryAsset } from '../types/battle';
 
 interface Props {
   accept: string;
-  onSelect: (a: AssetData) => void;
+  onSelect: (a: LibraryAsset) => void;
   onClose: () => void;
 }
 

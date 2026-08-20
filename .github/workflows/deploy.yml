@@ -30,6 +30,8 @@ jobs:
       - run: npm run build
         env:
           GITHUB_ACTIONS: true
+          VITE_LIBRARY_WORKER_URL: ${{ secrets.ASSET_SYNC_WORKER_URL }}
+          VITE_LIBRARY_PUBLISH_PASSPHRASE: ${{ secrets.ASSET_SYNC_PASSPHRASE }}
 
       - uses: actions/configure-pages@v4
 

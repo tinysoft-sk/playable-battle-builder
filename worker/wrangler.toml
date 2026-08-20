@@ -1,0 +1,15 @@
+name = "playable-battle-builder-asset-sync"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+
+[vars]
+GITHUB_OWNER = "tinysoft-sk"
+GITHUB_REPO = "playable-battle-builder"
+GITHUB_BRANCH = "main"
+
+[observability]
+enabled = true
+
+# Secrets are NOT set here — set them with:
+#   wrangler secret put GITHUB_TOKEN
+#   wrangler secret put PUBLISH_PASSPHRASE

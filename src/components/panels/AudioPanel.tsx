@@ -1,6 +1,7 @@
 import { useBattleStore } from '../../store/battleStore';
 import { AUDIO_EVENTS } from '../../types/battle';
 import AssetUpload from '../AssetUpload';
+import { FIXED_ROLE_KEYS, audioRoleKey } from '../../utils/roleKeys';
 
 const EVENT_LABELS: Record<string, string> = {
   spellbook_open:  'Spellbook Open',
@@ -36,6 +37,7 @@ export default function AudioPanel() {
           label="Music track"
           asset={config.audio.music}
           accept="audio/*"
+          roleKey={FIXED_ROLE_KEYS.audioMusic}
           onChange={setMusic}
         />
       </div>
@@ -48,6 +50,7 @@ export default function AudioPanel() {
               label={EVENT_LABELS[ev] ?? ev}
               asset={config.audio.sfxMap[ev] ?? null}
               accept="audio/*"
+              roleKey={audioRoleKey(ev)}
               onChange={a => setSfx(ev, a)}
             />
           </div>

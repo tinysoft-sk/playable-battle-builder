@@ -8,6 +8,12 @@ export interface AssetData {
   fileName: string;
 }
 
+export interface LibraryAsset extends AssetData { id: string; }
+
+// Maps a role key (see src/utils/roleKeys.ts) to the id of the
+// LibraryAsset currently used as that role's default.
+export type RoleDefaults = Record<string, string>;
+
 export interface UnitConfig {
   id: string;
   name: string;

@@ -8,19 +8,22 @@ interface Props {
   label: string;
   asset: AssetData | null;
   accept?: string;
+  roleKey?: string | null;
   onChange: (a: AssetData | null) => void;
 }
 
-export default function AssetUpload({ label, asset, accept = 'image/*', onChange }: Props) {
+export default function AssetUpload({ label, asset, accept = 'image/*', roleKey = null, onChange }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [showPicker, setShowPicker] = useState(false);
-  const { addToLibrary } = useBattleStore();
+  const { addToLibrary, recordUpload, setRoleDefault } = useBattleStore();
   const isAudio = accept.includes('audio');
 
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    onChange(await encodeFile(file));
+    const data = await encodeFile(file);
+    onChange(data);
+    if (roleKey) recordUpload(roleKey, data);
     e.target.value = '';
   }
 
@@ -68,7 +71,11 @@ export default function AssetUpload({ label, asset, accept = 'image/*', onChange
       {showPicker && (
         <LibraryPickerModal
           accept={accept}
-          onSelect={a => { onChange(a); setShowPicker(false); }}
+          onSelect={a => {
+            onChange(a);
+            if (roleKey) setRoleDefault(roleKey, a.id);
+            setShowPicker(false);
+          }}
           onClose={() => setShowPicker(false)}
         />
       )}

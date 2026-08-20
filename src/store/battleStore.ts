@@ -1,8 +1,9 @@
 import { create } from 'zustand';
-import type { BattleConfig, UnitConfig, HeroConfig, SpellConfig, BattleScenario, PopupConfig, AssetData, EnemyTurnDef, AttackReaction, PlayerTurnDef } from '../types/battle';
+import type { BattleConfig, UnitConfig, HeroConfig, SpellConfig, BattleScenario, PopupConfig, AssetData, EnemyTurnDef, AttackReaction, PlayerTurnDef, LibraryAsset, RoleDefaults } from '../types/battle';
 import { AUDIO_EVENTS } from '../types/battle';
+import { resolveDefaults, lookupRoleDefault } from '../utils/resolveDefaults';
+import { unitRoleKey, spellRoleKey } from '../utils/roleKeys';
 
-export interface LibraryAsset extends AssetData { id: string; }
 export interface TemplateEntry { id: string; name: string; savedAt: number; config: BattleConfig; }
 
 const LIBRARY_KEY = 'battle-editor-library';
@@ -12,6 +13,63 @@ function loadLibrary(): LibraryAsset[] {
 }
 function saveLibrary(lib: LibraryAsset[]) {
   try { localStorage.setItem(LIBRARY_KEY, JSON.stringify(lib)); } catch {}
+}
+function saveLocalLibrary(library: LibraryAsset[], remoteLibraryIds: string[]) {
+  const remoteSet = new Set(remoteLibraryIds);
+  saveLibrary(library.filter(a => !remoteSet.has(a.id)));
+}
+
+const ROLE_DEFAULTS_KEY = 'battle-editor-role-defaults';
+function loadRoleDefaults(): RoleDefaults {
+  try { const raw = localStorage.getItem(ROLE_DEFAULTS_KEY); if (raw) return JSON.parse(raw); } catch {}
+  return {};
+}
+function saveRoleDefaults(defaults: RoleDefaults) {
+  try { localStorage.setItem(ROLE_DEFAULTS_KEY, JSON.stringify(defaults)); } catch {}
+}
+
+const PENDING_KEY = 'battle-editor-pending-publishes';
+type PendingPublish = { roleKey: string | null; asset: LibraryAsset; status: 'syncing' | 'failed' };
+function loadPending(): Record<string, PendingPublish> {
+  try { const raw = localStorage.getItem(PENDING_KEY); if (raw) return JSON.parse(raw); } catch {}
+  return {};
+}
+function savePending(pending: Record<string, PendingPublish>) {
+  try { localStorage.setItem(PENDING_KEY, JSON.stringify(pending)); } catch {}
+}
+
+async function publishAsset(roleKey: string | null, asset: LibraryAsset): Promise<boolean> {
+  const url = import.meta.env.VITE_LIBRARY_WORKER_URL as string | undefined;
+  if (!url) return true; // no Worker configured yet — treat as a harmless local-only success
+  const passphrase = import.meta.env.VITE_LIBRARY_PUBLISH_PASSPHRASE as string | undefined;
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        passphrase,
+        roleKey,
+        asset: { id: asset.id, dataUri: asset.dataUri, mimeType: asset.mimeType, fileName: asset.fileName },
+      }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+async function fetchSharedLibrary(): Promise<{ library: LibraryAsset[]; roleDefaults: RoleDefaults }> {
+  try {
+    const [libRes, defRes] = await Promise.all([
+      fetch('library/library.json'),
+      fetch('library/role-defaults.json'),
+    ]);
+    const library = libRes.ok ? await libRes.json() : [];
+    const roleDefaults = defRes.ok ? await defRes.json() : {};
+    return { library, roleDefaults };
+  } catch {
+    return { library: [], roleDefaults: {} };
+  }
 }
 
 const emptyAudioMap = (): Record<string, AssetData | null> =>
@@ -183,6 +241,9 @@ interface BattleStore {
   redoStack: BattleConfig[];
   library: LibraryAsset[];
   templates: TemplateEntry[];
+  roleDefaults: RoleDefaults;
+  pendingPublishes: Record<string, PendingPublish>;
+  remoteLibraryIds: string[];
 
   // Undo/redo
   undo: () => void;
@@ -228,6 +289,10 @@ interface BattleStore {
   // Library
   addToLibrary: (asset: AssetData) => void;
   removeFromLibrary: (id: string) => void;
+  recordUpload: (roleKey: string | null, asset: AssetData) => LibraryAsset;
+  setRoleDefault: (roleKey: string, assetId: string) => void;
+  retryPublish: (assetId: string) => void;
+  initLibrary: () => Promise<void>;
 
   // Templates
   saveTemplate: (name: string) => void;
@@ -246,11 +311,14 @@ function pushUndo(get: () => BattleStore): { undoStack: BattleConfig[]; redoStac
 }
 
 export const useBattleStore = create<BattleStore>((set, get) => ({
-  config: DEFAULT_CONFIG,
+  config: resolveDefaults(DEFAULT_CONFIG, loadRoleDefaults(), loadLibrary()),
   undoStack: [],
   redoStack: [],
   library: loadLibrary(),
   templates: [],
+  roleDefaults: loadRoleDefaults(),
+  pendingPublishes: loadPending(),
+  remoteLibraryIds: [],
 
   undo() {
     const { undoStack, config } = get();
@@ -285,9 +353,14 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
       speechLayout: { ...DEFAULT_CONFIG.speechLayout, ...(c.speechLayout ?? {}) },
       uiAssets: { ...DEFAULT_CONFIG.uiAssets, ...(c.uiAssets ?? {}) },
     };
-    set({ config: normalized, undoStack: [], redoStack: [] });
+    set(s => ({ config: resolveDefaults(normalized, s.roleDefaults, s.library), undoStack: [], redoStack: [] }));
   },
-  resetToDefault: () => set({ config: { ...DEFAULT_CONFIG, id: crypto.randomUUID() }, undoStack: [], redoStack: [] }),
+  resetToDefault: () =>
+    set(s => ({
+      config: resolveDefaults({ ...DEFAULT_CONFIG, id: crypto.randomUUID() }, s.roleDefaults, s.library),
+      undoStack: [],
+      redoStack: [],
+    })),
 
   setName: (name) => set(s => ({ ...pushUndo(get), config: { ...s.config, name } })),
 
@@ -296,30 +369,48 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
       ...pushUndo(get),
       config: {
         ...s.config,
-        playerUnits: s.config.playerUnits.map(u => u.id === id ? { ...u, ...patch } : u),
+        playerUnits: s.config.playerUnits.map(u => {
+          if (u.id !== id) return u;
+          const updated: UnitConfig = { ...u, ...patch };
+          if (!('name' in patch)) return updated;
+          return {
+            ...updated,
+            assets: {
+              idle: updated.assets.idle ?? lookupRoleDefault(unitRoleKey('idle', updated.name), s.roleDefaults, s.library),
+              attack: updated.assets.attack ?? lookupRoleDefault(unitRoleKey('attack', updated.name), s.roleDefaults, s.library),
+              projectile: updated.assets.projectile ?? lookupRoleDefault(unitRoleKey('projectile', updated.name), s.roleDefaults, s.library),
+            },
+          };
+        }),
       },
     })),
 
   addPlayerUnit: () => {
     if (get().config.playerUnits.length >= 6) return;
-    const unit: UnitConfig = {
-      id: crypto.randomUUID(),
-      name: 'Unit',
-      type: 'melee',
-      hp: 100,
-      baseDamage: 20,
-      defense: 0,
-      damageMultiplier: 1,
-      gridCol: 0,
-      gridRow: 0,
-      displayWidth: 110,
-      moveRange: 2,
-      projectileSize: 60,
-      resistTo: [],
-      flipped: false,
-      assets: { idle: null, attack: null, projectile: null },
-    };
-    set(s => ({ ...pushUndo(get), config: { ...s.config, playerUnits: [...s.config.playerUnits, unit] } }));
+    set(s => {
+      const unit: UnitConfig = {
+        id: crypto.randomUUID(),
+        name: 'Unit',
+        type: 'melee',
+        hp: 100,
+        baseDamage: 20,
+        defense: 0,
+        damageMultiplier: 1,
+        gridCol: 0,
+        gridRow: 0,
+        displayWidth: 110,
+        moveRange: 2,
+        projectileSize: 60,
+        resistTo: [],
+        flipped: false,
+        assets: {
+          idle: lookupRoleDefault(unitRoleKey('idle', 'Unit'), s.roleDefaults, s.library),
+          attack: lookupRoleDefault(unitRoleKey('attack', 'Unit'), s.roleDefaults, s.library),
+          projectile: lookupRoleDefault(unitRoleKey('projectile', 'Unit'), s.roleDefaults, s.library),
+        },
+      };
+      return { ...pushUndo(get), config: { ...s.config, playerUnits: [...s.config.playerUnits, unit] } };
+    });
   },
 
   removePlayerUnit: (id) => {
@@ -332,30 +423,48 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
       ...pushUndo(get),
       config: {
         ...s.config,
-        enemyUnits: s.config.enemyUnits.map(u => u.id === id ? { ...u, ...patch } : u),
+        enemyUnits: s.config.enemyUnits.map(u => {
+          if (u.id !== id) return u;
+          const updated: UnitConfig = { ...u, ...patch };
+          if (!('name' in patch)) return updated;
+          return {
+            ...updated,
+            assets: {
+              idle: updated.assets.idle ?? lookupRoleDefault(unitRoleKey('idle', updated.name), s.roleDefaults, s.library),
+              attack: updated.assets.attack ?? lookupRoleDefault(unitRoleKey('attack', updated.name), s.roleDefaults, s.library),
+              projectile: updated.assets.projectile ?? lookupRoleDefault(unitRoleKey('projectile', updated.name), s.roleDefaults, s.library),
+            },
+          };
+        }),
       },
     })),
 
   addEnemyUnit: () => {
     if (get().config.enemyUnits.length >= 6) return;
-    const unit: UnitConfig = {
-      id: crypto.randomUUID(),
-      name: 'Enemy',
-      type: 'ranged',
-      hp: 100,
-      baseDamage: 20,
-      defense: 0,
-      damageMultiplier: 1,
-      gridCol: 2,
-      gridRow: 0,
-      displayWidth: 110,
-      moveRange: 2,
-      projectileSize: 60,
-      resistTo: [],
-      flipped: true,
-      assets: { idle: null, attack: null, projectile: null },
-    };
-    set(s => ({ ...pushUndo(get), config: { ...s.config, enemyUnits: [...s.config.enemyUnits, unit] } }));
+    set(s => {
+      const unit: UnitConfig = {
+        id: crypto.randomUUID(),
+        name: 'Enemy',
+        type: 'ranged',
+        hp: 100,
+        baseDamage: 20,
+        defense: 0,
+        damageMultiplier: 1,
+        gridCol: 2,
+        gridRow: 0,
+        displayWidth: 110,
+        moveRange: 2,
+        projectileSize: 60,
+        resistTo: [],
+        flipped: true,
+        assets: {
+          idle: lookupRoleDefault(unitRoleKey('idle', 'Enemy'), s.roleDefaults, s.library),
+          attack: lookupRoleDefault(unitRoleKey('attack', 'Enemy'), s.roleDefaults, s.library),
+          projectile: lookupRoleDefault(unitRoleKey('projectile', 'Enemy'), s.roleDefaults, s.library),
+        },
+      };
+      return { ...pushUndo(get), config: { ...s.config, enemyUnits: [...s.config.enemyUnits, unit] } };
+    });
   },
 
   removeEnemyUnit: (id) => {
@@ -369,7 +478,19 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
   updateSpell: (id, patch) =>
     set(s => ({
       ...pushUndo(get),
-      config: { ...s.config, spells: s.config.spells.map(sp => sp.id === id ? { ...sp, ...patch } : sp) },
+      config: {
+        ...s.config,
+        spells: s.config.spells.map(sp => {
+          if (sp.id !== id) return sp;
+          const updated: SpellConfig = { ...sp, ...patch };
+          if (!('name' in patch)) return updated;
+          return {
+            ...updated,
+            asset: updated.asset ?? lookupRoleDefault(spellRoleKey('asset', updated.name), s.roleDefaults, s.library),
+            projectileAsset: updated.projectileAsset ?? lookupRoleDefault(spellRoleKey('projectileAsset', updated.name), s.roleDefaults, s.library),
+          };
+        }),
+      },
     })),
 
   setScenario: (patch) =>
@@ -470,19 +591,91 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
   setSpeechLayout: (patch) =>
     set(s => ({ ...pushUndo(get), config: { ...s.config, speechLayout: { ...s.config.speechLayout, ...patch } } })),
 
-  addToLibrary: (asset) =>
-    set(s => {
-      const library = [...s.library, { ...asset, id: crypto.randomUUID() }];
-      saveLibrary(library);
-      return { library };
-    }),
+  addToLibrary: (asset) => { get().recordUpload(null, asset); },
 
   removeFromLibrary: (id) =>
     set(s => {
       const library = s.library.filter(a => a.id !== id);
-      saveLibrary(library);
-      return { library };
+      const roleDefaults = Object.fromEntries(
+        Object.entries(s.roleDefaults).filter(([, assetId]) => assetId !== id)
+      );
+      saveLocalLibrary(library, s.remoteLibraryIds);
+      saveRoleDefaults(roleDefaults);
+      return { library, roleDefaults };
     }),
+
+  recordUpload: (roleKey, asset) => {
+    const libraryAsset: LibraryAsset = { ...asset, id: crypto.randomUUID() };
+    set(s => {
+      const library = [...s.library, libraryAsset];
+      const roleDefaults = roleKey ? { ...s.roleDefaults, [roleKey]: libraryAsset.id } : s.roleDefaults;
+      const pendingPublishes = { ...s.pendingPublishes, [libraryAsset.id]: { roleKey, asset: libraryAsset, status: 'syncing' as const } };
+      saveLocalLibrary(library, s.remoteLibraryIds);
+      if (roleKey) saveRoleDefaults(roleDefaults);
+      savePending(pendingPublishes);
+      return { library, roleDefaults, pendingPublishes };
+    });
+    publishAsset(roleKey, libraryAsset).then(ok => {
+      set(s => {
+        const pendingPublishes = { ...s.pendingPublishes };
+        if (ok) delete pendingPublishes[libraryAsset.id];
+        else pendingPublishes[libraryAsset.id] = { roleKey, asset: libraryAsset, status: 'failed' };
+        savePending(pendingPublishes);
+        return { pendingPublishes };
+      });
+    });
+    return libraryAsset;
+  },
+
+  setRoleDefault: (roleKey, assetId) => {
+    const asset = get().library.find(a => a.id === assetId);
+    if (!asset) return;
+    set(s => {
+      const roleDefaults = { ...s.roleDefaults, [roleKey]: assetId };
+      const pendingPublishes = { ...s.pendingPublishes, [assetId]: { roleKey, asset, status: 'syncing' as const } };
+      saveRoleDefaults(roleDefaults);
+      savePending(pendingPublishes);
+      return { roleDefaults, pendingPublishes };
+    });
+    publishAsset(roleKey, asset).then(ok => {
+      set(s => {
+        const pendingPublishes = { ...s.pendingPublishes };
+        if (ok) delete pendingPublishes[assetId];
+        else pendingPublishes[assetId] = { roleKey, asset, status: 'failed' };
+        savePending(pendingPublishes);
+        return { pendingPublishes };
+      });
+    });
+  },
+
+  retryPublish: (assetId) => {
+    const entry = get().pendingPublishes[assetId];
+    if (!entry) return;
+    set(s => ({ pendingPublishes: { ...s.pendingPublishes, [assetId]: { ...entry, status: 'syncing' } } }));
+    publishAsset(entry.roleKey, entry.asset).then(ok => {
+      set(s => {
+        const pendingPublishes = { ...s.pendingPublishes };
+        if (ok) delete pendingPublishes[assetId];
+        else pendingPublishes[assetId] = { ...entry, status: 'failed' };
+        savePending(pendingPublishes);
+        return { pendingPublishes };
+      });
+    });
+  },
+
+  initLibrary: async () => {
+    const { library: remoteLib, roleDefaults: remoteDefaults } = await fetchSharedLibrary();
+    set(s => {
+      const localIds = new Set(s.library.map(a => a.id));
+      const library = [...remoteLib.filter(a => !localIds.has(a.id)), ...s.library];
+      const roleDefaults = { ...remoteDefaults, ...s.roleDefaults };
+      const remoteLibraryIds = remoteLib.map(a => a.id);
+      saveLocalLibrary(library, remoteLibraryIds);
+      saveRoleDefaults(roleDefaults);
+      return { library, roleDefaults, remoteLibraryIds, config: resolveDefaults(s.config, roleDefaults, library) };
+    });
+    Object.keys(get().pendingPublishes).forEach(id => get().retryPublish(id));
+  },
 
   saveTemplate: (name) => {
     const entry: TemplateEntry = { id: crypto.randomUUID(), name, savedAt: Date.now(), config: get().config };
@@ -491,7 +684,13 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
 
   loadTemplate: (id) => {
     const entry = get().templates.find(t => t.id === id);
-    if (entry) set({ config: { ...entry.config, id: crypto.randomUUID() }, undoStack: [], redoStack: [] });
+    if (entry) {
+      set(s => ({
+        config: resolveDefaults({ ...entry.config, id: crypto.randomUUID() }, s.roleDefaults, s.library),
+        undoStack: [],
+        redoStack: [],
+      }));
+    }
   },
 
   deleteTemplate: (id) =>

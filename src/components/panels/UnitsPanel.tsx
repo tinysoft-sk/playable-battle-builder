@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useBattleStore } from '../../store/battleStore';
 import type { UnitConfig, SpellElement } from '../../types/battle';
+import { unitRoleKey } from '../../utils/roleKeys';
 import AssetUpload from '../AssetUpload';
 
 function UnitCard({
@@ -110,6 +111,7 @@ function UnitCard({
           <AssetUpload
             label="Idle sprite"
             asset={unit.assets.idle}
+            roleKey={unitRoleKey('idle', unit.name)}
             onChange={a => onUpdate({ assets: { ...unit.assets, idle: a } })}
           />
         </div>
@@ -118,6 +120,7 @@ function UnitCard({
           <AssetUpload
             label="Attack sprite"
             asset={unit.assets.attack}
+            roleKey={unitRoleKey('attack', unit.name)}
             onChange={a => onUpdate({ assets: { ...unit.assets, attack: a } })}
           />
         </div>
@@ -128,6 +131,7 @@ function UnitCard({
               <AssetUpload
                 label="Projectile"
                 asset={unit.assets.projectile ?? null}
+                roleKey={unitRoleKey('projectile', unit.name)}
                 onChange={a => onUpdate({ assets: { ...unit.assets, projectile: a } })}
               />
             </div>

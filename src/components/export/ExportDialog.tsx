@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useBattleStore } from '../../store/battleStore';
 import { generateHTML } from '../../utils/htmlGenerator';
 import type { NetworkTarget } from '../../types/battle';
 import { estimateSize, formatBytes } from '../../utils/assetEncoder';
+import { resolveDefaults } from '../../utils/resolveDefaults';
 
 interface NetworkInfo {
   id: NetworkTarget;
@@ -22,11 +23,17 @@ interface Props { onClose: () => void; }
 
 export default function ExportDialog({ onClose }: Props) {
   const config = useBattleStore(s => s.config);
+  const roleDefaults = useBattleStore(s => s.roleDefaults);
+  const library = useBattleStore(s => s.library);
+  const resolvedConfig = useMemo(
+    () => resolveDefaults(config, roleDefaults, library, true),
+    [config, roleDefaults, library]
+  );
   const [working, setWorking] = useState(false);
 
   const sizes = NETWORKS.map(n => {
     try {
-      const html = generateHTML(config, n.id);
+      const html = generateHTML(resolvedConfig, n.id);
       const bytes = estimateSize(html);
       return { ...n, bytes, ok: bytes <= n.limitBytes };
     } catch {
@@ -39,7 +46,7 @@ export default function ExportDialog({ onClose }: Props) {
     const slug = config.name.replace(/[^a-z0-9]+/gi, '-').toLowerCase() || 'battle';
     for (const n of NETWORKS) {
       try {
-        const html = generateHTML(config, n.id);
+        const html = generateHTML(resolvedConfig, n.id);
         if (n.id === 'google' || n.id === 'mintegral') {
           await downloadZip(n.id, slug, html);
         } else {
@@ -55,7 +62,7 @@ export default function ExportDialog({ onClose }: Props) {
 
   function downloadSingle(n: NetworkInfo) {
     const slug = config.name.replace(/[^a-z0-9]+/gi, '-').toLowerCase() || 'battle';
-    const html = generateHTML(config, n.id);
+    const html = generateHTML(resolvedConfig, n.id);
     if (n.id === 'google' || n.id === 'mintegral') {
       downloadZip(n.id, slug, html);
     } else {

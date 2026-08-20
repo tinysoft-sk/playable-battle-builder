@@ -1,6 +1,7 @@
 import { useBattleStore } from '../../store/battleStore';
 import type { SpellConfig } from '../../types/battle';
 import AssetUpload from '../AssetUpload';
+import { FIXED_ROLE_KEYS, spellRoleKey } from '../../utils/roleKeys';
 
 export default function SpellsPanel() {
   const { config, updateSpell, setUiAsset, setSpellbookEnabled } = useBattleStore();
@@ -30,16 +31,19 @@ export default function SpellsPanel() {
           <div className="field">
             <label>Melee</label>
             <AssetUpload label="Melee icon" asset={config.uiAssets?.meleeIcon ?? null}
+              roleKey={FIXED_ROLE_KEYS.uiMeleeIcon}
               onChange={a => setUiAsset('meleeIcon', a)} />
           </div>
           <div className="field">
             <label>Ranged</label>
             <AssetUpload label="Ranged icon" asset={config.uiAssets?.rangedIcon ?? null}
+              roleKey={FIXED_ROLE_KEYS.uiRangedIcon}
               onChange={a => setUiAsset('rangedIcon', a)} />
           </div>
           <div className="field">
             <label>Flying</label>
             <AssetUpload label="Flying icon" asset={config.uiAssets?.flyingIcon ?? null}
+              roleKey={FIXED_ROLE_KEYS.uiFlyingIcon}
               onChange={a => setUiAsset('flyingIcon', a)} />
           </div>
         </div>
@@ -53,6 +57,7 @@ export default function SpellsPanel() {
         <div className="field">
           <label>Projectile Image</label>
           <AssetUpload label="Ranged projectile" asset={config.uiAssets?.rangedProjectile ?? null}
+            roleKey={FIXED_ROLE_KEYS.uiRangedProjectile}
             onChange={a => setUiAsset('rangedProjectile', a)} />
         </div>
       </div>
@@ -65,11 +70,13 @@ export default function SpellsPanel() {
               <div className="field">
                 <label>Closed (default state)</label>
                 <AssetUpload label="Spellbook closed" asset={config.uiAssets?.spellbookClosed ?? null}
+                  roleKey={FIXED_ROLE_KEYS.uiSpellbookClosed}
                   onChange={a => setUiAsset('spellbookClosed', a)} />
               </div>
               <div className="field">
                 <label>Open (when spells shown)</label>
                 <AssetUpload label="Spellbook open" asset={config.uiAssets?.spellbookOpen ?? null}
+                  roleKey={FIXED_ROLE_KEYS.uiSpellbookOpen}
                   onChange={a => setUiAsset('spellbookOpen', a)} />
               </div>
             </div>
@@ -111,11 +118,15 @@ function SpellCard({
       </div>
       <div className="field">
         <label>Spell Icon</label>
-        <AssetUpload label="Spell icon" asset={spell.asset} onChange={a => onUpdate({ asset: a })} />
+        <AssetUpload label="Spell icon" asset={spell.asset}
+          roleKey={spellRoleKey('asset', spell.name)}
+          onChange={a => onUpdate({ asset: a })} />
       </div>
       <div className="field">
         <label>Projectile Image (optional — falls back to the Spell Icon above if empty)</label>
-        <AssetUpload label="Spell projectile" asset={spell.projectileAsset ?? null} onChange={a => onUpdate({ projectileAsset: a })} />
+        <AssetUpload label="Spell projectile" asset={spell.projectileAsset ?? null}
+          roleKey={spellRoleKey('projectileAsset', spell.name)}
+          onChange={a => onUpdate({ projectileAsset: a })} />
       </div>
       <div className="field" style={{ maxWidth: 120 }}>
         <label>Projectile Size</label>

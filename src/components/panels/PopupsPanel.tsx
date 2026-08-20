@@ -1,5 +1,6 @@
 import { useBattleStore } from '../../store/battleStore';
 import AssetUpload from '../AssetUpload';
+import { FIXED_ROLE_KEYS } from '../../utils/roleKeys';
 
 export default function PopupsPanel() {
   const { config, setPopups, setAppIcon, setHintLayout, setSpeechLayout } = useBattleStore();
@@ -16,6 +17,7 @@ export default function PopupsPanel() {
         <div className="field">
           <label>Icon shown in win/defeat screens</label>
           <AssetUpload label="App icon" asset={config.appIcon ?? null}
+            roleKey={FIXED_ROLE_KEYS.appIcon}
             onChange={a => setAppIcon(a)} />
         </div>
       </div>
@@ -25,16 +27,19 @@ export default function PopupsPanel() {
         <div className="field">
           <label>Banner Image</label>
           <AssetUpload label="Victory banner" asset={popups.victory.bannerAsset}
+            roleKey={FIXED_ROLE_KEYS.popupVictoryBanner}
             onChange={a => setPopups({ victory: { ...popups.victory, bannerAsset: a } })} />
         </div>
         <div className="field">
           <label>Board Image</label>
           <AssetUpload label="Victory board" asset={popups.victory.boardAsset}
+            roleKey={FIXED_ROLE_KEYS.popupVictoryBoard}
             onChange={a => setPopups({ victory: { ...popups.victory, boardAsset: a } })} />
         </div>
         <div className="field">
           <label>CTA Button Image</label>
           <AssetUpload label="CTA button" asset={popups.victory.ctaButtonAsset}
+            roleKey={FIXED_ROLE_KEYS.popupVictoryCta}
             onChange={a => setPopups({ victory: { ...popups.victory, ctaButtonAsset: a } })} />
         </div>
       </div>
@@ -44,21 +49,25 @@ export default function PopupsPanel() {
         <div className="field">
           <label>Banner Image</label>
           <AssetUpload label="Defeat banner" asset={popups.defeat.bannerAsset}
+            roleKey={FIXED_ROLE_KEYS.popupDefeatBanner}
             onChange={a => setPopups({ defeat: { ...popups.defeat, bannerAsset: a } })} />
         </div>
         <div className="field">
           <label>Board Image</label>
           <AssetUpload label="Defeat board" asset={popups.defeat.boardAsset}
+            roleKey={FIXED_ROLE_KEYS.popupDefeatBoard}
             onChange={a => setPopups({ defeat: { ...popups.defeat, boardAsset: a } })} />
         </div>
         <div className="field">
           <label>Retry Button Image</label>
           <AssetUpload label="Retry button" asset={popups.defeat.retryButtonAsset}
+            roleKey={FIXED_ROLE_KEYS.popupDefeatRetry}
             onChange={a => setPopups({ defeat: { ...popups.defeat, retryButtonAsset: a } })} />
         </div>
         <div className="field">
           <label>Store Button Image</label>
           <AssetUpload label="Store button" asset={popups.defeat.storeButtonAsset}
+            roleKey={FIXED_ROLE_KEYS.popupDefeatStore}
             onChange={a => setPopups({ defeat: { ...popups.defeat, storeButtonAsset: a } })} />
         </div>
         <div className="field">

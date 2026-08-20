@@ -1,5 +1,6 @@
 import { useBattleStore } from '../../store/battleStore';
 import AssetUpload from '../AssetUpload';
+import { FIXED_ROLE_KEYS } from '../../utils/roleKeys';
 
 export default function HeroPanel() {
   const { config, setHeroLeft, setHeroRight } = useBattleStore();
@@ -12,7 +13,7 @@ export default function HeroPanel() {
       <div className="section-title">Left Hero</div>
       <div className="field">
         <label>Portrait</label>
-        <AssetUpload label="Left hero" asset={heroLeft.asset} onChange={a => setHeroLeft({ asset: a })} />
+        <AssetUpload label="Left hero" asset={heroLeft.asset} roleKey={FIXED_ROLE_KEYS.heroLeft} onChange={a => setHeroLeft({ asset: a })} />
       </div>
       <div className="row">
         <div className="field">
@@ -38,7 +39,7 @@ export default function HeroPanel() {
       <div className="section-title">Right Hero</div>
       <div className="field">
         <label>Portrait</label>
-        <AssetUpload label="Right hero" asset={heroRight.asset} onChange={a => setHeroRight({ asset: a })} />
+        <AssetUpload label="Right hero" asset={heroRight.asset} roleKey={FIXED_ROLE_KEYS.heroRight} onChange={a => setHeroRight({ asset: a })} />
       </div>
       <div className="row">
         <div className="field">
