@@ -1,9 +1,1 @@
-[
-  {
-    "name": "zz-deploy-check-20260821",
-    "savedAt": 1787319526186,
-    "config": {
-      "probe": true
-    }
-  }
-]
+[]
