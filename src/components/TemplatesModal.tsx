@@ -6,10 +6,11 @@ import { BUILT_IN_TEMPLATES } from '../data/builtInTemplates';
 interface Props { onClose: () => void; }
 
 export default function TemplatesModal({ onClose }: Props) {
-  const { config, templates, saveTemplate, loadTemplate, deleteTemplate, loadConfig } = useBattleStore();
+  const { config, sharedTemplates, saveTemplate, loadTemplate, deleteTemplate, loadConfig, pendingTemplatePublishes, retryTemplatePublish } = useBattleStore();
   const [saveName, setSaveName] = useState(config.name);
   const [loadingBuiltIn, setLoadingBuiltIn] = useState<string | null>(null);
   const importRef = useRef<HTMLInputElement>(null);
+  const failedTemplates = Object.entries(pendingTemplatePublishes).filter(([, p]) => p.status === 'failed');
 
   function doSave() {
     const name = saveName.trim();
@@ -102,21 +103,32 @@ export default function TemplatesModal({ onClose }: Props) {
           </div>
         )}
 
-        {/* Saved list */}
-        {templates.length > 0 && (
-          <div className="popup-section" style={{ marginBottom: 14 }}>
-            <div className="popup-section-title">Saved templates (this session)</div>
-            {templates.map(t => (
-              <div key={t.id} className="template-item">
+        {/* Shared templates */}
+        <div className="popup-section" style={{ marginBottom: 14 }}>
+          <div className="popup-section-title">Shared templates</div>
+          {failedTemplates.length > 0 && (
+            <div style={{ background: '#442222', border: '1px solid #663333', borderRadius: 6, padding: '8px 12px', marginBottom: 10, fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span>{failedTemplates.length} template change{failedTemplates.length > 1 ? 's' : ''} not yet synced.</span>
+              <button className="btn-secondary" style={{ fontSize: 11, padding: '3px 10px' }}
+                onClick={() => failedTemplates.forEach(([name]) => retryTemplatePublish(name))}>
+                Retry
+              </button>
+            </div>
+          )}
+          {sharedTemplates.length === 0 ? (
+            <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>No shared templates yet.</div>
+          ) : (
+            sharedTemplates.map(t => (
+              <div key={t.name} className="template-item">
                 <span className="template-name">{t.name}</span>
                 <span className="template-date">{new Date(t.savedAt).toLocaleTimeString()}</span>
                 <button className="btn-secondary" style={{ fontSize: 11, padding: '3px 10px' }}
-                  onClick={() => { loadTemplate(t.id); onClose(); }}>Load</button>
-                <button className="asset-clear" onClick={() => deleteTemplate(t.id)}>✕</button>
+                  onClick={() => { loadTemplate(t.name); onClose(); }}>Load</button>
+                <button className="asset-clear" onClick={() => deleteTemplate(t.name)}>✕</button>
               </div>
-            ))}
-          </div>
-        )}
+            ))
+          )}
+        </div>
 
         {/* JSON export / import */}
         <div className="popup-section">
