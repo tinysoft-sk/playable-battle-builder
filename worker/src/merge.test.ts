@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mergeLibrary, mergeRoleDefaults, LibraryAsset } from './merge';
+import { mergeLibrary, mergeRoleDefaults, LibraryAsset, upsertSharedTemplate, removeSharedTemplate } from './merge';
 
 const asset: LibraryAsset = { id: 'abc-123', dataUri: 'data:image/png;base64,xyz', mimeType: 'image/png', fileName: 'archer.png' };
 
@@ -54,5 +54,48 @@ describe('mergeRoleDefaults', () => {
   it('treats an empty string as empty role defaults', () => {
     const result = JSON.parse(mergeRoleDefaults('', 'unit:idle:archer', asset.id));
     expect(result).toEqual({ 'unit:idle:archer': asset.id });
+  });
+});
+
+describe('upsertSharedTemplate', () => {
+  it('adds a new template to an empty list', () => {
+    const result = JSON.parse(upsertSharedTemplate('[]', 'Arena Fight', 1000, { foo: 'bar' }));
+    expect(result).toEqual([{ name: 'Arena Fight', savedAt: 1000, config: { foo: 'bar' } }]);
+  });
+
+  it('adds a new template alongside existing ones', () => {
+    const existing = { name: 'Other', savedAt: 500, config: { a: 1 } };
+    const result = JSON.parse(upsertSharedTemplate(JSON.stringify([existing]), 'Arena Fight', 1000, { foo: 'bar' }));
+    expect(result).toEqual([existing, { name: 'Arena Fight', savedAt: 1000, config: { foo: 'bar' } }]);
+  });
+
+  it('replaces an existing template with the same name instead of duplicating it', () => {
+    const original = { name: 'Arena Fight', savedAt: 500, config: { v: 1 } };
+    const result = JSON.parse(upsertSharedTemplate(JSON.stringify([original]), 'Arena Fight', 1000, { v: 2 }));
+    expect(result).toEqual([{ name: 'Arena Fight', savedAt: 1000, config: { v: 2 } }]);
+  });
+
+  it('treats an empty string as an empty list', () => {
+    const result = JSON.parse(upsertSharedTemplate('', 'Arena Fight', 1000, { foo: 'bar' }));
+    expect(result).toEqual([{ name: 'Arena Fight', savedAt: 1000, config: { foo: 'bar' } }]);
+  });
+});
+
+describe('removeSharedTemplate', () => {
+  it('removes the template with a matching name', () => {
+    const list = [{ name: 'Arena Fight', savedAt: 1000, config: {} }, { name: 'Other', savedAt: 500, config: {} }];
+    const result = JSON.parse(removeSharedTemplate(JSON.stringify(list), 'Arena Fight'));
+    expect(result).toEqual([{ name: 'Other', savedAt: 500, config: {} }]);
+  });
+
+  it('leaves the list unchanged when the name is not found', () => {
+    const list = [{ name: 'Other', savedAt: 500, config: {} }];
+    const result = JSON.parse(removeSharedTemplate(JSON.stringify(list), 'Nonexistent'));
+    expect(result).toEqual(list);
+  });
+
+  it('treats an empty string as an empty list', () => {
+    const result = JSON.parse(removeSharedTemplate('', 'Arena Fight'));
+    expect(result).toEqual([]);
   });
 });

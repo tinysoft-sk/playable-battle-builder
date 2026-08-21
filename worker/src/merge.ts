@@ -18,3 +18,20 @@ export function mergeRoleDefaults(currentJson: string, roleKey: string | null, a
   if (!roleKey) return JSON.stringify(roleDefaults, null, 2);
   return JSON.stringify({ ...roleDefaults, [roleKey]: assetId }, null, 2);
 }
+
+export interface SharedTemplate {
+  name: string;
+  savedAt: number;
+  config: unknown;
+}
+
+export function upsertSharedTemplate(currentJson: string, name: string, savedAt: number, config: unknown): string {
+  const templates: SharedTemplate[] = currentJson ? JSON.parse(currentJson) : [];
+  const withoutExisting = templates.filter(t => t.name !== name);
+  return JSON.stringify([...withoutExisting, { name, savedAt, config }], null, 2);
+}
+
+export function removeSharedTemplate(currentJson: string, name: string): string {
+  const templates: SharedTemplate[] = currentJson ? JSON.parse(currentJson) : [];
+  return JSON.stringify(templates.filter(t => t.name !== name), null, 2);
+}
