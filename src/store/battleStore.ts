@@ -40,18 +40,27 @@ function savePending(pending: Record<string, PendingPublish>) {
 }
 
 const TEMPLATE_KEY = 'battle-editor-shared-templates';
-function loadLocalTemplates(): SharedTemplateEntry[] {
-  try { const raw = localStorage.getItem(TEMPLATE_KEY); if (raw) return JSON.parse(raw); } catch {}
+function loadLocalTemplates(library: LibraryAsset[], roleDefaults: RoleDefaults): SharedTemplateEntry[] {
+  try {
+    const raw = localStorage.getItem(TEMPLATE_KEY);
+    if (raw) {
+      const slimEntries: { name: string; savedAt: number; config: unknown }[] = JSON.parse(raw);
+      return slimEntries.map(t => ({ name: t.name, savedAt: t.savedAt, config: hydrateTemplate(t.config, library, roleDefaults) }));
+    }
+  } catch {}
   return [];
 }
-function saveLocalTemplates(templates: SharedTemplateEntry[], remoteTemplateNames: string[]) {
+function saveLocalTemplates(templates: SharedTemplateEntry[], remoteTemplateNames: string[], library: LibraryAsset[]) {
   const remoteSet = new Set(remoteTemplateNames);
-  try { localStorage.setItem(TEMPLATE_KEY, JSON.stringify(templates.filter(t => !remoteSet.has(t.name)))); } catch {}
+  const localOnly = templates.filter(t => !remoteSet.has(t.name));
+  try {
+    localStorage.setItem(TEMPLATE_KEY, JSON.stringify(localOnly.map(t => ({ name: t.name, savedAt: t.savedAt, config: slimTemplate(t.config, library) }))));
+  } catch {}
 }
 
 const TEMPLATE_PENDING_KEY = 'battle-editor-pending-template-publishes';
 type PendingTemplatePublish =
-  | { op: 'save'; name: string; config: BattleConfig; status: 'syncing' | 'failed' }
+  | { op: 'save'; name: string; slim: unknown; status: 'syncing' | 'failed' }
   | { op: 'delete'; name: string; status: 'syncing' | 'failed' };
 function loadPendingTemplates(): Record<string, PendingTemplatePublish> {
   try { const raw = localStorage.getItem(TEMPLATE_PENDING_KEY); if (raw) return JSON.parse(raw); } catch {}
@@ -82,7 +91,7 @@ async function publishAsset(roleKey: string | null, asset: LibraryAsset): Promis
 }
 
 async function publishTemplate(name: string, config: unknown): Promise<boolean> {
-  const url = import.meta.env.VITE_LIBRARY_WORKER_URL as string | undefined;
+  const url = (import.meta.env.VITE_LIBRARY_WORKER_URL as string | undefined)?.replace(/\/$/, '');
   if (!url) return true;
   const passphrase = import.meta.env.VITE_LIBRARY_PUBLISH_PASSPHRASE as string | undefined;
   try {
@@ -98,7 +107,7 @@ async function publishTemplate(name: string, config: unknown): Promise<boolean> 
 }
 
 async function deleteTemplateRemote(name: string): Promise<boolean> {
-  const url = import.meta.env.VITE_LIBRARY_WORKER_URL as string | undefined;
+  const url = (import.meta.env.VITE_LIBRARY_WORKER_URL as string | undefined)?.replace(/\/$/, '');
   if (!url) return true;
   const passphrase = import.meta.env.VITE_LIBRARY_PUBLISH_PASSPHRASE as string | undefined;
   try {
@@ -383,7 +392,7 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
   undoStack: [],
   redoStack: [],
   library: loadLibrary(),
-  sharedTemplates: loadLocalTemplates(),
+  sharedTemplates: loadLocalTemplates(loadLibrary(), loadRoleDefaults()),
   remoteTemplateNames: [],
   roleDefaults: loadRoleDefaults(),
   pendingPublishes: loadPending(),
@@ -761,19 +770,19 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
   saveTemplate: (name) => {
     const config = get().config;
     const savedAt = Date.now();
+    const slim = slimTemplate(config, get().library);
     set(s => {
       const sharedTemplates = [...s.sharedTemplates.filter(t => t.name !== name), { name, savedAt, config }];
-      const pendingTemplatePublishes = { ...s.pendingTemplatePublishes, [name]: { op: 'save' as const, name, config, status: 'syncing' as const } };
-      saveLocalTemplates(sharedTemplates, s.remoteTemplateNames);
+      const pendingTemplatePublishes = { ...s.pendingTemplatePublishes, [name]: { op: 'save' as const, name, slim, status: 'syncing' as const } };
+      saveLocalTemplates(sharedTemplates, s.remoteTemplateNames, s.library);
       savePendingTemplates(pendingTemplatePublishes);
       return { sharedTemplates, pendingTemplatePublishes };
     });
-    const slim = slimTemplate(config, get().library);
     publishTemplate(name, slim).then(ok => {
       set(s => {
         const pendingTemplatePublishes = { ...s.pendingTemplatePublishes };
         if (ok) delete pendingTemplatePublishes[name];
-        else pendingTemplatePublishes[name] = { op: 'save', name, config, status: 'failed' };
+        else pendingTemplatePublishes[name] = { op: 'save', name, slim, status: 'failed' };
         savePendingTemplates(pendingTemplatePublishes);
         return { pendingTemplatePublishes };
       });
@@ -795,7 +804,7 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
     set(s => {
       const sharedTemplates = s.sharedTemplates.filter(t => t.name !== name);
       const pendingTemplatePublishes = { ...s.pendingTemplatePublishes, [name]: { op: 'delete' as const, name, status: 'syncing' as const } };
-      saveLocalTemplates(sharedTemplates, s.remoteTemplateNames);
+      saveLocalTemplates(sharedTemplates, s.remoteTemplateNames, s.library);
       savePendingTemplates(pendingTemplatePublishes);
       return { sharedTemplates, pendingTemplatePublishes };
     });
@@ -815,7 +824,7 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
     if (!entry) return;
     set(s => ({ pendingTemplatePublishes: { ...s.pendingTemplatePublishes, [name]: { ...entry, status: 'syncing' } } }));
     const run = entry.op === 'save'
-      ? publishTemplate(name, slimTemplate(entry.config, get().library))
+      ? publishTemplate(name, entry.slim)
       : deleteTemplateRemote(name);
     run.then(ok => {
       set(s => {
@@ -840,7 +849,7 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
       const localOnly = s.sharedTemplates.filter(t => !remoteNames.has(t.name));
       const sharedTemplates = [...hydratedRemote, ...localOnly];
       const remoteTemplateNames = hydratedRemote.map(t => t.name);
-      saveLocalTemplates(sharedTemplates, remoteTemplateNames);
+      saveLocalTemplates(sharedTemplates, remoteTemplateNames, s.library);
       return { sharedTemplates, remoteTemplateNames };
     });
     Object.keys(get().pendingTemplatePublishes).forEach(name => get().retryTemplatePublish(name));

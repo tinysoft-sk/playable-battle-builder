@@ -37,8 +37,10 @@ export default function App() {
   const { config, setName, undo, redo, undoStack, redoStack, initLibrary, initSharedTemplates } = useBattleStore();
 
   useEffect(() => {
-    initLibrary();
-    initSharedTemplates();
+    (async () => {
+      await initLibrary();
+      await initSharedTemplates();
+    })();
   }, [initLibrary, initSharedTemplates]);
 
   return (

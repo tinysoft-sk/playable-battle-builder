@@ -15,6 +15,9 @@ export default function TemplatesModal({ onClose }: Props) {
   function doSave() {
     const name = saveName.trim();
     if (!name) return;
+    if (sharedTemplates.some(t => t.name === name) && !confirm(`A shared template named "${name}" already exists. Overwrite it for everyone?`)) {
+      return;
+    }
     saveTemplate(name);
     setSaveName('');
   }
@@ -124,7 +127,7 @@ export default function TemplatesModal({ onClose }: Props) {
                 <span className="template-date">{new Date(t.savedAt).toLocaleTimeString()}</span>
                 <button className="btn-secondary" style={{ fontSize: 11, padding: '3px 10px' }}
                   onClick={() => { loadTemplate(t.name); onClose(); }}>Load</button>
-                <button className="asset-clear" onClick={() => deleteTemplate(t.name)}>✕</button>
+                <button className="asset-clear" onClick={() => { if (confirm(`Delete shared template "${t.name}" for everyone? This can't be undone.`)) deleteTemplate(t.name); }}>✕</button>
               </div>
             ))
           )}

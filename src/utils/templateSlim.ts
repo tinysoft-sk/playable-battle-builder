@@ -1,4 +1,5 @@
 import type { AssetData, BattleConfig, LibraryAsset, RoleDefaults } from '../types/battle';
+import { AUDIO_EVENTS } from '../types/battle';
 import { resolveDefaults } from './resolveDefaults';
 
 export type SlimAssetSlot = { libraryAssetId: string } | AssetData | null;
@@ -8,6 +9,8 @@ function slimAsset(asset: AssetData | null | undefined, library: LibraryAsset[])
   if (asset.libraryAssetId && library.some(a => a.id === asset.libraryAssetId)) {
     return { libraryAssetId: asset.libraryAssetId };
   }
+  const matchByData = library.find(a => a.dataUri === asset.dataUri);
+  if (matchByData) return { libraryAssetId: matchByData.id };
   return asset;
 }
 
@@ -45,6 +48,8 @@ export function slimTemplate(config: BattleConfig, library: LibraryAsset[]): unk
       ...s,
       asset: slimAsset(s.asset, library),
       projectileAsset: slimAsset(s.projectileAsset, library),
+      sfxShoot: slimAsset(s.sfxShoot, library),
+      sfxHit: slimAsset(s.sfxHit, library),
     })),
     popups: {
       victory: {
@@ -79,9 +84,7 @@ export function slimTemplate(config: BattleConfig, library: LibraryAsset[]): unk
     appIcon: slimAsset(config.appIcon ?? null, library),
     audio: {
       music: slimAsset(config.audio.music, library),
-      sfxMap: Object.fromEntries(
-        Object.entries(config.audio.sfxMap).map(([ev, a]) => [ev, slimAsset(a, library)])
-      ),
+      sfxMap: Object.fromEntries(AUDIO_EVENTS.map(ev => [ev, slimAsset(config.audio.sfxMap[ev] ?? null, library)])),
     },
   };
 }
@@ -113,6 +116,8 @@ export function hydrateTemplate(slim: unknown, library: LibraryAsset[], roleDefa
       ...sp,
       asset: hydrateAsset(asSlot(sp.asset), library),
       projectileAsset: hydrateAsset(asSlot(sp.projectileAsset), library),
+      sfxShoot: hydrateAsset(asSlot(sp.sfxShoot), library),
+      sfxHit: hydrateAsset(asSlot(sp.sfxHit), library),
     })),
     popups: {
       victory: {
@@ -147,9 +152,7 @@ export function hydrateTemplate(slim: unknown, library: LibraryAsset[], roleDefa
     appIcon: hydrateAsset(asSlot(s.appIcon ?? null), library),
     audio: {
       music: hydrateAsset(asSlot(s.audio.music), library),
-      sfxMap: Object.fromEntries(
-        Object.entries(s.audio.sfxMap).map(([ev, a]) => [ev, hydrateAsset(asSlot(a), library)])
-      ),
+      sfxMap: Object.fromEntries(AUDIO_EVENTS.map(ev => [ev, hydrateAsset(asSlot(s.audio.sfxMap[ev]), library)])),
     },
   };
   return resolveDefaults(hydrated, roleDefaults, library);
