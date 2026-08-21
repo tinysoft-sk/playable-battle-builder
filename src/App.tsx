@@ -34,11 +34,12 @@ export default function App() {
   const [section, setSection] = useState<NavItem>('units');
   const [showExport, setShowExport] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
-  const { config, setName, undo, redo, undoStack, redoStack, initLibrary } = useBattleStore();
+  const { config, setName, undo, redo, undoStack, redoStack, initLibrary, initSharedTemplates } = useBattleStore();
 
   useEffect(() => {
     initLibrary();
-  }, [initLibrary]);
+    initSharedTemplates();
+  }, [initLibrary, initSharedTemplates]);
 
   return (
     <div className="app">
