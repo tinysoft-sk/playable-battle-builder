@@ -605,7 +605,18 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
     }),
 
   recordUpload: (roleKey, asset) => {
-    const libraryAsset: LibraryAsset = { ...asset, id: crypto.randomUUID() };
+    const existingId = asset.libraryAssetId;
+    const existing = existingId ? get().library.find(a => a.id === existingId) : undefined;
+    if (existing) {
+      if (roleKey) get().setRoleDefault(roleKey, existing.id);
+      return existing;
+    }
+    const libraryAsset: LibraryAsset = {
+      dataUri: asset.dataUri,
+      mimeType: asset.mimeType,
+      fileName: asset.fileName,
+      id: existingId ?? crypto.randomUUID(),
+    };
     set(s => {
       const library = [...s.library, libraryAsset];
       const roleDefaults = roleKey ? { ...s.roleDefaults, [roleKey]: libraryAsset.id } : s.roleDefaults;

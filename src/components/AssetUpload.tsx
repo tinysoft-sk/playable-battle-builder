@@ -21,7 +21,8 @@ export default function AssetUpload({ label, asset, accept = 'image/*', roleKey 
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    const data = await encodeFile(file);
+    const encoded = await encodeFile(file);
+    const data: AssetData = { ...encoded, libraryAssetId: crypto.randomUUID() };
     onChange(data);
     if (roleKey) recordUpload(roleKey, data);
     e.target.value = '';
@@ -72,7 +73,7 @@ export default function AssetUpload({ label, asset, accept = 'image/*', roleKey 
         <LibraryPickerModal
           accept={accept}
           onSelect={a => {
-            onChange(a);
+            onChange({ dataUri: a.dataUri, mimeType: a.mimeType, fileName: a.fileName, libraryAssetId: a.id });
             if (roleKey) setRoleDefault(roleKey, a.id);
             setShowPicker(false);
           }}
