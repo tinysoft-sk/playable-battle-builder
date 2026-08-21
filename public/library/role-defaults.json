@@ -37,6 +37,5 @@
   "audio:player_attack": "b85c68d8-39f0-495f-ae03-bc76e09beca3",
   "audio:player_death": "ec2bee1c-6991-485d-b6b0-fc66b277a82d",
   "unit:idle:archer": "40f62c75-5d97-4010-ba27-73b235e81047",
-  "unit:attack:archer": "3d4ede7a-d7a6-418b-bfb9-3ae74a041dee",
-  "test:cpu-check-20260821": "2d4980d8-1e1b-422e-bbb8-725e8c3684ff"
+  "unit:attack:archer": "3d4ede7a-d7a6-418b-bfb9-3ae74a041dee"
 }
