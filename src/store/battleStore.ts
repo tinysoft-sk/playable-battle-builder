@@ -3,8 +3,9 @@ import type { BattleConfig, UnitConfig, HeroConfig, SpellConfig, BattleScenario,
 import { AUDIO_EVENTS } from '../types/battle';
 import { resolveDefaults, lookupRoleDefault } from '../utils/resolveDefaults';
 import { unitRoleKey, spellRoleKey } from '../utils/roleKeys';
+import { slimTemplate, hydrateTemplate } from '../utils/templateSlim';
 
-export interface TemplateEntry { id: string; name: string; savedAt: number; config: BattleConfig; }
+export interface SharedTemplateEntry { name: string; savedAt: number; config: BattleConfig; }
 
 const LIBRARY_KEY = 'battle-editor-library';
 function loadLibrary(): LibraryAsset[] {
@@ -38,6 +39,28 @@ function savePending(pending: Record<string, PendingPublish>) {
   try { localStorage.setItem(PENDING_KEY, JSON.stringify(pending)); } catch {}
 }
 
+const TEMPLATE_KEY = 'battle-editor-shared-templates';
+function loadLocalTemplates(): SharedTemplateEntry[] {
+  try { const raw = localStorage.getItem(TEMPLATE_KEY); if (raw) return JSON.parse(raw); } catch {}
+  return [];
+}
+function saveLocalTemplates(templates: SharedTemplateEntry[], remoteTemplateNames: string[]) {
+  const remoteSet = new Set(remoteTemplateNames);
+  try { localStorage.setItem(TEMPLATE_KEY, JSON.stringify(templates.filter(t => !remoteSet.has(t.name)))); } catch {}
+}
+
+const TEMPLATE_PENDING_KEY = 'battle-editor-pending-template-publishes';
+type PendingTemplatePublish =
+  | { op: 'save'; name: string; config: BattleConfig; status: 'syncing' | 'failed' }
+  | { op: 'delete'; name: string; status: 'syncing' | 'failed' };
+function loadPendingTemplates(): Record<string, PendingTemplatePublish> {
+  try { const raw = localStorage.getItem(TEMPLATE_PENDING_KEY); if (raw) return JSON.parse(raw); } catch {}
+  return {};
+}
+function savePendingTemplates(pending: Record<string, PendingTemplatePublish>) {
+  try { localStorage.setItem(TEMPLATE_PENDING_KEY, JSON.stringify(pending)); } catch {}
+}
+
 async function publishAsset(roleKey: string | null, asset: LibraryAsset): Promise<boolean> {
   const url = import.meta.env.VITE_LIBRARY_WORKER_URL as string | undefined;
   if (!url) return true; // no Worker configured yet — treat as a harmless local-only success
@@ -58,6 +81,38 @@ async function publishAsset(roleKey: string | null, asset: LibraryAsset): Promis
   }
 }
 
+async function publishTemplate(name: string, config: unknown): Promise<boolean> {
+  const url = import.meta.env.VITE_LIBRARY_WORKER_URL as string | undefined;
+  if (!url) return true;
+  const passphrase = import.meta.env.VITE_LIBRARY_PUBLISH_PASSPHRASE as string | undefined;
+  try {
+    const res = await fetch(`${url}/publish-template`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ passphrase, name, config }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+async function deleteTemplateRemote(name: string): Promise<boolean> {
+  const url = import.meta.env.VITE_LIBRARY_WORKER_URL as string | undefined;
+  if (!url) return true;
+  const passphrase = import.meta.env.VITE_LIBRARY_PUBLISH_PASSPHRASE as string | undefined;
+  try {
+    const res = await fetch(`${url}/delete-template`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ passphrase, name }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 async function fetchSharedLibrary(): Promise<{ library: LibraryAsset[]; roleDefaults: RoleDefaults }> {
   try {
     const [libRes, defRes] = await Promise.all([
@@ -69,6 +124,15 @@ async function fetchSharedLibrary(): Promise<{ library: LibraryAsset[]; roleDefa
     return { library, roleDefaults };
   } catch {
     return { library: [], roleDefaults: {} };
+  }
+}
+
+async function fetchSharedTemplates(): Promise<{ name: string; savedAt: number; config: unknown }[]> {
+  try {
+    const res = await fetch('templates/shared-templates.json');
+    return res.ok ? await res.json() : [];
+  } catch {
+    return [];
   }
 }
 
@@ -240,9 +304,11 @@ interface BattleStore {
   undoStack: BattleConfig[];
   redoStack: BattleConfig[];
   library: LibraryAsset[];
-  templates: TemplateEntry[];
+  sharedTemplates: SharedTemplateEntry[];
+  remoteTemplateNames: string[];
   roleDefaults: RoleDefaults;
   pendingPublishes: Record<string, PendingPublish>;
+  pendingTemplatePublishes: Record<string, PendingTemplatePublish>;
   remoteLibraryIds: string[];
 
   // Undo/redo
@@ -296,8 +362,10 @@ interface BattleStore {
 
   // Templates
   saveTemplate: (name: string) => void;
-  loadTemplate: (id: string) => void;
-  deleteTemplate: (id: string) => void;
+  loadTemplate: (name: string) => void;
+  deleteTemplate: (name: string) => void;
+  retryTemplatePublish: (name: string) => void;
+  initSharedTemplates: () => Promise<void>;
 }
 
 const MAX_UNDO = 50;
@@ -315,9 +383,11 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
   undoStack: [],
   redoStack: [],
   library: loadLibrary(),
-  templates: [],
+  sharedTemplates: loadLocalTemplates(),
+  remoteTemplateNames: [],
   roleDefaults: loadRoleDefaults(),
   pendingPublishes: loadPending(),
+  pendingTemplatePublishes: loadPendingTemplates(),
   remoteLibraryIds: [],
 
   undo() {
@@ -689,12 +759,29 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
   },
 
   saveTemplate: (name) => {
-    const entry: TemplateEntry = { id: crypto.randomUUID(), name, savedAt: Date.now(), config: get().config };
-    set(s => ({ templates: [...s.templates, entry] }));
+    const config = get().config;
+    const savedAt = Date.now();
+    set(s => {
+      const sharedTemplates = [...s.sharedTemplates.filter(t => t.name !== name), { name, savedAt, config }];
+      const pendingTemplatePublishes = { ...s.pendingTemplatePublishes, [name]: { op: 'save' as const, name, config, status: 'syncing' as const } };
+      saveLocalTemplates(sharedTemplates, s.remoteTemplateNames);
+      savePendingTemplates(pendingTemplatePublishes);
+      return { sharedTemplates, pendingTemplatePublishes };
+    });
+    const slim = slimTemplate(config, get().library);
+    publishTemplate(name, slim).then(ok => {
+      set(s => {
+        const pendingTemplatePublishes = { ...s.pendingTemplatePublishes };
+        if (ok) delete pendingTemplatePublishes[name];
+        else pendingTemplatePublishes[name] = { op: 'save', name, config, status: 'failed' };
+        savePendingTemplates(pendingTemplatePublishes);
+        return { pendingTemplatePublishes };
+      });
+    });
   },
 
-  loadTemplate: (id) => {
-    const entry = get().templates.find(t => t.id === id);
+  loadTemplate: (name) => {
+    const entry = get().sharedTemplates.find(t => t.name === name);
     if (entry) {
       set(s => ({
         config: resolveDefaults({ ...entry.config, id: crypto.randomUUID() }, s.roleDefaults, s.library),
@@ -704,6 +791,58 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
     }
   },
 
-  deleteTemplate: (id) =>
-    set(s => ({ templates: s.templates.filter(t => t.id !== id) })),
+  deleteTemplate: (name) => {
+    set(s => {
+      const sharedTemplates = s.sharedTemplates.filter(t => t.name !== name);
+      const pendingTemplatePublishes = { ...s.pendingTemplatePublishes, [name]: { op: 'delete' as const, name, status: 'syncing' as const } };
+      saveLocalTemplates(sharedTemplates, s.remoteTemplateNames);
+      savePendingTemplates(pendingTemplatePublishes);
+      return { sharedTemplates, pendingTemplatePublishes };
+    });
+    deleteTemplateRemote(name).then(ok => {
+      set(s => {
+        const pendingTemplatePublishes = { ...s.pendingTemplatePublishes };
+        if (ok) delete pendingTemplatePublishes[name];
+        else pendingTemplatePublishes[name] = { op: 'delete', name, status: 'failed' };
+        savePendingTemplates(pendingTemplatePublishes);
+        return { pendingTemplatePublishes };
+      });
+    });
+  },
+
+  retryTemplatePublish: (name) => {
+    const entry = get().pendingTemplatePublishes[name];
+    if (!entry) return;
+    set(s => ({ pendingTemplatePublishes: { ...s.pendingTemplatePublishes, [name]: { ...entry, status: 'syncing' } } }));
+    const run = entry.op === 'save'
+      ? publishTemplate(name, slimTemplate(entry.config, get().library))
+      : deleteTemplateRemote(name);
+    run.then(ok => {
+      set(s => {
+        const pendingTemplatePublishes = { ...s.pendingTemplatePublishes };
+        if (ok) delete pendingTemplatePublishes[name];
+        else pendingTemplatePublishes[name] = { ...entry, status: 'failed' };
+        savePendingTemplates(pendingTemplatePublishes);
+        return { pendingTemplatePublishes };
+      });
+    });
+  },
+
+  initSharedTemplates: async () => {
+    const remote = await fetchSharedTemplates();
+    set(s => {
+      const hydratedRemote = remote.map(t => ({
+        name: t.name,
+        savedAt: t.savedAt,
+        config: hydrateTemplate(t.config, s.library, s.roleDefaults),
+      }));
+      const remoteNames = new Set(hydratedRemote.map(t => t.name));
+      const localOnly = s.sharedTemplates.filter(t => !remoteNames.has(t.name));
+      const sharedTemplates = [...hydratedRemote, ...localOnly];
+      const remoteTemplateNames = hydratedRemote.map(t => t.name);
+      saveLocalTemplates(sharedTemplates, remoteTemplateNames);
+      return { sharedTemplates, remoteTemplateNames };
+    });
+    Object.keys(get().pendingTemplatePublishes).forEach(name => get().retryTemplatePublish(name));
+  },
 }));
