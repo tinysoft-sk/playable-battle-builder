@@ -13,7 +13,7 @@ export function lookupRoleDefault(
   if (!assetId) return null;
   const found = library.find(a => a.id === assetId);
   if (!found) return null;
-  return { dataUri: found.dataUri, mimeType: found.mimeType, fileName: found.fileName };
+  return { dataUri: found.dataUri, mimeType: found.mimeType, fileName: found.fileName, libraryAssetId: found.id };
 }
 
 export function resolveDefaults(

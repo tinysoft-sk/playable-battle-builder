@@ -6,6 +6,7 @@ export interface AssetData {
   dataUri: string;
   mimeType: string;
   fileName: string;
+  libraryAssetId?: string;
 }
 
 export interface LibraryAsset extends AssetData { id: string; }

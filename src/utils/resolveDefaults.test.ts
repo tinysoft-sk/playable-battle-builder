@@ -47,7 +47,7 @@ const heroImg: LibraryAsset = { id: 'lib2', dataUri: 'data:image/png;base64,hero
 describe('resolveDefaults', () => {
   it('fills a null unit slot from a matching name-based role default', () => {
     const result = resolveDefaults(baseConfig(), { 'unit:idle:archer': 'lib1' }, [archerIdle]);
-    expect(result.playerUnits[0].assets.idle).toEqual({ dataUri: archerIdle.dataUri, mimeType: archerIdle.mimeType, fileName: archerIdle.fileName });
+    expect(result.playerUnits[0].assets.idle).toEqual({ dataUri: archerIdle.dataUri, mimeType: archerIdle.mimeType, fileName: archerIdle.fileName, libraryAssetId: archerIdle.id });
   });
 
   it('leaves a slot untouched if it already has an asset', () => {
@@ -60,13 +60,13 @@ describe('resolveDefaults', () => {
 
   it('fills a fixed-slot role default (hero portrait)', () => {
     const result = resolveDefaults(baseConfig(), { 'hero:heroLeft': 'lib2' }, [heroImg]);
-    expect(result.heroLeft.asset).toEqual({ dataUri: heroImg.dataUri, mimeType: heroImg.mimeType, fileName: heroImg.fileName });
+    expect(result.heroLeft.asset).toEqual({ dataUri: heroImg.dataUri, mimeType: heroImg.mimeType, fileName: heroImg.fileName, libraryAssetId: heroImg.id });
   });
 
   it('fills an audio slot by event id', () => {
     const music: LibraryAsset = { id: 'lib3', dataUri: 'data:audio/mp3;base64,x', mimeType: 'audio/mp3', fileName: 'walk.mp3' };
     const result = resolveDefaults(baseConfig(), { 'audio:walk': 'lib3' }, [music]);
-    expect(result.audio.sfxMap.walk).toEqual({ dataUri: music.dataUri, mimeType: music.mimeType, fileName: music.fileName });
+    expect(result.audio.sfxMap.walk).toEqual({ dataUri: music.dataUri, mimeType: music.mimeType, fileName: music.fileName, libraryAssetId: music.id });
   });
 
   it('does not mutate the input config', () => {
@@ -89,5 +89,10 @@ describe('resolveDefaults', () => {
     const result = resolveDefaults(baseConfig(), {}, []);
     expect(result.audio.music).toBeNull();
     expect(result.audio.sfxMap.walk).toBeNull();
+  });
+
+  it('tags a filled slot with the library asset id it came from', () => {
+    const result = resolveDefaults(baseConfig(), { 'unit:idle:archer': 'lib1' }, [archerIdle]);
+    expect(result.playerUnits[0].assets.idle?.libraryAssetId).toBe('lib1');
   });
 });
