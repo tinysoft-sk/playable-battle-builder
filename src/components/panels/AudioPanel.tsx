@@ -1,7 +1,16 @@
 import { useBattleStore } from '../../store/battleStore';
-import { AUDIO_EVENTS } from '../../types/battle';
+import type { AudioEvent } from '../../types/battle';
 import AssetUpload from '../AssetUpload';
 import { FIXED_ROLE_KEYS, audioRoleKey } from '../../utils/roleKeys';
+
+const SFX_GROUPS: { label: string; events: AudioEvent[] }[] = [
+  { label: 'UI Sounds', events: ['spellbook_open', 'spell_select', 'grid_select'] },
+  { label: 'Movement', events: ['walk'] },
+  { label: 'Spells', events: ['spell1_shoot', 'spell1_hit', 'spell2_shoot', 'spell2_hit'] },
+  { label: 'Player Combat', events: ['player_attack', 'player_ranged_attack', 'player_flying_attack', 'player_death'] },
+  { label: 'Enemy Combat', events: ['flying_attack', 'flying_death', 'ranged_attack', 'ranged_death', 'melee_attack', 'melee_death'] },
+  { label: 'Other', events: ['fail'] },
+];
 
 const EVENT_LABELS: Record<string, string> = {
   spellbook_open:  'Spellbook Open',
@@ -41,21 +50,25 @@ export default function AudioPanel() {
           onChange={setMusic}
         />
       </div>
-      <div className="section-title">Sound Effects</div>
-      <div className="audio-grid">
-        {AUDIO_EVENTS.map(ev => (
-          <div key={ev} className="field">
-            <div className="field-label">{EVENT_LABELS[ev] ?? ev}</div>
-            <AssetUpload
-              label={EVENT_LABELS[ev] ?? ev}
-              asset={config.audio.sfxMap[ev] ?? null}
-              accept="audio/*"
-              roleKey={audioRoleKey(ev)}
-              onChange={a => setSfx(ev, a)}
-            />
+      {SFX_GROUPS.map(group => (
+        <div key={group.label}>
+          <div className="section-title">{group.label}</div>
+          <div className="audio-grid">
+            {group.events.map(ev => (
+              <div key={ev} className="field">
+                <div className="field-label">{EVENT_LABELS[ev] ?? ev}</div>
+                <AssetUpload
+                  label={EVENT_LABELS[ev] ?? ev}
+                  asset={config.audio.sfxMap[ev] ?? null}
+                  accept="audio/*"
+                  roleKey={audioRoleKey(ev)}
+                  onChange={a => setSfx(ev, a)}
+                />
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </div>
+      ))}
     </div>
   );
 }
