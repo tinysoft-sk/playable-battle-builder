@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useBattleStore } from '../../store/battleStore';
 import type { FailCondition, WinStep, PostKillRetaliation } from '../../types/battle';
 
@@ -18,6 +19,16 @@ export default function ScenarioPanel() {
   const alt = scenario.alternating;
   const gridCols = config.grid?.cols ?? 5;
   const gridRows = config.grid?.rows ?? 4;
+
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({
+    firstTurn: true,
+    playerTurns: true,
+    enemyTurns: true,
+    reactions: true,
+  });
+  function toggleSection(key: string) {
+    setOpenSections(s => ({ ...s, [key]: !s[key] }));
+  }
 
   // ── puzzle helpers ──────────────────────────────────────────────────
 
@@ -285,173 +296,251 @@ export default function ScenarioPanel() {
         <>
           {/* Who starts */}
           <div className="popup-section" style={{ marginBottom: 12 }}>
-            <div className="popup-section-title">Who starts?</div>
-            <div className="resist-row">
-              <label>
-                <input type="radio" name="firstTurn" value="player"
-                  checked={(alt?.firstTurn ?? 'player') === 'player'}
-                  onChange={() => setScenario({ alternating: { ...alt, firstTurn: 'player' } })} />
-                &nbsp;Player
-              </label>
-              <label>
-                <input type="radio" name="firstTurn" value="enemy"
-                  checked={(alt?.firstTurn ?? 'player') === 'enemy'}
-                  onChange={() => setScenario({ alternating: { ...alt, firstTurn: 'enemy' } })} />
-                &nbsp;Enemy
-              </label>
+            <div
+              className="popup-section-title"
+              role="button"
+              tabIndex={0}
+              aria-expanded={openSections.firstTurn}
+              style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+              onClick={() => toggleSection('firstTurn')}
+              onKeyDown={e => {
+                if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) {
+                  e.preventDefault();
+                  toggleSection('firstTurn');
+                }
+              }}
+            >
+              <span>Who starts?</span>
+              <span aria-hidden="true">{openSections.firstTurn ? '▾' : '▸'}</span>
             </div>
+            {openSections.firstTurn && (
+              <div className="resist-row">
+                <label>
+                  <input type="radio" name="firstTurn" value="player"
+                    checked={(alt?.firstTurn ?? 'player') === 'player'}
+                    onChange={() => setScenario({ alternating: { ...alt, firstTurn: 'player' } })} />
+                  &nbsp;Player
+                </label>
+                <label>
+                  <input type="radio" name="firstTurn" value="enemy"
+                    checked={(alt?.firstTurn ?? 'player') === 'enemy'}
+                    onChange={() => setScenario({ alternating: { ...alt, firstTurn: 'enemy' } })} />
+                  &nbsp;Enemy
+                </label>
+              </div>
+            )}
           </div>
 
           {/* Player Turn Order */}
           <div className="popup-section" style={{ marginBottom: 12 }}>
-            <div className="popup-section-title">Player Turn Order</div>
-            <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 10 }}>
-              Which player units attack and in what order. Cycles after each enemy turn.
-            </p>
-            {(alt?.playerTurns ?? []).map((pt, i) => (
-              <div key={pt.id} className="step-card" style={{ flexWrap: 'wrap', gap: 6, marginBottom: 6 }}>
-                <span className="step-order">{i + 1}.</span>
-                <select
-                  value={pt.unitId}
-                  onChange={e => updatePlayerTurn(pt.id, { unitId: e.target.value })}
-                  style={{ flex: '1 1 120px', minWidth: 100 }}
-                  aria-label="Turn unit"
-                >
-                  {config.playerUnits.map(u => (
-                    <option key={u.id} value={u.id}>{u.name}</option>
-                  ))}
-                </select>
-                <button className="unit-remove"
-                  disabled={(alt?.playerTurns ?? []).length <= 1}
-                  aria-label="Remove turn" onClick={() => removePlayerTurn(pt.id)}>✕</button>
-              </div>
-            ))}
-            <button className="btn-add" onClick={addPlayerTurn}>+ Add Turn</button>
+            <div
+              className="popup-section-title"
+              role="button"
+              tabIndex={0}
+              aria-expanded={openSections.playerTurns}
+              style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+              onClick={() => toggleSection('playerTurns')}
+              onKeyDown={e => {
+                if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) {
+                  e.preventDefault();
+                  toggleSection('playerTurns');
+                }
+              }}
+            >
+              <span>Player Turn Order</span>
+              <span aria-hidden="true">{openSections.playerTurns ? '▾' : '▸'}</span>
+            </div>
+            {openSections.playerTurns && (
+              <>
+                <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 10 }}>
+                  Which player units attack and in what order. Cycles after each enemy turn.
+                </p>
+                {(alt?.playerTurns ?? []).map((pt, i) => (
+                  <div key={pt.id} className="step-card" style={{ flexWrap: 'wrap', gap: 6, marginBottom: 6 }}>
+                    <span className="step-order">{i + 1}.</span>
+                    <select
+                      value={pt.unitId}
+                      onChange={e => updatePlayerTurn(pt.id, { unitId: e.target.value })}
+                      style={{ flex: '1 1 120px', minWidth: 100 }}
+                      aria-label="Turn unit"
+                    >
+                      {config.playerUnits.map(u => (
+                        <option key={u.id} value={u.id}>{u.name}</option>
+                      ))}
+                    </select>
+                    <button className="unit-remove"
+                      disabled={(alt?.playerTurns ?? []).length <= 1}
+                      aria-label="Remove turn" onClick={() => removePlayerTurn(pt.id)}>✕</button>
+                  </div>
+                ))}
+                <button className="btn-add" onClick={addPlayerTurn}>+ Add Turn</button>
+              </>
+            )}
           </div>
 
           {/* Enemy Turn Sequence */}
           <div className="popup-section" style={{ marginBottom: 12 }}>
-            <div className="popup-section-title">Enemy Turn Sequence</div>
-            <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 10 }}>
-              Enemies attack in this order (dead enemies are skipped). Cycles until fight ends.
-            </p>
-            {(alt?.enemyTurns ?? []).map((turn, i) => {
-              const turnAction = turn.action ?? 'attack';
-              return (
-                <div key={turn.id} className="step-card" style={{ flexWrap: 'wrap', gap: 6, marginBottom: 6 }}>
-                  <span className="step-order">{i + 1}.</span>
-                  <select
-                    title="Attacker"
-                    aria-label="Attacker"
-                    value={turn.attackerUnitId}
-                    onChange={e => updateEnemyTurn(turn.id, { attackerUnitId: e.target.value })}
-                    style={{ flex: '1 1 90px', minWidth: 80 }}
-                  >
-                    {config.enemyUnits.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
-                  </select>
-                  <select
-                    title="Action"
-                    aria-label="Action"
-                    value={turnAction}
-                    onChange={e => updateEnemyTurn(turn.id, { action: e.target.value as 'attack' | 'move' })}
-                    style={{ flex: '0 0 80px' }}
-                  >
-                    <option value="attack">Attack</option>
-                    <option value="move">Move</option>
-                  </select>
-                  {turnAction === 'attack' ? (
-                    <>
+            <div
+              className="popup-section-title"
+              role="button"
+              tabIndex={0}
+              aria-expanded={openSections.enemyTurns}
+              style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+              onClick={() => toggleSection('enemyTurns')}
+              onKeyDown={e => {
+                if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) {
+                  e.preventDefault();
+                  toggleSection('enemyTurns');
+                }
+              }}
+            >
+              <span>Enemy Turn Sequence</span>
+              <span aria-hidden="true">{openSections.enemyTurns ? '▾' : '▸'}</span>
+            </div>
+            {openSections.enemyTurns && (
+              <>
+                <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 10 }}>
+                  Enemies attack in this order (dead enemies are skipped). Cycles until fight ends.
+                </p>
+                {(alt?.enemyTurns ?? []).map((turn, i) => {
+                  const turnAction = turn.action ?? 'attack';
+                  return (
+                    <div key={turn.id} className="step-card" style={{ flexWrap: 'wrap', gap: 6, marginBottom: 6 }}>
+                      <span className="step-order">{i + 1}.</span>
                       <select
-                        title="Target player unit"
-                        aria-label="Target player unit"
-                        value={turn.targetUnitId ?? ''}
-                        onChange={e => updateEnemyTurn(turn.id, { targetUnitId: e.target.value })}
+                        title="Attacker"
+                        aria-label="Attacker"
+                        value={turn.attackerUnitId}
+                        onChange={e => updateEnemyTurn(turn.id, { attackerUnitId: e.target.value })}
                         style={{ flex: '1 1 90px', minWidth: 80 }}
                       >
-                        <option value="">Active player</option>
-                        {config.playerUnits.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                        {config.enemyUnits.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
                       </select>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, flex: '0 0 auto' }}>
-                        <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>dmg</span>
-                        <input
-                          type="number" min={0} value={turn.damage}
-                          onChange={e => updateEnemyTurn(turn.id, { damage: +e.target.value })}
-                          style={{ width: 60 }}
-                        />
-                      </div>
-                      <input
-                        type="text" placeholder="Speech text"
-                        value={turn.speechText}
-                        onChange={e => updateEnemyTurn(turn.id, { speechText: e.target.value })}
-                        style={{ flex: '2 1 140px', minWidth: 100 }}
-                      />
-                    </>
-                  ) : (
-                    <>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, flex: '0 0 auto' }}>
-                        <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>col</span>
-                        <input
-                          type="number" min={0} max={gridCols - 1} value={turn.moveTargetCol ?? 0}
-                          onChange={e => updateEnemyTurn(turn.id, { moveTargetCol: +e.target.value })}
-                          style={{ width: 50 }}
-                        />
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, flex: '0 0 auto' }}>
-                        <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>row</span>
-                        <input
-                          type="number" min={0} max={gridRows - 1} value={turn.moveTargetRow ?? 0}
-                          onChange={e => updateEnemyTurn(turn.id, { moveTargetRow: +e.target.value })}
-                          style={{ width: 50 }}
-                        />
-                      </div>
-                    </>
-                  )}
-                  <button className="unit-remove" aria-label="Remove enemy turn" onClick={() => removeEnemyTurn(turn.id)}>✕</button>
-                </div>
-              );
-            })}
-            <button className="btn-add" onClick={addEnemyTurn}>+ Add Enemy Turn</button>
+                      <select
+                        title="Action"
+                        aria-label="Action"
+                        value={turnAction}
+                        onChange={e => updateEnemyTurn(turn.id, { action: e.target.value as 'attack' | 'move' })}
+                        style={{ flex: '0 0 80px' }}
+                      >
+                        <option value="attack">Attack</option>
+                        <option value="move">Move</option>
+                      </select>
+                      {turnAction === 'attack' ? (
+                        <>
+                          <select
+                            title="Target player unit"
+                            aria-label="Target player unit"
+                            value={turn.targetUnitId ?? ''}
+                            onChange={e => updateEnemyTurn(turn.id, { targetUnitId: e.target.value })}
+                            style={{ flex: '1 1 90px', minWidth: 80 }}
+                          >
+                            <option value="">Active player</option>
+                            {config.playerUnits.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                          </select>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 4, flex: '0 0 auto' }}>
+                            <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>dmg</span>
+                            <input
+                              type="number" min={0} value={turn.damage}
+                              onChange={e => updateEnemyTurn(turn.id, { damage: +e.target.value })}
+                              style={{ width: 60 }}
+                            />
+                          </div>
+                          <input
+                            type="text" placeholder="Speech text"
+                            value={turn.speechText}
+                            onChange={e => updateEnemyTurn(turn.id, { speechText: e.target.value })}
+                            style={{ flex: '2 1 140px', minWidth: 100 }}
+                          />
+                        </>
+                      ) : (
+                        <>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 4, flex: '0 0 auto' }}>
+                            <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>col</span>
+                            <input
+                              type="number" min={0} max={gridCols - 1} value={turn.moveTargetCol ?? 0}
+                              onChange={e => updateEnemyTurn(turn.id, { moveTargetCol: +e.target.value })}
+                              style={{ width: 50 }}
+                            />
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 4, flex: '0 0 auto' }}>
+                            <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>row</span>
+                            <input
+                              type="number" min={0} max={gridRows - 1} value={turn.moveTargetRow ?? 0}
+                              onChange={e => updateEnemyTurn(turn.id, { moveTargetRow: +e.target.value })}
+                              style={{ width: 50 }}
+                            />
+                          </div>
+                        </>
+                      )}
+                      <button className="unit-remove" aria-label="Remove enemy turn" onClick={() => removeEnemyTurn(turn.id)}>✕</button>
+                    </div>
+                  );
+                })}
+                <button className="btn-add" onClick={addEnemyTurn}>+ Add Enemy Turn</button>
+              </>
+            )}
           </div>
 
           {/* Attack Reactions */}
           <div className="popup-section">
-            <div className="popup-section-title">Enemy Reactions (when player attacks)</div>
-            <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 10 }}>
-              For each enemy: does it retaliate when the player hits it?
-            </p>
-            {allReactions.map(reaction => {
-              const enemy = config.enemyUnits.find(u => u.id === reaction.enemyUnitId);
-              if (!enemy) return null;
-              return (
-                <div key={reaction.enemyUnitId} className="ret-card" style={{ marginBottom: 8 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                    <span style={{ fontWeight: 600, fontSize: 13, flex: 1 }}>{enemy.name}</span>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer' }}>
-                      <input
-                        type="checkbox"
-                        checked={reaction.retaliates}
-                        onChange={e => updateAttackReaction(reaction.enemyUnitId, { retaliates: e.target.checked })}
-                      />
-                      Retaliates
-                    </label>
-                  </div>
-                  {reaction.retaliates && (
-                    <div className="row">
-                      <div className="field" style={{ maxWidth: 90 }}>
-                        <label htmlFor={`scenario-reaction-damage-${reaction.enemyUnitId}`}>Damage</label>
-                        <input id={`scenario-reaction-damage-${reaction.enemyUnitId}`} type="number" min={0} value={reaction.retaliationDamage}
-                          onChange={e => updateAttackReaction(reaction.enemyUnitId, { retaliationDamage: +e.target.value })} />
+            <div
+              className="popup-section-title"
+              role="button"
+              tabIndex={0}
+              aria-expanded={openSections.reactions}
+              style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+              onClick={() => toggleSection('reactions')}
+              onKeyDown={e => {
+                if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) {
+                  e.preventDefault();
+                  toggleSection('reactions');
+                }
+              }}
+            >
+              <span>Enemy Reactions (when player attacks)</span>
+              <span aria-hidden="true">{openSections.reactions ? '▾' : '▸'}</span>
+            </div>
+            {openSections.reactions && (
+              <>
+                <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 10 }}>
+                  For each enemy: does it retaliate when the player hits it?
+                </p>
+                {allReactions.map(reaction => {
+                  const enemy = config.enemyUnits.find(u => u.id === reaction.enemyUnitId);
+                  if (!enemy) return null;
+                  return (
+                    <div key={reaction.enemyUnitId} className="ret-card" style={{ marginBottom: 8 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                        <span style={{ fontWeight: 600, fontSize: 13, flex: 1 }}>{enemy.name}</span>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer' }}>
+                          <input
+                            type="checkbox"
+                            checked={reaction.retaliates}
+                            onChange={e => updateAttackReaction(reaction.enemyUnitId, { retaliates: e.target.checked })}
+                          />
+                          Retaliates
+                        </label>
                       </div>
-                      <div className="field">
-                        <label htmlFor={`scenario-reaction-speech-${reaction.enemyUnitId}`}>Retaliation Speech</label>
-                        <input id={`scenario-reaction-speech-${reaction.enemyUnitId}`} type="text" value={reaction.retaliationSpeech}
-                          onChange={e => updateAttackReaction(reaction.enemyUnitId, { retaliationSpeech: e.target.value })} />
-                      </div>
+                      {reaction.retaliates && (
+                        <div className="row">
+                          <div className="field" style={{ maxWidth: 90 }}>
+                            <label htmlFor={`scenario-reaction-damage-${reaction.enemyUnitId}`}>Damage</label>
+                            <input id={`scenario-reaction-damage-${reaction.enemyUnitId}`} type="number" min={0} value={reaction.retaliationDamage}
+                              onChange={e => updateAttackReaction(reaction.enemyUnitId, { retaliationDamage: +e.target.value })} />
+                          </div>
+                          <div className="field">
+                            <label htmlFor={`scenario-reaction-speech-${reaction.enemyUnitId}`}>Retaliation Speech</label>
+                            <input id={`scenario-reaction-speech-${reaction.enemyUnitId}`} type="text" value={reaction.retaliationSpeech}
+                              onChange={e => updateAttackReaction(reaction.enemyUnitId, { retaliationSpeech: e.target.value })} />
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              );
-            })}
+                  );
+                })}
+              </>
+            )}
           </div>
         </>
       )}
