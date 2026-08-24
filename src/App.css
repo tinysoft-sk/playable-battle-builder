@@ -1,12 +1,15 @@
 :root {
-  --bg: #1a1a2e;
-  --surface: #16213e;
-  --surface2: #0f3460;
+  --bg: #232a45;
+  --chrome: #1b2038;
+  --surface: #2f3a5f;
+  --surface2: #3d4a78;
   --accent: #e94560;
-  --text: #eaeaea;
-  --text-muted: #888;
-  --border: #2a2a4a;
-  --radius: 6px;
+  --accent2: #4ecdc4;
+  --text: #f7f8fc;
+  --text-muted: #c7cee0;
+  --border: #5a6ba0;
+  --border-accent: #7c93d6;
+  --radius: 8px;
 }
 
 button:focus-visible,
@@ -28,7 +31,7 @@ a:focus-visible,
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
   font-size: 13px;
   height: 100vh;
   overflow: hidden;
@@ -46,17 +49,18 @@ body {
   align-items: center;
   gap: 12px;
   padding: 8px 16px;
-  background: var(--surface);
+  background: var(--chrome);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
-.app-logo { font-weight: 700; font-size: 15px; white-space: nowrap; }
+.app-logo { font-family: 'Sora', sans-serif; font-weight: 700; font-size: 15px; letter-spacing: 0.01em; white-space: nowrap; }
 .project-name {
   flex: 1;
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   color: var(--text);
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
   font-size: 13px;
   padding: 4px 10px;
   max-width: 280px;
@@ -68,11 +72,13 @@ body {
   border-radius: var(--radius);
   color: var(--text);
   cursor: pointer;
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
   font-size: 12px;
+  font-weight: 600;
   padding: 4px 10px;
 }
 .header-actions button:disabled { opacity: 0.35; cursor: default; }
-.header-actions button:not(:disabled):hover { background: #123456; border-color: #4af; }
+.header-actions button:not(:disabled):hover { background: #4a5a94; border-color: #4af; }
 .btn-export {
   background: var(--accent) !important;
   border-color: var(--accent) !important;
@@ -93,7 +99,7 @@ body {
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  background: var(--surface);
+  background: var(--chrome);
   border-right: 1px solid var(--border);
   padding: 8px 0;
   gap: 2px;
@@ -105,13 +111,14 @@ body {
   border-radius: 0;
   color: var(--text-muted);
   cursor: pointer;
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
   font-size: 13px;
   padding: 9px 14px;
   text-align: left;
   transition: background 0.12s, color 0.12s;
 }
-.app-nav button:hover { background: var(--surface2); color: var(--text); }
-.app-nav button.active { background: var(--surface2); color: #fff; font-weight: 600; }
+.app-nav button:hover { background: var(--surface); color: var(--text); }
+.app-nav button.active { background: var(--surface2); color: #fff; font-weight: 600; box-shadow: inset 3px 0 0 var(--border-accent); }
 
 /* ── Config panel ── */
 .app-config {
@@ -130,15 +137,16 @@ body {
 }
 
 /* ── Shared form controls ── */
-.panel-title { font-size: 15px; font-weight: 700; margin-bottom: 14px; }
-.section-title { font-size: 13px; font-weight: 600; margin: 14px 0 8px; color: #aac; }
+.panel-title { font-family: 'Sora', sans-serif; font-size: 19px; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 14px; }
+.section-title { font-family: 'Sora', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 0.02em; margin: 14px 0 8px; color: var(--accent2); }
 .field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
 .field label,
 .field .field-label {
   font-size: 11px;
+  font-weight: 500;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
 }
 .field input[type="text"],
 .field input[type="number"],
@@ -146,13 +154,18 @@ body {
 .field input[type="color"],
 .field select,
 .field textarea {
-  background: var(--bg);
+  background: var(--chrome);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   color: var(--text);
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
   font-size: 13px;
   padding: 5px 8px;
   width: 100%;
+}
+.field input[type="number"] {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
 }
 .field textarea { resize: vertical; min-height: 60px; }
 .field input[type="color"] { height: 32px; padding: 2px 4px; cursor: pointer; }
@@ -165,7 +178,7 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: var(--bg);
+  background: var(--chrome);
   border: 1px dashed var(--border);
   border-radius: var(--radius);
   padding: 6px 8px;
@@ -211,6 +224,7 @@ body {
 .unit-card {
   background: var(--surface);
   border: 1px solid var(--border);
+  border-left: 3px solid var(--border-accent);
   border-radius: var(--radius);
   margin-bottom: 10px;
   overflow: hidden;
@@ -223,11 +237,11 @@ body {
   cursor: pointer;
   background: var(--surface2);
 }
-.unit-card-header:hover { background: #1a3a6a; }
+.unit-card-header:hover { background: #4a5a94; }
 .unit-card-header:focus-visible {
   outline-offset: -2px;
 }
-.unit-card-title { flex: 1; font-weight: 600; font-size: 13px; }
+.unit-card-title { font-family: 'Sora', sans-serif; flex: 1; font-weight: 600; font-size: 13px; }
 .unit-card-type { font-size: 11px; color: var(--text-muted); }
 .unit-card-body { padding: 10px; display: none; }
 .unit-card-body.open { display: block; }
@@ -248,7 +262,9 @@ body {
   border-radius: var(--radius);
   color: var(--text-muted);
   cursor: pointer;
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
   font-size: 12px;
+  font-weight: 500;
   padding: 7px;
   text-align: center;
   width: 100%;
@@ -260,7 +276,7 @@ body {
 
 /* ── Two-col units layout ── */
 .units-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.units-col-title { font-size: 12px; font-weight: 600; color: #aac; margin-bottom: 8px; }
+.units-col-title { font-family: 'Sora', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 0.02em; color: var(--accent2); margin-bottom: 8px; }
 
 /* ── Resist checkboxes ── */
 .resist-row { display: flex; gap: 12px; align-items: center; }
@@ -268,8 +284,8 @@ body {
 
 /* ── Scenario step ── */
 .step-card {
-  background: var(--bg);
-  border: 1px solid var(--border);
+  background: #262d4c;
+  border: 1px solid #4a5a8c;
   border-radius: var(--radius);
   padding: 8px 10px;
   margin-bottom: 6px;
@@ -277,23 +293,25 @@ body {
   align-items: center;
   gap: 8px;
 }
-.step-order { font-size: 11px; color: var(--text-muted); width: 18px; flex-shrink: 0; }
+.step-order { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; color: var(--text-muted); width: 18px; flex-shrink: 0; }
 
 /* ── Fail condition card ── */
 .fail-card {
   background: var(--surface);
   border: 1px solid var(--border);
+  border-left: 3px solid var(--border-accent);
   border-radius: var(--radius);
   padding: 10px;
   margin-bottom: 8px;
 }
 .fail-card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-.fail-id { background: var(--accent); color: #fff; font-weight: 700; font-size: 11px; padding: 2px 7px; border-radius: 4px; }
+.fail-id { background: var(--accent2); color: #0a2a28; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-weight: 700; font-size: 11px; padding: 2px 7px; border-radius: 4px; }
 
 /* ── Retaliation card ── */
 .ret-card {
   background: var(--surface);
   border: 1px solid var(--border);
+  border-left: 3px solid var(--border-accent);
   border-radius: var(--radius);
   padding: 10px;
   margin-bottom: 8px;
@@ -303,11 +321,12 @@ body {
 .popup-section {
   background: var(--surface);
   border: 1px solid var(--border);
+  border-left: 3px solid var(--border-accent);
   border-radius: var(--radius);
   padding: 10px;
   margin-bottom: 12px;
 }
-.popup-section-title { font-size: 12px; font-weight: 600; color: #aac; margin-bottom: 10px; }
+.popup-section-title { font-family: 'Sora', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 0.02em; margin-bottom: 10px; color: var(--accent2); }
 
 /* ── Audio grid ── */
 .audio-grid {
@@ -336,7 +355,7 @@ body {
   overflow-y: auto;
   overscroll-behavior: contain;
 }
-.dialog h2 { font-size: 16px; margin-bottom: 16px; }
+.dialog h2 { font-family: 'Sora', sans-serif; font-weight: 600; font-size: 16px; margin-bottom: 16px; }
 .dialog-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
 .btn-primary {
   background: var(--accent);
@@ -344,6 +363,7 @@ body {
   border-radius: var(--radius);
   color: #fff;
   cursor: pointer;
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
   font-size: 13px;
   font-weight: 600;
   padding: 7px 16px;
@@ -354,7 +374,9 @@ body {
   border-radius: var(--radius);
   color: var(--text);
   cursor: pointer;
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
   font-size: 13px;
+  font-weight: 600;
   padding: 7px 16px;
 }
 .btn-primary:hover { background: #d63850; }
@@ -370,7 +392,7 @@ body {
 }
 .network-row:last-child { border-bottom: none; }
 .network-name { width: 110px; font-weight: 600; }
-.network-size { font-size: 11px; color: var(--text-muted); flex: 1; }
+.network-size { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; font-size: 11px; color: var(--text-muted); flex: 1; }
 .size-ok  { color: #4c4; }
 .size-bad { color: var(--accent); }
 
@@ -380,7 +402,7 @@ body {
   align-items: center;
   gap: 8px;
   padding: 6px 10px;
-  background: var(--surface);
+  background: var(--chrome);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
@@ -391,6 +413,7 @@ body {
   border-radius: var(--radius);
   color: var(--text);
   cursor: pointer;
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
   font-size: 11px;
   padding: 3px 8px;
 }
