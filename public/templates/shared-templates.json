@@ -1,1 +1,350 @@
-[]
+[
+  {
+    "name": "Roman Test",
+    "savedAt": 1787561415231,
+    "config": {
+      "id": "fd3d476e-501e-4457-b263-1181025f83a9",
+      "name": "My Battle",
+      "spellbookEnabled": true,
+      "playerUnits": [
+        {
+          "id": "knight",
+          "name": "Frostwolf",
+          "type": "melee",
+          "hp": 100,
+          "baseDamage": 100,
+          "defense": 0,
+          "damageMultiplier": 1,
+          "gridCol": 1,
+          "gridRow": 2,
+          "displayWidth": 110,
+          "moveRange": 2,
+          "projectileSize": 60,
+          "resistTo": [],
+          "flipped": false,
+          "assets": {
+            "idle": {
+              "libraryAssetId": "74f65b08-0739-4d44-b8f6-56d15c80dff9"
+            },
+            "attack": null,
+            "projectile": null
+          }
+        }
+      ],
+      "enemyUnits": [
+        {
+          "id": "valkyrie",
+          "name": "Valkyrie",
+          "type": "flying",
+          "hp": 100,
+          "baseDamage": 100,
+          "defense": 0,
+          "damageMultiplier": 1,
+          "gridCol": 4,
+          "gridRow": 0,
+          "displayWidth": 115,
+          "moveRange": 2,
+          "projectileSize": 60,
+          "resistTo": [
+            "ice"
+          ],
+          "flipped": true,
+          "assets": {
+            "idle": null,
+            "attack": null,
+            "projectile": null
+          }
+        },
+        {
+          "id": "armored_giant",
+          "name": "Armored Giant",
+          "type": "ranged",
+          "hp": 100,
+          "baseDamage": 85,
+          "defense": 0,
+          "damageMultiplier": 1,
+          "gridCol": 3,
+          "gridRow": 2,
+          "displayWidth": 130,
+          "moveRange": 2,
+          "projectileSize": 60,
+          "resistTo": [],
+          "flipped": true,
+          "assets": {
+            "idle": null,
+            "attack": null,
+            "projectile": null
+          }
+        }
+      ],
+      "heroLeft": {
+        "asset": {
+          "libraryAssetId": "94422307-537c-4835-80e9-146c37c2a50e"
+        },
+        "flipped": true,
+        "posX": 42,
+        "posY": 170,
+        "displayWidth": 128
+      },
+      "heroRight": {
+        "asset": {
+          "libraryAssetId": "e337c625-ba3e-4cfb-aca4-3f4ddc3eb03d"
+        },
+        "flipped": false,
+        "posX": 42,
+        "posY": 150,
+        "displayWidth": 128
+      },
+      "spells": [
+        {
+          "id": "fireball",
+          "name": "Fireball",
+          "element": "fire",
+          "asset": null,
+          "projectileAsset": null,
+          "projectileSize": 60,
+          "sfxShoot": null,
+          "sfxHit": null
+        },
+        {
+          "id": "ice_shard",
+          "name": "Ice Shard",
+          "element": "ice",
+          "asset": null,
+          "projectileAsset": null,
+          "projectileSize": 60,
+          "sfxShoot": null,
+          "sfxHit": null
+        }
+      ],
+      "scenario": {
+        "mode": "puzzle",
+        "introSpeech": "",
+        "winningSequence": [
+          {
+            "order": 0,
+            "actorUnitId": "knight",
+            "action": "cast_spell",
+            "spellId": "fireball",
+            "targetUnitId": "valkyrie",
+            "tooltipText": "Cast Fireball on the Valkyrie first — she flies and can always reach you, and only fire hurts her."
+          },
+          {
+            "order": 1,
+            "actorUnitId": "knight",
+            "action": "melee_attack",
+            "targetUnitId": "armored_giant",
+            "tooltipText": "Now finish off the Armored Giant with a melee strike."
+          }
+        ],
+        "failConditions": [
+          {
+            "id": "A",
+            "trigger": "move_to_flying",
+            "hintLines": [
+              "Frostwolf has limited range.",
+              "He can only",
+              "reach the Armored Giant."
+            ]
+          },
+          {
+            "id": "B",
+            "trigger": "kill_ranged_first",
+            "hintLines": [
+              "Valkyrie is Flying type.",
+              "She can always reach you.",
+              "Try killing her first."
+            ]
+          },
+          {
+            "id": "C",
+            "trigger": "wrong_spell_on_flying",
+            "hintLines": [
+              "Frostborn Faction",
+              "is immune to Ice."
+            ]
+          },
+          {
+            "id": "D",
+            "trigger": "wasted_spell",
+            "hintLines": [
+              "Valkyrie is Flying type.",
+              "She can always reach you.",
+              "Try killing her first."
+            ]
+          }
+        ],
+        "retaliations": [
+          {
+            "killedUnitId": "valkyrie",
+            "retaliatorUnitId": "armored_giant",
+            "damage": 85,
+            "speechText": "Armored Giant retaliates!",
+            "followUpSpeech": "Now defeat the Armored Giant!"
+          }
+        ],
+        "alternating": {
+          "firstTurn": "player",
+          "playerTurns": [
+            {
+              "id": "pt1",
+              "unitId": "knight"
+            }
+          ],
+          "enemyTurns": [
+            {
+              "id": "et1",
+              "attackerUnitId": "valkyrie",
+              "action": "attack",
+              "targetUnitId": "",
+              "damage": 30,
+              "speechText": "Valkyrie strikes!",
+              "moveTargetCol": 0,
+              "moveTargetRow": 0
+            },
+            {
+              "id": "et2",
+              "attackerUnitId": "armored_giant",
+              "action": "attack",
+              "targetUnitId": "",
+              "damage": 10,
+              "speechText": "Armored Giant charges!",
+              "moveTargetCol": 0,
+              "moveTargetRow": 0
+            }
+          ],
+          "attackReactions": [
+            {
+              "enemyUnitId": "valkyrie",
+              "retaliates": false,
+              "retaliationDamage": 0,
+              "retaliationSpeech": ""
+            },
+            {
+              "enemyUnitId": "armored_giant",
+              "retaliates": true,
+              "retaliationDamage": 20,
+              "retaliationSpeech": "Armored Giant fights back!"
+            }
+          ]
+        }
+      },
+      "popups": {
+        "victory": {
+          "bannerAsset": {
+            "libraryAssetId": "fda35e38-c0bb-4df6-9e20-4985254f4395"
+          },
+          "boardAsset": null,
+          "ctaButtonAsset": {
+            "libraryAssetId": "a3214dee-a987-4aba-8621-57b700832b56"
+          }
+        },
+        "defeat": {
+          "bannerAsset": null,
+          "boardAsset": null,
+          "retryButtonAsset": {
+            "libraryAssetId": "65bbaca8-5041-4c5d-9b03-5ded99df0102"
+          },
+          "storeButtonAsset": {
+            "libraryAssetId": "1ccf0056-31ac-4b05-b5d2-06c3b0b61775"
+          },
+          "hintTextColor": "#ffe8c0"
+        }
+      },
+      "backgrounds": {
+        "landscape": {
+          "libraryAssetId": "7cf5a419-b5e5-48c0-86f3-f5700a871e3e"
+        },
+        "portrait": {
+          "libraryAssetId": "f1fe4a34-d781-431f-a6d2-70deffe59860"
+        }
+      },
+      "store": {
+        "iosUrl": "https://apps.apple.com/us/app/magic-war-legends/id1501316113",
+        "androidUrl": "https://play.google.com/store/apps/details?id=vikings.strategy.rpg.tactics.card",
+        "ctaFailCount": 3
+      },
+      "audio": {
+        "music": {
+          "libraryAssetId": "7f63b6d9-043f-4602-9e47-db4728f2d27e"
+        },
+        "sfxMap": {
+          "spellbook_open": null,
+          "spell_select": null,
+          "walk": {
+            "libraryAssetId": "1ed2c7c5-2ada-48b0-a789-4a7eb834e50c"
+          },
+          "grid_select": {
+            "libraryAssetId": "613c4345-81e8-492f-86f5-85fc61e7cfd7"
+          },
+          "spell1_shoot": null,
+          "spell1_hit": null,
+          "spell2_shoot": null,
+          "spell2_hit": null,
+          "player_attack": {
+            "libraryAssetId": "b85c68d8-39f0-495f-ae03-bc76e09beca3"
+          },
+          "player_ranged_attack": null,
+          "player_flying_attack": null,
+          "player_death": {
+            "libraryAssetId": "ec2bee1c-6991-485d-b6b0-fc66b277a82d"
+          },
+          "flying_attack": null,
+          "flying_death": null,
+          "ranged_attack": null,
+          "ranged_death": null,
+          "melee_attack": null,
+          "melee_death": null,
+          "fail": null
+        }
+      },
+      "gridTiles": {
+        "walkable": {
+          "libraryAssetId": "f1c4799e-7c1d-4bbb-bf7f-68bf361f3565"
+        },
+        "active": {
+          "libraryAssetId": "6eccc5cc-f193-49ec-81d0-6229b5b16fbd"
+        }
+      },
+      "uiAssets": {
+        "spellbookClosed": null,
+        "spellbookOpen": null,
+        "meleeIcon": {
+          "libraryAssetId": "41f15762-3c6e-47df-bb72-cdf6b2821f4f"
+        },
+        "rangedIcon": {
+          "libraryAssetId": "7356cf14-4bef-4441-b9a0-735302583c26"
+        },
+        "flyingIcon": {
+          "libraryAssetId": "e5941f36-a477-4b98-8969-a3544f19ae45"
+        },
+        "rangedProjectile": null
+      },
+      "appIcon": {
+        "libraryAssetId": "4c63ef95-3d32-44bc-89b7-d411fa9598b2"
+      },
+      "grid": {
+        "cols": 5,
+        "rows": 4
+      },
+      "gridOffset": {
+        "landscape": 0,
+        "portrait": 0
+      },
+      "hintLayout": {
+        "landscapeY": 265,
+        "portraitY": 265,
+        "landscapeFontSize": 13.5,
+        "portraitFontSize": 13.5
+      },
+      "speechLayout": {
+        "landscapeX": 160,
+        "landscapeY": 14,
+        "landscapeFontSize": 13,
+        "portraitX": 14,
+        "portraitY": 14,
+        "portraitFontSize": 13
+      }
+    }
+  }
+]
