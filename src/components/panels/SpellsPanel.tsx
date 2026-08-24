@@ -29,19 +29,19 @@ export default function SpellsPanel() {
         </p>
         <div className="row">
           <div className="field">
-            <label>Melee</label>
+            <div className="field-label">Melee</div>
             <AssetUpload label="Melee icon" asset={config.uiAssets?.meleeIcon ?? null}
               roleKey={FIXED_ROLE_KEYS.uiMeleeIcon}
               onChange={a => setUiAsset('meleeIcon', a)} />
           </div>
           <div className="field">
-            <label>Ranged</label>
+            <div className="field-label">Ranged</div>
             <AssetUpload label="Ranged icon" asset={config.uiAssets?.rangedIcon ?? null}
               roleKey={FIXED_ROLE_KEYS.uiRangedIcon}
               onChange={a => setUiAsset('rangedIcon', a)} />
           </div>
           <div className="field">
-            <label>Flying</label>
+            <div className="field-label">Flying</div>
             <AssetUpload label="Flying icon" asset={config.uiAssets?.flyingIcon ?? null}
               roleKey={FIXED_ROLE_KEYS.uiFlyingIcon}
               onChange={a => setUiAsset('flyingIcon', a)} />
@@ -55,7 +55,7 @@ export default function SpellsPanel() {
           The image that travels from attacker to target during a ranged attack (player or enemy). Optional — leave empty for a plain glowing shot.
         </p>
         <div className="field">
-          <label>Projectile Image</label>
+          <div className="field-label">Projectile Image</div>
           <AssetUpload label="Ranged projectile" asset={config.uiAssets?.rangedProjectile ?? null}
             roleKey={FIXED_ROLE_KEYS.uiRangedProjectile}
             onChange={a => setUiAsset('rangedProjectile', a)} />
@@ -68,13 +68,13 @@ export default function SpellsPanel() {
             <div className="popup-section-title">Spellbook Icon</div>
             <div className="row">
               <div className="field">
-                <label>Closed (default state)</label>
+                <div className="field-label">Closed (default state)</div>
                 <AssetUpload label="Spellbook closed" asset={config.uiAssets?.spellbookClosed ?? null}
                   roleKey={FIXED_ROLE_KEYS.uiSpellbookClosed}
                   onChange={a => setUiAsset('spellbookClosed', a)} />
               </div>
               <div className="field">
-                <label>Open (when spells shown)</label>
+                <div className="field-label">Open (when spells shown)</div>
                 <AssetUpload label="Spellbook open" asset={config.uiAssets?.spellbookOpen ?? null}
                   roleKey={FIXED_ROLE_KEYS.uiSpellbookOpen}
                   onChange={a => setUiAsset('spellbookOpen', a)} />
@@ -105,40 +105,40 @@ function SpellCard({
       <div className="popup-section-title">Spell {index + 1}</div>
       <div className="row">
         <div className="field">
-          <label>Name</label>
-          <input type="text" value={spell.name} onChange={e => onUpdate({ name: e.target.value })} />
+          <label htmlFor={`spell-name-${spell.id}`}>Name</label>
+          <input id={`spell-name-${spell.id}`} type="text" value={spell.name} onChange={e => onUpdate({ name: e.target.value })} />
         </div>
         <div className="field">
-          <label>Element</label>
-          <select value={spell.element} onChange={e => onUpdate({ element: e.target.value as SpellConfig['element'] })}>
+          <label htmlFor={`spell-element-${spell.id}`}>Element</label>
+          <select id={`spell-element-${spell.id}`} value={spell.element} onChange={e => onUpdate({ element: e.target.value as SpellConfig['element'] })}>
             <option value="fire">Fire</option>
             <option value="ice">Ice</option>
           </select>
         </div>
       </div>
       <div className="field">
-        <label>Spell Icon</label>
+        <div className="field-label">Spell Icon</div>
         <AssetUpload label="Spell icon" asset={spell.asset}
           roleKey={spellRoleKey('asset', spell.name)}
           onChange={a => onUpdate({ asset: a })} />
       </div>
       <div className="field">
-        <label>Projectile Image (optional — falls back to the Spell Icon above if empty)</label>
+        <div className="field-label">Projectile Image (optional — falls back to the Spell Icon above if empty)</div>
         <AssetUpload label="Spell projectile" asset={spell.projectileAsset ?? null}
           roleKey={spellRoleKey('projectileAsset', spell.name)}
           onChange={a => onUpdate({ projectileAsset: a })} />
       </div>
       <div className="field" style={{ maxWidth: 120 }}>
-        <label>Projectile Size</label>
-        <input type="number" min={16} max={200} value={spell.projectileSize ?? 60}
+        <label htmlFor={`spell-projsize-${spell.id}`}>Projectile Size</label>
+        <input id={`spell-projsize-${spell.id}`} type="number" min={16} max={200} value={spell.projectileSize ?? 60}
           onChange={e => onUpdate({ projectileSize: +e.target.value })} />
       </div>
       <div className="field">
-        <label>SFX – Shoot</label>
+        <div className="field-label">SFX – Shoot</div>
         <AssetUpload label="Shoot sound" asset={spell.sfxShoot} accept="audio/*" onChange={a => onUpdate({ sfxShoot: a })} />
       </div>
       <div className="field">
-        <label>SFX – Hit</label>
+        <div className="field-label">SFX – Hit</div>
         <AssetUpload label="Hit sound" asset={spell.sfxHit} accept="audio/*" onChange={a => onUpdate({ sfxHit: a })} />
       </div>
     </div>

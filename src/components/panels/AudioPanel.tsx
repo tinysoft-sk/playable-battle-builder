@@ -32,7 +32,7 @@ export default function AudioPanel() {
     <div>
       <div className="panel-title">Audio</div>
       <div className="field">
-        <label>Background Music</label>
+        <div className="field-label">Background Music</div>
         <AssetUpload
           label="Music track"
           asset={config.audio.music}
@@ -45,7 +45,7 @@ export default function AudioPanel() {
       <div className="audio-grid">
         {AUDIO_EVENTS.map(ev => (
           <div key={ev} className="field">
-            <label>{EVENT_LABELS[ev] ?? ev}</label>
+            <div className="field-label">{EVENT_LABELS[ev] ?? ev}</div>
             <AssetUpload
               label={EVENT_LABELS[ev] ?? ev}
               asset={config.audio.sfxMap[ev] ?? null}

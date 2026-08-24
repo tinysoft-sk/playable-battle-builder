@@ -9,13 +9,13 @@ export default function BackgroundPanel() {
     <div>
       <div className="panel-title">Backgrounds</div>
       <div className="field">
-        <label>Landscape Background</label>
+        <div className="field-label">Landscape Background</div>
         <AssetUpload label="Landscape BG" asset={config.backgrounds.landscape}
           roleKey={FIXED_ROLE_KEYS.backgroundLandscape}
           onChange={a => setBackground('landscape', a)} />
       </div>
       <div className="field">
-        <label>Portrait Background</label>
+        <div className="field-label">Portrait Background</div>
         <AssetUpload label="Portrait BG" asset={config.backgrounds.portrait}
           roleKey={FIXED_ROLE_KEYS.backgroundPortrait}
           onChange={a => setBackground('portrait', a)} />
