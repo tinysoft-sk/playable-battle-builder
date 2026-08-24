@@ -50,6 +50,7 @@ function UnitCard({
         )}
       </div>
       <div className={`unit-card-body${open ? ' open' : ''}`}>
+        <div className="section-title" style={{ marginTop: 0 }}>Identity</div>
         <div className="field">
           <label htmlFor={`unit-name-${unit.id}`}>Name</label>
           <input id={`unit-name-${unit.id}`} type="text" value={unit.name} onChange={e => onUpdate({ name: e.target.value })} />
@@ -63,6 +64,7 @@ function UnitCard({
           </select>
         </div>
 
+        <div className="section-title">Combat</div>
         <div className="row">
           <div className="field">
             <label htmlFor={`unit-hp-${unit.id}`}>HP</label>
@@ -73,7 +75,6 @@ function UnitCard({
             <input id={`unit-basedamage-${unit.id}`} type="number" min={0} value={unit.baseDamage} onChange={e => onUpdate({ baseDamage: +e.target.value })} />
           </div>
         </div>
-
         <div className="row">
           <div className="field">
             <label htmlFor={`unit-defense-${unit.id}`}>Defense</label>
@@ -84,26 +85,6 @@ function UnitCard({
             <input id={`unit-dmgmult-${unit.id}`} type="number" min={0} step={0.1} value={unit.damageMultiplier} onChange={e => onUpdate({ damageMultiplier: +e.target.value })} />
           </div>
         </div>
-
-        <div className="row">
-          <div className="field">
-            <label htmlFor={`unit-gridcol-${unit.id}`}>Grid Col</label>
-            <input id={`unit-gridcol-${unit.id}`} type="number" min={0} max={gridCols - 1} value={unit.gridCol} onChange={e => onUpdate({ gridCol: +e.target.value })} />
-          </div>
-          <div className="field">
-            <label htmlFor={`unit-gridrow-${unit.id}`}>Grid Row</label>
-            <input id={`unit-gridrow-${unit.id}`} type="number" min={0} max={gridRows - 1} value={unit.gridRow} onChange={e => onUpdate({ gridRow: +e.target.value })} />
-          </div>
-          <div className="field">
-            <label htmlFor={`unit-displaywidth-${unit.id}`}>Display Width</label>
-            <input id={`unit-displaywidth-${unit.id}`} type="number" min={40} max={300} value={unit.displayWidth} onChange={e => onUpdate({ displayWidth: +e.target.value })} />
-          </div>
-          <div className="field">
-            <label htmlFor={`unit-moverange-${unit.id}`}>Move Range</label>
-            <input id={`unit-moverange-${unit.id}`} type="number" min={1} max={8} value={unit.moveRange ?? 2} onChange={e => onUpdate({ moveRange: +e.target.value })} title="Max hexes per turn" />
-          </div>
-        </div>
-
         <div className="field">
           <div className="field-label">Resist To</div>
           <div className="resist-row">
@@ -125,6 +106,27 @@ function UnitCard({
           </div>
         </div>
 
+        <div className="section-title">Position &amp; Size</div>
+        <div className="row">
+          <div className="field">
+            <label htmlFor={`unit-gridcol-${unit.id}`}>Grid Col</label>
+            <input id={`unit-gridcol-${unit.id}`} type="number" min={0} max={gridCols - 1} value={unit.gridCol} onChange={e => onUpdate({ gridCol: +e.target.value })} />
+          </div>
+          <div className="field">
+            <label htmlFor={`unit-gridrow-${unit.id}`}>Grid Row</label>
+            <input id={`unit-gridrow-${unit.id}`} type="number" min={0} max={gridRows - 1} value={unit.gridRow} onChange={e => onUpdate({ gridRow: +e.target.value })} />
+          </div>
+          <div className="field">
+            <label htmlFor={`unit-displaywidth-${unit.id}`}>Display Width</label>
+            <input id={`unit-displaywidth-${unit.id}`} type="number" min={40} max={300} value={unit.displayWidth} onChange={e => onUpdate({ displayWidth: +e.target.value })} />
+          </div>
+          <div className="field">
+            <label htmlFor={`unit-moverange-${unit.id}`}>Move Range</label>
+            <input id={`unit-moverange-${unit.id}`} type="number" min={1} max={8} value={unit.moveRange ?? 2} onChange={e => onUpdate({ moveRange: +e.target.value })} title="Max hexes per turn" />
+          </div>
+        </div>
+
+        <div className="section-title">Art</div>
         <div className="field">
           <div className="field-label">Idle Image</div>
           <AssetUpload
