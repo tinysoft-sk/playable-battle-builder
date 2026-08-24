@@ -77,8 +77,8 @@ export default function ScenarioPanel() {
       <div className="panel-title">Scenario</div>
 
       <div className="field" style={{ marginBottom: 16 }}>
-        <label>Battle Mode</label>
-        <select value={scenario.mode} onChange={e => setScenario({ mode: e.target.value as 'puzzle' | 'alternating' | 'guided' })}>
+        <label htmlFor="scenario-mode">Battle Mode</label>
+        <select id="scenario-mode" value={scenario.mode} onChange={e => setScenario({ mode: e.target.value as 'puzzle' | 'alternating' | 'guided' })}>
           <option value="puzzle">Puzzle (one winning path)</option>
           <option value="alternating">Alternating turns</option>
           <option value="guided">Guided (one option per turn)</option>
@@ -86,8 +86,9 @@ export default function ScenarioPanel() {
       </div>
 
       <div className="field" style={{ marginBottom: 16 }}>
-        <label>Intro Speech</label>
+        <label htmlFor="scenario-intro-speech">Intro Speech</label>
         <input
+          id="scenario-intro-speech"
           type="text"
           value={scenario.introSpeech ?? ''}
           placeholder="Defeat the enemies!"
@@ -109,6 +110,7 @@ export default function ScenarioPanel() {
               {/* Actor */}
               <select
                 title="Who acts"
+                aria-label="Who acts"
                 value={step.actorUnitId ?? config.playerUnits[0]?.id ?? ''}
                 onChange={e => updateStep(i, { actorUnitId: e.target.value })}
                 style={{ flex: '1 1 90px', minWidth: 80 }}
@@ -121,6 +123,7 @@ export default function ScenarioPanel() {
               {/* Action */}
               <select
                 title="Action"
+                aria-label="Action"
                 value={step.action}
                 onChange={e => {
                   const action = e.target.value as WinStep['action'];
@@ -142,6 +145,7 @@ export default function ScenarioPanel() {
               {step.action === 'cast_spell' && (
                 <select
                   title="Spell"
+                  aria-label="Spell"
                   value={step.spellId ?? ''}
                   onChange={e => updateStep(i, { spellId: e.target.value })}
                   style={{ flex: '1 1 90px', minWidth: 80 }}
@@ -175,6 +179,7 @@ export default function ScenarioPanel() {
               ) : (
                 <select
                   title="Target enemy"
+                  aria-label="Target enemy"
                   value={step.targetUnitId}
                   onChange={e => updateStep(i, { targetUnitId: e.target.value })}
                   style={{ flex: '1 1 90px', minWidth: 80 }}
@@ -185,12 +190,13 @@ export default function ScenarioPanel() {
                 </select>
               )}
 
-              <button className="unit-remove" onClick={() => removeStep(i)}>✕</button>
+              <button className="unit-remove" aria-label={`Remove step ${i + 1}`} onClick={() => removeStep(i)}>✕</button>
 
               {scenario.mode === 'guided' && (
                 <div className="field" style={{ flex: '1 1 100%' }}>
-                  <label>Tooltip (what &amp; why)</label>
+                  <label htmlFor={`scenario-step-tooltip-${i}`}>Tooltip (what &amp; why)</label>
                   <textarea
+                    id={`scenario-step-tooltip-${i}`}
                     value={step.tooltipText ?? ''}
                     onChange={e => updateStep(i, { tooltipText: e.target.value })}
                   />
@@ -216,8 +222,9 @@ export default function ScenarioPanel() {
                     </select>
                   </div>
                   <div className="field">
-                    <label>Hint Lines (one per line → shown with line breaks)</label>
+                    <label htmlFor={`scenario-hint-lines-${fc.id}`}>Hint Lines (one per line → shown with line breaks)</label>
                     <textarea
+                      id={`scenario-hint-lines-${fc.id}`}
                       value={fc.hintLines.join('\n')}
                       onChange={e => updateFailCondition(fc.id, { hintLines: e.target.value.split('\n') })}
                     />
@@ -235,35 +242,35 @@ export default function ScenarioPanel() {
             <div key={i} className="ret-card">
               <div className="row" style={{ marginBottom: 6 }}>
                 <div className="field">
-                  <label>When killed</label>
-                  <select value={ret.killedUnitId}
+                  <label htmlFor={`scenario-ret-killed-${i}`}>When killed</label>
+                  <select id={`scenario-ret-killed-${i}`} value={ret.killedUnitId}
                     onChange={e => updateRetaliation(i, { killedUnitId: e.target.value })}>
                     {config.enemyUnits.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
                   </select>
                 </div>
                 <div className="field">
-                  <label>Retaliator</label>
-                  <select value={ret.retaliatorUnitId}
+                  <label htmlFor={`scenario-ret-retaliator-${i}`}>Retaliator</label>
+                  <select id={`scenario-ret-retaliator-${i}`} value={ret.retaliatorUnitId}
                     onChange={e => updateRetaliation(i, { retaliatorUnitId: e.target.value })}>
                     {config.enemyUnits.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
                   </select>
                 </div>
                 <div className="field" style={{ maxWidth: 80 }}>
-                  <label>Damage</label>
-                  <input type="number" min={0} value={ret.damage}
+                  <label htmlFor={`scenario-ret-damage-${i}`}>Damage</label>
+                  <input id={`scenario-ret-damage-${i}`} type="number" min={0} value={ret.damage}
                     onChange={e => updateRetaliation(i, { damage: +e.target.value })} />
                 </div>
                 <button className="unit-remove" style={{ alignSelf: 'flex-end', marginBottom: 2 }}
-                  onClick={() => removeRetaliation(i)}>✕</button>
+                  aria-label="Remove retaliation" onClick={() => removeRetaliation(i)}>✕</button>
               </div>
               <div className="field">
-                <label>Speech Text</label>
-                <input type="text" value={ret.speechText}
+                <label htmlFor={`scenario-ret-speech-${i}`}>Speech Text</label>
+                <input id={`scenario-ret-speech-${i}`} type="text" value={ret.speechText}
                   onChange={e => updateRetaliation(i, { speechText: e.target.value })} />
               </div>
               <div className="field">
-                <label>Follow-up Speech</label>
-                <input type="text" value={ret.followUpSpeech}
+                <label htmlFor={`scenario-ret-followup-${i}`}>Follow-up Speech</label>
+                <input id={`scenario-ret-followup-${i}`} type="text" value={ret.followUpSpeech}
                   onChange={e => updateRetaliation(i, { followUpSpeech: e.target.value })} />
               </div>
             </div>
@@ -314,7 +321,7 @@ export default function ScenarioPanel() {
                 </select>
                 <button className="unit-remove"
                   disabled={(alt?.playerTurns ?? []).length <= 1}
-                  onClick={() => removePlayerTurn(pt.id)}>✕</button>
+                  aria-label="Remove turn" onClick={() => removePlayerTurn(pt.id)}>✕</button>
               </div>
             ))}
             <button className="btn-add" onClick={addPlayerTurn}>+ Add Turn</button>
@@ -333,6 +340,7 @@ export default function ScenarioPanel() {
                   <span className="step-order">{i + 1}.</span>
                   <select
                     title="Attacker"
+                    aria-label="Attacker"
                     value={turn.attackerUnitId}
                     onChange={e => updateEnemyTurn(turn.id, { attackerUnitId: e.target.value })}
                     style={{ flex: '1 1 90px', minWidth: 80 }}
@@ -341,6 +349,7 @@ export default function ScenarioPanel() {
                   </select>
                   <select
                     title="Action"
+                    aria-label="Action"
                     value={turnAction}
                     onChange={e => updateEnemyTurn(turn.id, { action: e.target.value as 'attack' | 'move' })}
                     style={{ flex: '0 0 80px' }}
@@ -352,6 +361,7 @@ export default function ScenarioPanel() {
                     <>
                       <select
                         title="Target player unit"
+                        aria-label="Target player unit"
                         value={turn.targetUnitId ?? ''}
                         onChange={e => updateEnemyTurn(turn.id, { targetUnitId: e.target.value })}
                         style={{ flex: '1 1 90px', minWidth: 80 }}
@@ -394,7 +404,7 @@ export default function ScenarioPanel() {
                       </div>
                     </>
                   )}
-                  <button className="unit-remove" onClick={() => removeEnemyTurn(turn.id)}>✕</button>
+                  <button className="unit-remove" aria-label="Remove enemy turn" onClick={() => removeEnemyTurn(turn.id)}>✕</button>
                 </div>
               );
             })}
@@ -426,13 +436,13 @@ export default function ScenarioPanel() {
                   {reaction.retaliates && (
                     <div className="row">
                       <div className="field" style={{ maxWidth: 90 }}>
-                        <label>Damage</label>
-                        <input type="number" min={0} value={reaction.retaliationDamage}
+                        <label htmlFor={`scenario-reaction-damage-${reaction.enemyUnitId}`}>Damage</label>
+                        <input id={`scenario-reaction-damage-${reaction.enemyUnitId}`} type="number" min={0} value={reaction.retaliationDamage}
                           onChange={e => updateAttackReaction(reaction.enemyUnitId, { retaliationDamage: +e.target.value })} />
                       </div>
                       <div className="field">
-                        <label>Retaliation Speech</label>
-                        <input type="text" value={reaction.retaliationSpeech}
+                        <label htmlFor={`scenario-reaction-speech-${reaction.enemyUnitId}`}>Retaliation Speech</label>
+                        <input id={`scenario-reaction-speech-${reaction.enemyUnitId}`} type="text" value={reaction.retaliationSpeech}
                           onChange={e => updateAttackReaction(reaction.enemyUnitId, { retaliationSpeech: e.target.value })} />
                       </div>
                     </div>
