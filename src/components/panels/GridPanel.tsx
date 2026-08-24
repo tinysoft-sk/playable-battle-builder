@@ -14,13 +14,13 @@ export default function GridPanel() {
       <div className="section-title">Grid Size</div>
       <div className="row">
         <div className="field">
-          <label>Columns</label>
-          <input type="number" min={2} max={10} value={grid.cols}
+          <label htmlFor="grid-cols">Columns</label>
+          <input id="grid-cols" type="number" min={2} max={10} value={grid.cols}
             onChange={e => setGridSize({ cols: +e.target.value })} />
         </div>
         <div className="field">
-          <label>Rows</label>
-          <input type="number" min={2} max={8} value={grid.rows}
+          <label htmlFor="grid-rows">Rows</label>
+          <input id="grid-rows" type="number" min={2} max={8} value={grid.rows}
             onChange={e => setGridSize({ rows: +e.target.value })} />
         </div>
       </div>
@@ -31,26 +31,26 @@ export default function GridPanel() {
       </p>
       <div className="row">
         <div className="field">
-          <label>Landscape offset Y</label>
-          <input type="number" step={10} value={gridOffset.landscape}
+          <label htmlFor="grid-offset-landscape">Landscape offset Y</label>
+          <input id="grid-offset-landscape" type="number" step={10} value={gridOffset.landscape}
             onChange={e => setGridOffset('landscape', +e.target.value)} />
         </div>
         <div className="field">
-          <label>Portrait offset Y</label>
-          <input type="number" step={10} value={gridOffset.portrait}
+          <label htmlFor="grid-offset-portrait">Portrait offset Y</label>
+          <input id="grid-offset-portrait" type="number" step={10} value={gridOffset.portrait}
             onChange={e => setGridOffset('portrait', +e.target.value)} />
         </div>
       </div>
 
       <div className="section-title">Grid Tiles</div>
       <div className="field">
-        <label>Walkable Hex Tile</label>
+        <div className="field-label">Walkable Hex Tile</div>
         <AssetUpload label="Walkable hex" asset={config.gridTiles.walkable}
           roleKey={FIXED_ROLE_KEYS.gridTileWalkable}
           onChange={a => setGridTile('walkable', a)} />
       </div>
       <div className="field">
-        <label>Active Hex Tile</label>
+        <div className="field-label">Active Hex Tile</div>
         <AssetUpload label="Active hex" asset={config.gridTiles.active}
           roleKey={FIXED_ROLE_KEYS.gridTileActive}
           onChange={a => setGridTile('active', a)} />
