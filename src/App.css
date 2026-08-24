@@ -9,6 +9,20 @@
   --radius: 6px;
 }
 
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+a:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid #4af;
+  outline-offset: 2px;
+}
+.field:focus-within label,
+.field:focus-within .field-label {
+  color: var(--text);
+}
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
@@ -58,6 +72,7 @@ body {
   padding: 4px 10px;
 }
 .header-actions button:disabled { opacity: 0.35; cursor: default; }
+.header-actions button:not(:disabled):hover { background: #123456; border-color: #4af; }
 .btn-export {
   background: var(--accent) !important;
   border-color: var(--accent) !important;
@@ -117,7 +132,13 @@ body {
 .panel-title { font-size: 15px; font-weight: 700; margin-bottom: 14px; }
 .section-title { font-size: 13px; font-weight: 600; margin: 14px 0 8px; color: #aac; }
 .field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
-.field label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.field label,
+.field .field-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
 .field input[type="text"],
 .field input[type="number"],
 .field input[type="url"],
@@ -309,6 +330,7 @@ body {
   width: 420px;
   max-height: 80vh;
   overflow-y: auto;
+  overscroll-behavior: contain;
 }
 .dialog h2 { font-size: 16px; margin-bottom: 16px; }
 .dialog-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
@@ -331,6 +353,8 @@ body {
   font-size: 13px;
   padding: 7px 16px;
 }
+.btn-primary:hover { background: #d63850; }
+.btn-secondary:hover { border-color: #4af; }
 
 /* ── Network row ── */
 .network-row {
@@ -366,6 +390,7 @@ body {
   font-size: 11px;
   padding: 3px 8px;
 }
+.preview-toolbar button:hover { border-color: #4af; }
 .preview-frame {
   flex: 1;
   border: none;
