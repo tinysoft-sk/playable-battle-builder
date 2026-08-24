@@ -39,7 +39,7 @@ export default function AssetUpload({ label, asset, accept = 'image/*', roleKey 
             <img className="asset-thumb" src={asset.dataUri} alt={asset.fileName} />
           )
         ) : (
-          <div className="asset-thumb-audio" style={{ color: '#666', fontSize: 22 }}>
+          <div className="asset-thumb-audio" style={{ color: 'var(--text-muted)', fontSize: 22 }}>
             {isAudio ? '🔊' : '🖼'}
           </div>
         )}

@@ -1075,7 +1075,7 @@ import type { AudioEvent } from '../../types/battle';
 
 - [ ] **Step 2: Verify**
 
-Run: `npx tsc --noEmit` and `npm test -- --run`. Both green. (`tsc` will catch it directly if any event was left out of every group — a leftover reference to the removed `AUDIO_EVENTS` import, or a TS error on `SFX_GROUPS`'s type, would fail the build. As an extra check: count the total events across all 6 groups in `SFX_GROUPS` and confirm it's 19.)
+Run: `npx tsc --noEmit` and `npm test -- --run`. Both green. Note: `tsc` alone does NOT guarantee every `AUDIO_EVENT` is covered — `SFX_GROUPS` is typed as an array of valid events, so omitting one is not a type error. A dedicated test (`AudioPanel.test.ts`) added in a later fix wave guards this directly.
 
 Manually: open Audio, confirm the SFX section now shows 6 labeled groups (UI Sounds, Movement, Spells, Player Combat, Enemy Combat, Other) instead of one flat list, and every one of the 19 slots is present exactly once across the groups. Upload a sound to one slot in each of two different groups and confirm both save correctly.
 

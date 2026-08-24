@@ -3,7 +3,7 @@ import type { AudioEvent } from '../../types/battle';
 import AssetUpload from '../AssetUpload';
 import { FIXED_ROLE_KEYS, audioRoleKey } from '../../utils/roleKeys';
 
-const SFX_GROUPS: { label: string; events: AudioEvent[] }[] = [
+export const SFX_GROUPS: { label: string; events: AudioEvent[] }[] = [
   { label: 'UI Sounds', events: ['spellbook_open', 'spell_select', 'grid_select'] },
   { label: 'Movement', events: ['walk'] },
   { label: 'Spells', events: ['spell1_shoot', 'spell1_hit', 'spell2_shoot', 'spell2_hit'] },

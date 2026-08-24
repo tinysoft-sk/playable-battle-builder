@@ -83,7 +83,7 @@ export default function ExportDialog({ onClose }: Props) {
             <span className={`network-size ${n.ok ? 'size-ok' : 'size-bad'}`}>
               {formatBytes(n.bytes)} / {formatBytes(n.limitBytes)} {n.ok ? '✓' : '⚠ OVER'}
             </span>
-            <span style={{ fontSize: 11, color: '#666' }}>{n.format}</span>
+            <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{n.format}</span>
             <button className="btn-secondary" style={{ fontSize: 11, padding: '3px 10px' }} onClick={() => downloadSingle(n)}>
               Download
             </button>

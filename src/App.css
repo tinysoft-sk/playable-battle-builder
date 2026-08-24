@@ -277,6 +277,7 @@ body {
 /* ── Two-col units layout ── */
 .units-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .units-col-title { font-family: 'Sora', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 0.02em; color: var(--accent2); margin-bottom: 8px; }
+.unit-card-body .section-title { font-size: 11px; }
 
 /* ── Resist checkboxes ── */
 .resist-row { display: flex; gap: 12px; align-items: center; }
@@ -315,6 +316,10 @@ body {
   border-radius: var(--radius);
   padding: 10px;
   margin-bottom: 8px;
+}
+.popup-section .ret-card {
+  border-left-width: 1px;
+  border-left-color: var(--border);
 }
 
 /* ── Popup section ── */
@@ -394,7 +399,7 @@ body {
 .network-name { width: 110px; font-weight: 600; }
 .network-size { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; font-size: 11px; color: var(--text-muted); flex: 1; }
 .size-ok  { color: #4c4; }
-.size-bad { color: var(--accent); }
+.size-bad { color: #ff8a9c; }
 
 /* ── Live preview ── */
 .preview-toolbar {
