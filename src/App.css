@@ -78,6 +78,7 @@ body {
   border-color: var(--accent) !important;
   font-weight: 600;
 }
+.btn-export:not(:disabled):hover { background: #d63850 !important; }
 
 /* ── Body ── */
 .app-body {
@@ -223,6 +224,9 @@ body {
   background: var(--surface2);
 }
 .unit-card-header:hover { background: #1a3a6a; }
+.unit-card-header:focus-visible {
+  outline-offset: -2px;
+}
 .unit-card-title { flex: 1; font-weight: 600; font-size: 13px; }
 .unit-card-type { font-size: 11px; color: var(--text-muted); }
 .unit-card-body { padding: 10px; display: none; }

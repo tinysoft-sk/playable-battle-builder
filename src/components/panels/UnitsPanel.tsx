@@ -105,7 +105,7 @@ function UnitCard({
         </div>
 
         <div className="field">
-          <label>Resist To</label>
+          <div className="field-label">Resist To</div>
           <div className="resist-row">
             {(['fire', 'ice'] as SpellElement[]).map(el => (
               <label key={el}>
@@ -126,7 +126,7 @@ function UnitCard({
         </div>
 
         <div className="field">
-          <label>Idle Image</label>
+          <div className="field-label">Idle Image</div>
           <AssetUpload
             label="Idle sprite"
             asset={unit.assets.idle}
@@ -135,7 +135,7 @@ function UnitCard({
           />
         </div>
         <div className="field">
-          <label>Attack Image</label>
+          <div className="field-label">Attack Image</div>
           <AssetUpload
             label="Attack sprite"
             asset={unit.assets.attack}
@@ -146,7 +146,7 @@ function UnitCard({
         {unit.type === 'ranged' && (
           <>
             <div className="field">
-              <label>Projectile Image</label>
+              <div className="field-label">Projectile Image</div>
               <AssetUpload
                 label="Projectile"
                 asset={unit.assets.projectile ?? null}

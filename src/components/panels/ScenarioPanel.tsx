@@ -217,6 +217,7 @@ export default function ScenarioPanel() {
                       value={fc.trigger}
                       onChange={e => updateFailCondition(fc.id, { trigger: e.target.value as FailCondition['trigger'] })}
                       style={{ flex: 1 }}
+                      aria-label="Fail trigger"
                     >
                       {TRIGGERS.map(t => <option key={t} value={t}>{t}</option>)}
                     </select>
@@ -314,6 +315,7 @@ export default function ScenarioPanel() {
                   value={pt.unitId}
                   onChange={e => updatePlayerTurn(pt.id, { unitId: e.target.value })}
                   style={{ flex: '1 1 120px', minWidth: 100 }}
+                  aria-label="Turn unit"
                 >
                   {config.playerUnits.map(u => (
                     <option key={u.id} value={u.id}>{u.name}</option>

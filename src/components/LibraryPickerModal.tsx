@@ -21,7 +21,7 @@ export default function LibraryPickerModal({ accept, onSelect, onClose }: Props)
       <div className="dialog lib-picker-dialog" ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="library-picker-title" tabIndex={-1} onClick={e => e.stopPropagation()}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
           <h2 id="library-picker-title">Library — pick {isAudio ? 'audio' : 'image'}</h2>
-          <button className="asset-clear" style={{ fontSize: 18 }} onClick={onClose}>✕</button>
+          <button className="asset-clear" aria-label="Close" style={{ fontSize: 18 }} onClick={onClose}>✕</button>
         </div>
         {filtered.length === 0 ? (
           <p style={{ color: 'var(--text-muted)', fontSize: 12 }}>
