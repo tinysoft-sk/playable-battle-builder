@@ -43,12 +43,23 @@ export default function App() {
     })();
   }, [initLibrary, initSharedTemplates]);
 
+  useEffect(() => {
+    function handleBeforeUnload(e: BeforeUnloadEvent) {
+      if (undoStack.length === 0) return;
+      e.preventDefault();
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [undoStack.length]);
+
   return (
     <div className="app">
       <header className="app-header">
         <span className="app-logo">⚔ Battle Editor</span>
         <input
           className="project-name"
+          aria-label="Project name"
+          autoComplete="off"
           value={config.name}
           onChange={e => setName(e.target.value)}
         />
