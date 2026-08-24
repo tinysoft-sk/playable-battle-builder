@@ -11,7 +11,7 @@ export default function LibraryPanel() {
         Upload an asset anywhere, then click 💾 to save it here. Pick it later from any upload slot via "📚 Library".
       </p>
       {failed.length > 0 && (
-        <div style={{ background: '#442222', border: '1px solid #663333', borderRadius: 6, padding: '8px 12px', marginBottom: 14, fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div role="status" aria-live="polite" style={{ background: '#442222', border: '1px solid #663333', borderRadius: 6, padding: '8px 12px', marginBottom: 14, fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span>{failed.length} upload{failed.length > 1 ? 's' : ''} not yet synced to the shared library.</span>
           <button className="btn-secondary" style={{ fontSize: 11, padding: '3px 10px' }}
             onClick={() => failed.forEach(([id]) => retryPublish(id))}>
@@ -33,6 +33,7 @@ export default function LibraryPanel() {
               <span className="lib-item-name">{a.fileName}</span>
               <button
                 className="lib-del-btn"
+                aria-label={`Remove ${a.fileName} from library`}
                 title="Remove from library"
                 onClick={() => removeFromLibrary(a.id)}
               >
