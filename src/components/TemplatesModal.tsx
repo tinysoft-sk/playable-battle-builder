@@ -72,7 +72,7 @@ export default function TemplatesModal({ onClose }: Props) {
       <div className="dialog" style={{ width: 460 }} ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="templates-dialog-title" tabIndex={-1} onClick={e => e.stopPropagation()}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
           <h2 id="templates-dialog-title">Templates</h2>
-          <button className="asset-clear" style={{ fontSize: 18 }} onClick={onClose}>✕</button>
+          <button className="asset-clear" aria-label="Close" style={{ fontSize: 18 }} onClick={onClose}>✕</button>
         </div>
 
         {/* Save current */}
@@ -83,7 +83,8 @@ export default function TemplatesModal({ onClose }: Props) {
               className="project-name"
               style={{ flex: 1, maxWidth: 'none' }}
               value={saveName}
-              placeholder="Template name"
+              placeholder="e.g. Boss Fight Lv.3…"
+              autoComplete="off"
               onChange={e => setSaveName(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && doSave()}
             />
@@ -112,7 +113,7 @@ export default function TemplatesModal({ onClose }: Props) {
         <div className="popup-section" style={{ marginBottom: 14 }}>
           <div className="popup-section-title">Shared templates</div>
           {failedTemplates.length > 0 && (
-            <div style={{ background: '#442222', border: '1px solid #663333', borderRadius: 6, padding: '8px 12px', marginBottom: 10, fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div role="status" aria-live="polite" style={{ background: '#442222', border: '1px solid #663333', borderRadius: 6, padding: '8px 12px', marginBottom: 10, fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <span>{failedTemplates.length} template change{failedTemplates.length > 1 ? 's' : ''} not yet synced.</span>
               <button className="btn-secondary" style={{ fontSize: 11, padding: '3px 10px' }}
                 onClick={() => failedTemplates.forEach(([name]) => retryTemplatePublish(name))}>
@@ -129,7 +130,7 @@ export default function TemplatesModal({ onClose }: Props) {
                 <span className="template-date">{new Date(t.savedAt).toLocaleTimeString()}</span>
                 <button className="btn-secondary" style={{ fontSize: 11, padding: '3px 10px' }}
                   onClick={() => { loadTemplate(t.name); onClose(); }}>Load</button>
-                <button className="asset-clear" onClick={() => { if (confirm(`Delete shared template "${t.name}" for everyone? This can't be undone.`)) deleteTemplate(t.name); }}>✕</button>
+                <button className="asset-clear" aria-label={`Delete ${t.name}`} onClick={() => { if (confirm(`Delete shared template "${t.name}" for everyone? This can't be undone.`)) deleteTemplate(t.name); }}>✕</button>
               </div>
             ))
           )}
