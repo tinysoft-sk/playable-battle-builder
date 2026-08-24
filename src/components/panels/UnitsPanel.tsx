@@ -30,7 +30,7 @@ function UnitCard({
         aria-expanded={open}
         onClick={() => setOpen(o => !o)}
         onKeyDown={e => {
-          if (e.key === 'Enter' || e.key === ' ') {
+          if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) {
             e.preventDefault();
             setOpen(o => !o);
           }
