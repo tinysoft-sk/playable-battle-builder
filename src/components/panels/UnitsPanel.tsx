@@ -23,21 +23,40 @@ function UnitCard({
 
   return (
     <div className="unit-card">
-      <div className="unit-card-header" onClick={() => setOpen(o => !o)}>
+      <div
+        className="unit-card-header"
+        role="button"
+        tabIndex={0}
+        aria-expanded={open}
+        onClick={() => setOpen(o => !o)}
+        onKeyDown={e => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setOpen(o => !o);
+          }
+        }}
+      >
         <span className="unit-card-title">{unit.name || '(unnamed)'}</span>
         <span className="unit-card-type">{unit.type}</span>
         {canRemove && (
-          <button className="unit-remove" onClick={e => { e.stopPropagation(); onRemove(); }} title="Remove">✕</button>
+          <button
+            className="unit-remove"
+            aria-label={`Remove ${unit.name || 'unit'}`}
+            onClick={e => { e.stopPropagation(); onRemove(); }}
+            title="Remove"
+          >
+            ✕
+          </button>
         )}
       </div>
       <div className={`unit-card-body${open ? ' open' : ''}`}>
         <div className="field">
-          <label>Name</label>
-          <input type="text" value={unit.name} onChange={e => onUpdate({ name: e.target.value })} />
+          <label htmlFor={`unit-name-${unit.id}`}>Name</label>
+          <input id={`unit-name-${unit.id}`} type="text" value={unit.name} onChange={e => onUpdate({ name: e.target.value })} />
         </div>
         <div className="field">
-          <label>Type</label>
-          <select value={unit.type} onChange={e => onUpdate({ type: e.target.value as UnitConfig['type'] })}>
+          <label htmlFor={`unit-type-${unit.id}`}>Type</label>
+          <select id={`unit-type-${unit.id}`} value={unit.type} onChange={e => onUpdate({ type: e.target.value as UnitConfig['type'] })}>
             <option value="melee">Melee</option>
             <option value="ranged">Ranged</option>
             <option value="flying">Flying</option>
@@ -46,42 +65,42 @@ function UnitCard({
 
         <div className="row">
           <div className="field">
-            <label>HP</label>
-            <input type="number" min={1} value={unit.hp} onChange={e => onUpdate({ hp: +e.target.value })} />
+            <label htmlFor={`unit-hp-${unit.id}`}>HP</label>
+            <input id={`unit-hp-${unit.id}`} type="number" min={1} value={unit.hp} onChange={e => onUpdate({ hp: +e.target.value })} />
           </div>
           <div className="field">
-            <label>Base Damage</label>
-            <input type="number" min={0} value={unit.baseDamage} onChange={e => onUpdate({ baseDamage: +e.target.value })} />
-          </div>
-        </div>
-
-        <div className="row">
-          <div className="field">
-            <label>Defense</label>
-            <input type="number" min={0} value={unit.defense} onChange={e => onUpdate({ defense: +e.target.value })} />
-          </div>
-          <div className="field">
-            <label>Dmg Multiplier</label>
-            <input type="number" min={0} step={0.1} value={unit.damageMultiplier} onChange={e => onUpdate({ damageMultiplier: +e.target.value })} />
+            <label htmlFor={`unit-basedamage-${unit.id}`}>Base Damage</label>
+            <input id={`unit-basedamage-${unit.id}`} type="number" min={0} value={unit.baseDamage} onChange={e => onUpdate({ baseDamage: +e.target.value })} />
           </div>
         </div>
 
         <div className="row">
           <div className="field">
-            <label>Grid Col</label>
-            <input type="number" min={0} max={gridCols - 1} value={unit.gridCol} onChange={e => onUpdate({ gridCol: +e.target.value })} />
+            <label htmlFor={`unit-defense-${unit.id}`}>Defense</label>
+            <input id={`unit-defense-${unit.id}`} type="number" min={0} value={unit.defense} onChange={e => onUpdate({ defense: +e.target.value })} />
           </div>
           <div className="field">
-            <label>Grid Row</label>
-            <input type="number" min={0} max={gridRows - 1} value={unit.gridRow} onChange={e => onUpdate({ gridRow: +e.target.value })} />
+            <label htmlFor={`unit-dmgmult-${unit.id}`}>Dmg Multiplier</label>
+            <input id={`unit-dmgmult-${unit.id}`} type="number" min={0} step={0.1} value={unit.damageMultiplier} onChange={e => onUpdate({ damageMultiplier: +e.target.value })} />
+          </div>
+        </div>
+
+        <div className="row">
+          <div className="field">
+            <label htmlFor={`unit-gridcol-${unit.id}`}>Grid Col</label>
+            <input id={`unit-gridcol-${unit.id}`} type="number" min={0} max={gridCols - 1} value={unit.gridCol} onChange={e => onUpdate({ gridCol: +e.target.value })} />
           </div>
           <div className="field">
-            <label>Display Width</label>
-            <input type="number" min={40} max={300} value={unit.displayWidth} onChange={e => onUpdate({ displayWidth: +e.target.value })} />
+            <label htmlFor={`unit-gridrow-${unit.id}`}>Grid Row</label>
+            <input id={`unit-gridrow-${unit.id}`} type="number" min={0} max={gridRows - 1} value={unit.gridRow} onChange={e => onUpdate({ gridRow: +e.target.value })} />
           </div>
           <div className="field">
-            <label>Move Range</label>
-            <input type="number" min={1} max={8} value={unit.moveRange ?? 2} onChange={e => onUpdate({ moveRange: +e.target.value })} title="Max hexes per turn" />
+            <label htmlFor={`unit-displaywidth-${unit.id}`}>Display Width</label>
+            <input id={`unit-displaywidth-${unit.id}`} type="number" min={40} max={300} value={unit.displayWidth} onChange={e => onUpdate({ displayWidth: +e.target.value })} />
+          </div>
+          <div className="field">
+            <label htmlFor={`unit-moverange-${unit.id}`}>Move Range</label>
+            <input id={`unit-moverange-${unit.id}`} type="number" min={1} max={8} value={unit.moveRange ?? 2} onChange={e => onUpdate({ moveRange: +e.target.value })} title="Max hexes per turn" />
           </div>
         </div>
 
@@ -136,8 +155,8 @@ function UnitCard({
               />
             </div>
             <div className="field" style={{ maxWidth: 120 }}>
-              <label>Projectile Size</label>
-              <input type="number" min={16} max={200} value={unit.projectileSize ?? 60}
+              <label htmlFor={`unit-projsize-${unit.id}`}>Projectile Size</label>
+              <input id={`unit-projsize-${unit.id}`} type="number" min={16} max={200} value={unit.projectileSize ?? 60}
                 onChange={e => onUpdate({ projectileSize: +e.target.value })} />
             </div>
           </>
