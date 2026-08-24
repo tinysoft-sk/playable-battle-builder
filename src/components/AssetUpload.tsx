@@ -36,7 +36,7 @@ export default function AssetUpload({ label, asset, accept = 'image/*', roleKey 
           isAudio ? (
             <div className="asset-thumb-audio">🔊</div>
           ) : (
-            <img className="asset-thumb" src={asset.dataUri} alt="" />
+            <img className="asset-thumb" src={asset.dataUri} alt={asset.fileName} />
           )
         ) : (
           <div className="asset-thumb-audio" style={{ color: '#666', fontSize: 22 }}>
@@ -51,6 +51,7 @@ export default function AssetUpload({ label, asset, accept = 'image/*', roleKey 
           <>
             <button
               className="asset-action-btn"
+              aria-label="Save to library"
               title="Save to library"
               onClick={e => { e.preventDefault(); addToLibrary(asset); }}
             >
@@ -58,6 +59,7 @@ export default function AssetUpload({ label, asset, accept = 'image/*', roleKey 
             </button>
             <button
               className="asset-clear"
+              aria-label={`Remove ${asset.fileName}`}
               title="Remove"
               onClick={e => { e.preventDefault(); onChange(null); }}
             >
