@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { useBattleStore } from '../store/battleStore';
 import type { BattleConfig } from '../types/battle';
 import { BUILT_IN_TEMPLATES } from '../data/builtInTemplates';
+import { useDialogA11y } from '../hooks/useDialogA11y';
 
 interface Props { onClose: () => void; }
 
@@ -10,6 +11,7 @@ export default function TemplatesModal({ onClose }: Props) {
   const [saveName, setSaveName] = useState(config.name);
   const [loadingBuiltIn, setLoadingBuiltIn] = useState<string | null>(null);
   const importRef = useRef<HTMLInputElement>(null);
+  const dialogRef = useDialogA11y(onClose);
   const failedTemplates = Object.entries(pendingTemplatePublishes).filter(([, p]) => p.status === 'failed');
 
   function doSave() {
@@ -67,9 +69,9 @@ export default function TemplatesModal({ onClose }: Props) {
 
   return (
     <div className="dialog-backdrop" onClick={onClose}>
-      <div className="dialog" style={{ width: 460 }} onClick={e => e.stopPropagation()}>
+      <div className="dialog" style={{ width: 460 }} ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="templates-dialog-title" tabIndex={-1} onClick={e => e.stopPropagation()}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-          <h2>Templates</h2>
+          <h2 id="templates-dialog-title">Templates</h2>
           <button className="asset-clear" style={{ fontSize: 18 }} onClick={onClose}>✕</button>
         </div>
 

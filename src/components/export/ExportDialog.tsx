@@ -4,6 +4,7 @@ import { generateHTML } from '../../utils/htmlGenerator';
 import type { NetworkTarget } from '../../types/battle';
 import { estimateSize, formatBytes } from '../../utils/assetEncoder';
 import { resolveDefaults } from '../../utils/resolveDefaults';
+import { useDialogA11y } from '../../hooks/useDialogA11y';
 
 interface NetworkInfo {
   id: NetworkTarget;
@@ -30,6 +31,7 @@ export default function ExportDialog({ onClose }: Props) {
     [config, roleDefaults, library]
   );
   const [working, setWorking] = useState(false);
+  const dialogRef = useDialogA11y(onClose);
 
   const sizes = NETWORKS.map(n => {
     try {
@@ -72,8 +74,8 @@ export default function ExportDialog({ onClose }: Props) {
 
   return (
     <div className="dialog-backdrop" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="dialog">
-        <h2>Export</h2>
+      <div className="dialog" ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="export-dialog-title" tabIndex={-1}>
+        <h2 id="export-dialog-title">Export</h2>
 
         {sizes.map(n => (
           <div key={n.id} className="network-row">

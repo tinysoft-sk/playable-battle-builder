@@ -1,5 +1,6 @@
 import { useBattleStore } from '../store/battleStore';
 import type { LibraryAsset } from '../types/battle';
+import { useDialogA11y } from '../hooks/useDialogA11y';
 
 interface Props {
   accept: string;
@@ -9,6 +10,7 @@ interface Props {
 
 export default function LibraryPickerModal({ accept, onSelect, onClose }: Props) {
   const { library } = useBattleStore();
+  const dialogRef = useDialogA11y(onClose);
   const isAudio = accept.includes('audio');
   const filtered = library.filter(a =>
     isAudio ? a.mimeType.startsWith('audio/') : a.mimeType.startsWith('image/')
@@ -16,9 +18,9 @@ export default function LibraryPickerModal({ accept, onSelect, onClose }: Props)
 
   return (
     <div className="dialog-backdrop" onClick={onClose}>
-      <div className="dialog lib-picker-dialog" onClick={e => e.stopPropagation()}>
+      <div className="dialog lib-picker-dialog" ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="library-picker-title" tabIndex={-1} onClick={e => e.stopPropagation()}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-          <h2>Library — pick {isAudio ? 'audio' : 'image'}</h2>
+          <h2 id="library-picker-title">Library — pick {isAudio ? 'audio' : 'image'}</h2>
           <button className="asset-clear" style={{ fontSize: 18 }} onClick={onClose}>✕</button>
         </div>
         {filtered.length === 0 ? (
