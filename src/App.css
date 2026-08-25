@@ -423,12 +423,19 @@ body {
   padding: 3px 8px;
 }
 .preview-toolbar button:hover { border-color: #4af; }
+.preview-toolbar select {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  cursor: pointer;
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  font-size: 11px;
+  padding: 3px 8px;
+}
 .preview-frame {
-  flex: 1;
   border: none;
   background: #000;
-  width: 100%;
-  height: 100%;
 }
 .preview-wrap {
   flex: 1;

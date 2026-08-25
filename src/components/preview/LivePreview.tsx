@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState, useCallback } from 'react';
+import { useRef, useEffect, useLayoutEffect, useState, useCallback } from 'react';
 import { useBattleStore } from '../../store/battleStore';
 import { generateHTML } from '../../utils/htmlGenerator';
 
@@ -63,7 +63,7 @@ export default function LivePreview() {
   // width/height — only a wrapping div's CSS transform — so the iframe's own
   // window.innerWidth/innerHeight (read by the exported playable's own resize
   // logic) always reflects the true selected device size.
-  useEffect(() => {
+  useLayoutEffect(() => {
     const wrap = wrapRef.current;
     if (!wrap) return;
     function computeScale() {

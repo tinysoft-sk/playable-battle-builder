@@ -11,7 +11,7 @@
 ## Global Constraints
 
 - No change to what HTML is generated (`generateHTML` call, its args, the debounced-refresh-on-config-change behavior, or the Restart button's behavior) — this plan only changes how the iframe is *sized* on screen.
-- Default device selection must be "Design (563×1000)" so the preview's default appearance is unchanged from today unless a user actively picks a different device from the dropdown.
+- Default device selection must be "Design (563×1000)" — this preset's fixed 1000×563 canvas itself is unchanged from before, but the *display* now goes through the same fixed-pixel + scale-to-fit path as every other preset. Unlike the old preview, which always stretched to fill 100%/100% of the pane, the default view may now letterbox/center within the available pane depending on its aspect ratio, and is capped at 1:1 scale. This is intentional — it's the natural consequence of a single consistent sizing architecture across all presets, not a regression.
 - The iframe's actual `width`/`height` (which determine what its own internal JS reads as `window.innerWidth`/`innerHeight`) must be the device's true pixel dimensions — never scaled down in the DOM. Only the wrapping `<div>`'s CSS `transform: scale()` may shrink the *visual* size for display.
 
 ---
