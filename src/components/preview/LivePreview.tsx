@@ -69,12 +69,14 @@ export default function LivePreview() {
     function computeScale() {
       const availW = wrap!.clientWidth;
       const availH = wrap!.clientHeight;
+      if (availW === 0 || availH === 0) return;
       setFitScale(Math.min(availW / frameW, availH / frameH, 1));
     }
     computeScale();
+    const raf = requestAnimationFrame(computeScale);
     const observer = new ResizeObserver(computeScale);
     observer.observe(wrap);
-    return () => observer.disconnect();
+    return () => { cancelAnimationFrame(raf); observer.disconnect(); };
   }, [frameW, frameH]);
 
   return (
