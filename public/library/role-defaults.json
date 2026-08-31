@@ -42,5 +42,6 @@
   "unit:idle:unit": "5d033de0-dead-4507-adfb-2a80d3c0552c",
   "unit:attack:armored giant": "f9a1ffc6-47c4-4f9a-af0e-f20ba1f0c398",
   "unit:attack:unit": "ac95a041-4598-44fa-8929-757c82868f20",
-  "unit:idle:wolf rider": "5fd5b3da-5c8a-4f12-97c5-fbd8ec2e601f"
+  "unit:idle:wolf rider": "5fd5b3da-5c8a-4f12-97c5-fbd8ec2e601f",
+  "unit:attack:wolf rider": "54eeb4cf-6c53-475f-b13c-8a75c7738abd"
 }
