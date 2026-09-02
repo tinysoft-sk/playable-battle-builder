@@ -48,5 +48,6 @@
   "unit:idle:ice demon": "487e277c-0519-4d48-9db3-5191ee3c0ca7",
   "unit:attack:ice demon": "f9a1ffc6-47c4-4f9a-af0e-f20ba1f0c398",
   "unit:idle:seidkona": "5fd5b3da-5c8a-4f12-97c5-fbd8ec2e601f",
-  "unit:attack:seidkona": "54eeb4cf-6c53-475f-b13c-8a75c7738abd"
+  "unit:attack:seidkona": "54eeb4cf-6c53-475f-b13c-8a75c7738abd",
+  "unit:idle:azure dragon": "cfe7c6a2-cff0-49f3-b834-4e22dd31c3c7"
 }
