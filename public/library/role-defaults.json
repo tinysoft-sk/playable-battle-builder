@@ -45,5 +45,6 @@
   "unit:idle:wolf rider": "5fd5b3da-5c8a-4f12-97c5-fbd8ec2e601f",
   "unit:attack:wolf rider": "54eeb4cf-6c53-475f-b13c-8a75c7738abd",
   "unit:projectile:seidkona": "0aed3a8e-d1e6-479c-a174-bf07c95bc8b8",
-  "unit:idle:ice demon": "487e277c-0519-4d48-9db3-5191ee3c0ca7"
+  "unit:idle:ice demon": "487e277c-0519-4d48-9db3-5191ee3c0ca7",
+  "unit:attack:ice demon": "f9a1ffc6-47c4-4f9a-af0e-f20ba1f0c398"
 }
