@@ -846,11 +846,11 @@
   },
   {
     "name": "HFB_play_FirstBlood_PZ_V1",
-    "savedAt": 1788360372184,
+    "savedAt": 1788360939957,
     "config": {
       "id": "75199153-abb7-4854-9f1f-b95c482b7c93",
       "name": "HFB_play_FirstBlood_PZ_V1",
-      "spellbookEnabled": false,
+      "spellbookEnabled": true,
       "playerUnits": [
         {
           "id": "6869ed0e-f9a6-4163-89cd-2fae46560f1a",
@@ -910,15 +910,15 @@
       "enemyUnits": [
         {
           "id": "690bba98-e91b-442e-aba7-1a7fa488423b",
-          "name": "Seidkona",
-          "type": "ranged",
+          "name": "Azure Dragon",
+          "type": "flying",
           "hp": 60,
           "baseDamage": 15,
           "defense": 0,
           "damageMultiplier": 1,
-          "gridCol": 2,
-          "gridRow": 0,
-          "displayWidth": 160,
+          "gridCol": 1,
+          "gridRow": 1,
+          "displayWidth": 220,
           "moveRange": 2,
           "resistTo": [
             "fire"
@@ -926,10 +926,10 @@
           "flipped": true,
           "assets": {
             "idle": {
-              "libraryAssetId": "5fd5b3da-5c8a-4f12-97c5-fbd8ec2e601f"
+              "libraryAssetId": "7e49195f-a91d-4788-bcc5-d1b678cd4941"
             },
             "attack": {
-              "libraryAssetId": "54eeb4cf-6c53-475f-b13c-8a75c7738abd"
+              "libraryAssetId": "1dd392b3-5cab-4e50-8ca5-9d92e8fd5076"
             },
             "projectile": {
               "libraryAssetId": "0aed3a8e-d1e6-479c-a174-bf07c95bc8b8"
@@ -1008,42 +1008,10 @@
           {
             "order": 0,
             "actorUnitId": "6869ed0e-f9a6-4163-89cd-2fae46560f1a",
-            "action": "ranged_attack",
+            "action": "cast_spell",
             "spellId": "fireball",
             "targetUnitId": "valkyrie",
             "tooltipText": "Never trade blows with an Ogre at full strenght! Soften him from range first!"
-          },
-          {
-            "order": 1,
-            "actorUnitId": "6869ed0e-f9a6-4163-89cd-2fae46560f1a",
-            "action": "cast_spell",
-            "targetUnitId": "valkyrie",
-            "tooltipText": "He's staggered! Open your spellbook and burn the Ogre down!",
-            "spellId": "fireball"
-          },
-          {
-            "order": 2,
-            "actorUnitId": "knight",
-            "action": "move",
-            "targetUnitId": "valkyrie",
-            "tooltipText": "Liches are deadly at range but hellpless up close. Charge the Mage!",
-            "moveTargetCol": 5,
-            "moveTargetRow": 2
-          },
-          {
-            "order": 3,
-            "actorUnitId": "knight",
-            "action": "melee_attack",
-            "targetUnitId": "armored_giant",
-            "tooltipText": "Now! Cut gim down before he reloads"
-          },
-          {
-            "order": 4,
-            "actorUnitId": "6869ed0e-f9a6-4163-89cd-2fae46560f1a",
-            "action": "cast_spell",
-            "targetUnitId": "690bba98-e91b-442e-aba7-1a7fa488423b",
-            "tooltipText": "His wings shrug off flame — freeze him out of the sky!",
-            "spellId": "ice_shard"
           }
         ],
         "failConditions": [
@@ -1161,7 +1129,8 @@
               "retaliationSpeech": ""
             }
           ]
-        }
+        },
+        "introSpeech": "Can You Kill The Dragon?"
       },
       "popups": {
         "victory": {
