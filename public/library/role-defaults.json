@@ -51,5 +51,6 @@
   "unit:attack:seidkona": "54eeb4cf-6c53-475f-b13c-8a75c7738abd",
   "unit:idle:azure dragon": "7e49195f-a91d-4788-bcc5-d1b678cd4941",
   "unit:attack:azure dragon": "1dd392b3-5cab-4e50-8ca5-9d92e8fd5076",
-  "unit:idle:valkyrie": "5fd5b3da-5c8a-4f12-97c5-fbd8ec2e601f"
+  "unit:idle:valkyrie": "5fd5b3da-5c8a-4f12-97c5-fbd8ec2e601f",
+  "unit:attack:valkyrie": "ac95a041-4598-44fa-8929-757c82868f20"
 }
